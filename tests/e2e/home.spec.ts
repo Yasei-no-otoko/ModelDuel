@@ -558,7 +558,7 @@ test("submits a sketch-only live analysis with an empty explanation", async ({
 
   await page.goto("/");
   await page.getByLabel("Your current explanation").fill("");
-  await page.getByLabel("Add a sketch optional").setInputFiles({
+  await page.getByLabel("Choose sketch").setInputFiles({
     name: "moon-sketch.png",
     mimeType: "image/png",
     buffer: Buffer.from([137, 80, 78, 71, 1, 2, 3, 4]),
