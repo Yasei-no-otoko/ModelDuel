@@ -192,6 +192,7 @@ export function ModelDuelExperience() {
   const currentSessionId = useRef(session.sessionId);
   const activeTransports = useRef(new Map<string, TransportGuard>());
   const analysisPreparationActive = useRef(false);
+  const sketchInputRef = useRef<HTMLInputElement>(null);
   const hydrationReady = useHydrationReady();
   const [selectedScenarioId, setSelectedScenarioId] =
     useState<ScenarioId>("moon-phases");
@@ -318,6 +319,14 @@ export function ModelDuelExperience() {
     }
     setSketchError(null);
     setSketch({ file, previewUrl: URL.createObjectURL(file) });
+  }
+
+  function clearSketchSelection() {
+    if (sketchInputRef.current) {
+      sketchInputRef.current.value = "";
+    }
+    setSketch(null);
+    setSketchError(null);
   }
 
   async function requestValidatedChallenge(
@@ -749,9 +758,8 @@ export function ModelDuelExperience() {
     });
     setSelectedScenarioId(nextScenarioId);
     setExplanation(SCENARIO_CONTENT[nextScenarioId].sampleMisconception);
-    setSketch(null);
+    clearSketchSelection();
     setInputError(null);
-    setSketchError(null);
     setAnalysisLoad(null);
     setAnalysisPending(false);
     setAnalysisError(null);
@@ -888,17 +896,31 @@ export function ModelDuelExperience() {
 
               <div className="sketch-field">
                 <div>
-                  <label htmlFor="learner-sketch">Add a sketch <span>optional</span></label>
-                  <p>PNG, JPEG, or WebP · up to 3 MB</p>
+                  <p className="sketch-heading">
+                    Add a sketch <span>optional</span>
+                  </p>
+                  <p className="sketch-help" id="sketch-help">
+                    PNG, JPEG, or WebP · up to 3 MB
+                  </p>
                 </div>
-                <input
-                  id="learner-sketch"
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  onChange={handleSketch}
-                  aria-describedby={sketchError ? "sketch-error" : undefined}
-                  aria-invalid={Boolean(sketchError)}
-                />
+                <div className="sketch-upload-control">
+                  <input
+                    ref={sketchInputRef}
+                    className="sketch-upload-input"
+                    id="learner-sketch"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    onChange={handleSketch}
+                    aria-describedby={`sketch-help${sketchError ? " sketch-error" : ""}`}
+                    aria-invalid={Boolean(sketchError)}
+                  />
+                  <label className="sketch-upload-button" htmlFor="learner-sketch">
+                    Choose sketch
+                  </label>
+                  <span className="sketch-upload-status" aria-live="polite">
+                    {sketch?.file.name ?? "No sketch selected"}
+                  </span>
+                </div>
               </div>
               {sketchError ? <p className="field-error" id="sketch-error">{sketchError}</p> : null}
               {sketch ? (
@@ -906,12 +928,14 @@ export function ModelDuelExperience() {
                   {/* eslint-disable-next-line @next/next/no-img-element -- local object URL preview */}
                   <img src={sketch.previewUrl} alt="Selected learner sketch preview" />
                   <div>
-                  <strong>{sketch.file.name}</strong>
+                    <strong>{sketch.file.name}</strong>
                     <span>
                       This local preview is uploaded only if you choose live GPT analysis.
                       The verified sample never uploads or analyzes it.
                     </span>
-                    <button type="button" onClick={() => setSketch(null)}>Remove sketch</button>
+                    <button type="button" onClick={clearSketchSelection}>
+                      Remove sketch
+                    </button>
                   </div>
                 </div>
               ) : null}
