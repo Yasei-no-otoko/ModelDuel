@@ -51,7 +51,11 @@ function moonViewpointRelation(text: string): boolean {
     /\b(?:view(?:ing)?|angle|position|perspective)\b.{0,30}\b(?:does not|doesn't|doesnt|is not|isn't|isnt|never)\b.{0,30}\b(?:matter|change|reveal|determine|involved|relevant)\b/i.test(
       text,
     );
-  if (negated) {
+  const negatedObservation =
+    /\b(?:do(?:es)?\s+not|don't|doesn't|dont|doesnt|never)\s+(?:see|observe|reveal)\b.{0,30}\b(?:different|changing|visible|lit|illuminated)?\s*(?:fractions?|portions?|parts?)\b/i.test(
+      text,
+    );
+  if (negated || negatedObservation) {
     return false;
   }
 
@@ -60,6 +64,9 @@ function moonViewpointRelation(text: string): boolean {
       text,
     ) ||
     /\b(?:visible|lit|illuminated)\s+(?:fraction|portion|part|half)\b.{0,40}\b(?:changes?|depends?)\b.{0,55}\b(?:view(?:ing)?|angle|position|perspective)\b/i.test(
+      text,
+    ) ||
+    /\b(?:orbit|orbital\s+position|position)\b.{0,35}\b(?:chang(?:e(?:s|d)?|ing)|shift(?:s|ed|ing)?|alter(?:s|ed|ing)?)\b.{0,30}\b(?:our\s+)?(?:view(?:ing)?\s+angle|viewpoint|perspective)\b.{0,55}\b(?:see(?:s|ing)?|reveal(?:s|ed|ing)?|show(?:s|ed|ing)?)\b.{0,30}\b(?:different|changing|visible|lit|illuminated)?\s*(?:fractions?|portions?|parts?)\b/i.test(
       text,
     )
   );

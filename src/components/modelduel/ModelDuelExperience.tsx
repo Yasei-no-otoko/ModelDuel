@@ -43,6 +43,7 @@ import {
   validateRevision,
   validateSketchFile,
 } from "./flow";
+import { getTraceHeroCopy } from "./trace-copy";
 import { WorldComparison } from "./WorldComparison";
 import { useHydrationReady } from "./browser";
 
@@ -1420,9 +1421,10 @@ export function ModelDuelExperience() {
               </span>
               <p className="eyebrow">Model Revision Trace · complete</p>
               <h1 id="trace-title">
-                {session.trace.transfer.result.isCorrect
-                  ? "Your revised model transferred."
-                  : "The trace found the next question to test."}
+                {getTraceHeroCopy(
+                  session.trace.revision.feedback.conceptualChange,
+                  session.trace.transfer.result.isCorrect,
+                )}
               </h1>
               <p>{session.trace.transfer.result.rationale}</p>
               {analysisLoad ? <p className="trace-source-notice">{analysisLoad.notice}</p> : null}
