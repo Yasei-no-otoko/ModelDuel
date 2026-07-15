@@ -330,7 +330,7 @@ function MoonComparison({
             intersection: {physical.earthShadowIntersection}.
           </h3>
           <p>
-            This is simulation evidence calculated from the validated CaseSpec. A model’s
+            This is simulation evidence calculated from the validated test case. A model’s
             claim is shown separately above and is never treated as physical evidence.
           </p>
         </div>

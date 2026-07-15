@@ -46,6 +46,7 @@ export type ScenarioContent = Readonly<{
   interpretSummary: string;
   scientificTitle: string;
   scientificBullets: readonly string[];
+  hiddenEvidenceCopy: string;
   sealedCaseCopy: string;
   revisionPlaceholder: string;
   transferEyebrow: string;
@@ -70,6 +71,8 @@ export const SCENARIO_CONTENT = {
       "The visible fraction changes with the Moon's position around Earth.",
       "Earth's shadow is reserved for lunar eclipses.",
     ],
+    hiddenEvidenceCopy:
+      "Moon–Sun–Earth geometry, illuminated fraction, Earth-shadow intersection, and the observed phase.",
     sealedCaseCopy:
       "The observation stays sealed until you lock a prediction and run both worlds.",
     revisionPlaceholder:
@@ -94,6 +97,8 @@ export const SCENARIO_CONTENT = {
       "In June, the Northern Hemisphere receives more direct sunlight while the Southern Hemisphere receives less.",
       "The hemispheres therefore experience opposite seasons even though both share the same Earth–Sun distance.",
     ],
+    hiddenEvidenceCopy:
+      "June geometry, sunlight angles, relative energy, and each hemisphere's seasonal result.",
     sealedCaseCopy:
       "The June observation and relative energy evidence stay sealed until you lock a prediction and run both worlds.",
     revisionPlaceholder:

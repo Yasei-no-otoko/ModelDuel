@@ -44,6 +44,7 @@ import {
   validateSketchFile,
 } from "./flow";
 import { getTraceHeroCopy } from "./trace-copy";
+import { formatCausalRelation } from "./learner-copy";
 import { WorldComparison } from "./WorldComparison";
 import { useHydrationReady } from "./browser";
 
@@ -543,7 +544,9 @@ export function ModelDuelExperience() {
     dispatch({ type: "BEGIN_OBSERVATION", startedAt: nextTimestamp(clock) });
     dispatch({ type: "COMPLETE_OBSERVATION", completedAt: nextTimestamp(clock) });
     setObservationReviewed(false);
-    setStatus("Both models ran under the same CaseSpec. Verified evidence is now visible.");
+    setStatus(
+      "Both models ran the same validated case. Verified evidence is now visible.",
+    );
   }
 
   async function handleRevision(event: FormEvent<HTMLFormElement>) {
@@ -1068,7 +1071,7 @@ export function ModelDuelExperience() {
                     <ul>
                       {analysis.learnerModel.causalRelations.map((relation) => (
                         <li key={`${relation.subject}-${relation.relation}-${relation.object}`}>
-                          {relation.subject} · {relation.relation} · {relation.object}
+                          {formatCausalRelation(relation)}
                         </li>
                       ))}
                     </ul>
@@ -1086,7 +1089,7 @@ export function ModelDuelExperience() {
                   </article>
                 </div>
                 <div className="stage-action-row">
-                  <p><strong>Still hidden:</strong> physical positions, illumination, shadow intersection, and result.</p>
+                  <p><strong>Still hidden:</strong> {scenarioContent.hiddenEvidenceCopy}</p>
                   <button className="primary-button" type="button" onClick={handleConfirmModels}>
                     Make a prediction <span aria-hidden="true">→</span>
                   </button>
@@ -1167,7 +1170,7 @@ export function ModelDuelExperience() {
                 <div className="sealed-worlds" aria-hidden="true">
                   <span>A</span><i>VS</i><span>B</span>
                 </div>
-                <h2>Ready to run one validated CaseSpec.</h2>
+                <h2>Prediction locked. Ready to run both worlds.</h2>
                 <p>{scenarioContent.sealedCaseCopy}</p>
                 <button
                   className="primary-button"
