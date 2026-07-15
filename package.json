@@ -1,0 +1,44 @@
+{
+  "name": "modelduel",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Evidence-led conceptual learning through competing runnable models.",
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@11.13.0",
+  "engines": {
+    "node": ">=22.13.0",
+    "pnpm": ">=11.13.0 <12"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
+  },
+  "dependencies": {
+    "@react-three/fiber": "9.6.1",
+    "next": "16.2.10",
+    "openai": "6.47.0",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "three": "0.185.1",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1",
+    "@types/node": "24.13.3",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "@types/three": "0.185.1",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.2.10",
+    "typescript": "6.0.3",
+    "vitest": "4.1.10"
+  }
+}

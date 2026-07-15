@@ -1,0 +1,7 @@
+allowBuilds:
+  sharp@0.34.5: true
+  unrs-resolver@1.12.2: false
+minimumReleaseAgeExclude:
+  - openai@6.47.0
+overrides:
+  "next@16.2.10>postcss": "8.5.10"
