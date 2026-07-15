@@ -168,7 +168,19 @@ The runtime ships no third-party image, audio, video, or 3D media. Astronomy vis
 
 ## Submission verification
 
-The final clean-branch gate, merge to `main`, and post-merge test/build/E2E gates are pending. Deployment, public repository access, real Sol/Terra smoke evidence, video, screenshots, and placeholder replacement are also external submission work. Track the canonical handoff in [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md).
+The application tree merged at `89941ff` was verified on main on 2026-07-16 JST.
+
+| Verification | Result |
+| --- | --- |
+| ESLint | **Pass** — zero warnings. |
+| Strict TypeScript | **Pass**. |
+| Vitest unit/API | **283/283** across **26 files**. |
+| Next.js 16.2.10 production build | **Pass**. |
+| Chromium E2E against `next start` | **23/23 Pass**. |
+| Production dependency audit | **No known vulnerabilities**. |
+| Tracked live-token/private-key scan | **0 matches**. |
+
+Verified samples require no OpenAI key. External gates remain pending: a real paid Sol/Terra smoke, distributed production rate limiting, deployment, public repository access, the `/feedback` Session ID, final media/video/screenshots, and replacement of all four placeholders. Track the canonical handoff in [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md); the external submission is not yet complete.
 
 ## License
 

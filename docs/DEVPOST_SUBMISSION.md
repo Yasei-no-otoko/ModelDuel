@@ -221,11 +221,13 @@ Capture only the final merged production build. Do not include audit â€œbeforeâ€
 
 ### Code and tests
 
-- [ ] Finish on a clean branch and review the final diff.
-- [ ] Merge the approved work to `main`.
-- [ ] Run and record `pnpm check` after the merge.
-- [ ] Run and record `pnpm test:e2e` after the merge.
+- [x] Finish on a clean branch and review the final diff.
+- [x] Merge the approved work to `main`.
+- [x] Run and record `pnpm check` after the merge.
+- [x] Run and record `pnpm test:e2e` after the merge.
 - [ ] Manually verify Moon and Seasons on the final desktop and mobile build.
+
+Recorded on main at `89941ff`: Vitest unit/API **283/283** across **26 files**, Chromium E2E against `next start` **23/23**, Next.js 16.2.10 production build **Pass**, and production dependency audit **No known vulnerabilities**.
 
 ### GPT-5.6 proof
 
