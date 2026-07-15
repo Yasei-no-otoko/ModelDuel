@@ -576,7 +576,10 @@ function SeasonsComparison({
   const physical = scientific.physicalObservation;
 
   return (
-    <section className="world-comparison" aria-labelledby="world-comparison-title">
+    <section
+      className="world-comparison seasons-comparison"
+      aria-labelledby="world-comparison-title"
+    >
       <div className="case-toolbar">
         <div>
           <p className="micro-label">Same deterministic test case</p>
