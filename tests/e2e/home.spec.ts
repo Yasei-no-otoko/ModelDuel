@@ -3,11 +3,40 @@ import { expect, test, type Page } from "@playwright/test";
 const revisedExplanation =
   "The Moon appears half illuminated because sunlight lights one half and our viewing angle reveals half, while Earth's shadow does not intersect it.";
 
+const seasonsRevisedExplanation =
+  "Earth's axial tilt changes the sunlight angle, so the Northern and Southern Hemispheres receive different energy and experience opposite seasons.";
+
+async function selectScenario(page: Page, scenario: "moon-phases" | "seasons") {
+  const name = scenario === "seasons" ? /Seasons/ : /Moon phases/;
+  const radio = page.getByRole("radio", { name });
+  await radio.locator("xpath=ancestor::label").click();
+  await expect(radio).toBeChecked();
+}
+
 async function startChallenge(page: Page) {
   await page.goto("/");
   await page.getByRole("button", { name: "Run verified sample" }).click();
   await expect(
     page.getByRole("heading", { name: "Turn one disagreement into a fair test." }),
+  ).toBeVisible();
+}
+
+async function startSeasonsChallenge(page: Page) {
+  await page.goto("/");
+  await selectScenario(page, "seasons");
+  await expect(page.getByLabel("Your current explanation")).toHaveValue(
+    /Summer happens because Earth moves closer/,
+  );
+  const requestPromise = page.waitForRequest((request) =>
+    request.url().includes("/api/demo?sessionId=") &&
+    request.url().includes("scenarioId=seasons"),
+  );
+  await page.getByRole("button", { name: "Run verified sample" }).click();
+  await requestPromise;
+  await expect(
+    page.getByRole("heading", {
+      name: "Turn one disagreement into a fair test.",
+    }),
   ).toBeVisible();
 }
 
@@ -79,6 +108,137 @@ async function expectFreshCaptureAndVerifiedReuse(page: Page) {
   await verifiedCta.click();
   await expect(page.getByRole("heading", { name: "Turn one disagreement into a fair test." })).toBeVisible();
 }
+
+test("completes the verified Seasons journey with sealed evidence and a transfer trace", async ({ page }) => {
+  await startSeasonsChallenge(page);
+  await expect(page.getByText("Verified authored sample", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText(
+      "This is a deterministic verified sample, not a live GPT response.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/distance explanation into a learner world/i),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Make a prediction" }).click();
+  await page
+    .getByLabel("One receives more direct light while the other receives less")
+    .check();
+  await expect(page.getByTestId("verified-observation")).toHaveCount(0);
+  await expect(page.getByText(/relative incident energy/i)).toHaveCount(0);
+  await page.getByRole("button", { name: "Lock prediction" }).click();
+  await expect(page.getByTestId("verified-observation")).toHaveCount(0);
+  await expect(
+    page.getByText(/June observation and relative energy evidence stay sealed/i),
+  ).toBeVisible();
+
+  await page
+    .getByRole("button", { name: "Run both worlds and reveal evidence" })
+    .click();
+  await expect(page.getByTestId("verified-observation")).toBeVisible();
+  await expect(
+    page.getByText(
+      "Northern Hemisphere: summer; Southern Hemisphere: winter.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await expect(page.getByText(/Relative incident energy index:/)).toBeVisible();
+
+  await page.getByRole("button", { name: "Revise my explanation" }).click();
+  await page
+    .getByLabel("Revised causal explanation")
+    .fill(seasonsRevisedExplanation);
+  await page
+    .getByRole("button", { name: "Capture revision and continue" })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Can your revised model travel?" }),
+  ).toBeVisible();
+  await page.getByLabel("The higher-energy hemisphere reverses").check();
+  await page.getByRole("button", { name: "Lock and check answer" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "Your revised model transferred." }),
+  ).toBeVisible();
+  await expect(page.getByText("Model Revision Trace · complete", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Verified observation · seasonal evidence", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/Northern summer; Southern winter; relative incident energy/),
+  ).toBeVisible();
+  await expect(page.getByText("Correct · 1/1", { exact: true })).toBeVisible();
+
+  await page
+    .getByRole("button", { name: "New attempt", exact: true })
+    .click();
+  await expect(page.getByRole("radio", { name: /Seasons/ })).toBeChecked();
+  await expect(page.getByLabel("Your current explanation")).toHaveValue(
+    /Summer happens because Earth moves closer/,
+  );
+});
+
+test("ignores a deferred Moon response after reset and switching to Seasons", async ({ page }) => {
+  await page.goto("/");
+  const routePattern = "**/api/demo**";
+  const deferred = await installDeferredJsonRoute(
+    page,
+    routePattern,
+    () => ({
+      status: 503,
+      body: {
+        error: {
+          code: "INTERNAL_ERROR",
+          message: "STALE MOON RESPONSE MUST NOT APPEAR",
+          retryable: true,
+        },
+      },
+    }),
+  );
+
+  await page.getByRole("button", { name: "Run verified sample" }).click();
+  await deferred.started;
+  await page.getByRole("button", { name: "New attempt" }).click();
+  await selectScenario(page, "seasons");
+  deferred.release();
+  await deferred.settled;
+  await page.unroute(routePattern);
+
+  await expect(page.getByRole("radio", { name: /Seasons/ })).toBeChecked();
+  await expect(
+    page.getByRole("heading", { name: "What causes Earth's seasons?" }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Your current explanation")).toHaveValue(
+    /Summer happens because Earth moves closer/,
+  );
+  await expect(page.getByText("STALE MOON RESPONSE MUST NOT APPEAR")).toHaveCount(0);
+  await expect(page.locator(".protected-state-error")).toHaveCount(0);
+  await expect(page.getByTestId("revision-trace")).toHaveCount(0);
+  await expect(page.locator(".source-badge.live")).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Run verified sample" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Turn one disagreement into a fair test." }),
+  ).toBeVisible();
+  await expect(page.getByText("Verified authored sample", { exact: true })).toBeVisible();
+});
+
+test("keeps the Seasons selector readable without horizontal overflow at 320px", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await page.goto("/");
+  await selectScenario(page, "seasons");
+
+  await expect(page.getByRole("radio", { name: /Seasons/ })).toBeChecked();
+  await expect(
+    page.getByRole("heading", { name: "What causes Earth's seasons?" }),
+  ).toBeVisible();
+  const hasHorizontalOverflow = await page.evaluate(
+    () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+  );
+  expect(hasHorizontalOverflow).toBe(false);
+});
 
 test("reset discards a deferred revision response and keeps a fresh attempt usable", async ({ page }) => {
   await advanceToRevision(page);

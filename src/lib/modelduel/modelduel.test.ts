@@ -718,6 +718,21 @@ describe("session identity, evidence timing, and evaluation receipts", () => {
     expect(transition.state).toBe(analyzing);
   });
 
+  it("rejects a cross-scenario analysis response without changing state", () => {
+    const analyzing = reachAnalyzing();
+    const transition = reduceSession(analyzing, {
+      type: "RECEIVE_ANALYSIS",
+      sessionId: SESSION_ID,
+      requestId: REQUEST_ID,
+      analysis: SEASONS_SAMPLE,
+      receivedAt: 3,
+    });
+
+    expect(transition.accepted).toBe(false);
+    expect(transition.reason).toBe("SCENARIO_MISMATCH");
+    expect(transition.state).toBe(analyzing);
+  });
+
   it("rejects an old response after restart", () => {
     const analyzing = reachAnalyzing();
     const restarted = accept(analyzing, {

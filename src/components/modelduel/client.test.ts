@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { MOON_HERO_SAMPLE } from "@/lib/modelduel";
+import { MOON_HERO_SAMPLE, SEASONS_SAMPLE } from "@/lib/modelduel";
 
 import {
   ModelDuelApiError,
@@ -68,7 +68,12 @@ describe("verified demo adapter", () => {
       }),
     );
 
-    await loadVerifiedDemo("session-abc", fetchMock, controller.signal);
+    await loadVerifiedDemo(
+      "session-abc",
+      "moon-phases",
+      fetchMock,
+      controller.signal,
+    );
 
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/demo?sessionId=session-abc&scenarioId=moon-phases",
@@ -90,10 +95,45 @@ describe("verified demo adapter", () => {
       ),
     );
 
-    await expect(loadVerifiedDemo("session-abc", fetchMock)).rejects.toMatchObject({
+    await expect(
+      loadVerifiedDemo("session-abc", "moon-phases", fetchMock),
+    ).rejects.toMatchObject({
       code: "INTERNAL_ERROR",
       retryable: true,
     });
+  });
+});
+
+describe("Seasons verified demo adapter", () => {
+  it("requests and correlates the Seasons demo", async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      jsonResponse({
+        source: "verified-sample",
+        notice: "Authored sample.",
+        analysis: SEASONS_SAMPLE,
+      }),
+    );
+
+    await loadVerifiedDemo("session-seasons", "seasons", fetchMock);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/demo?sessionId=session-seasons&scenarioId=seasons",
+      expect.objectContaining({ cache: "no-store" }),
+    );
+  });
+
+  it("rejects a verified response for another scenario", async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      jsonResponse({
+        source: "verified-sample",
+        notice: "Authored sample.",
+        analysis: MOON_HERO_SAMPLE,
+      }),
+    );
+
+    await expect(
+      loadVerifiedDemo("session-seasons", "seasons", fetchMock),
+    ).rejects.toThrow("did not match");
   });
 });
 

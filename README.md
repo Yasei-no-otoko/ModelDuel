@@ -4,13 +4,13 @@
 
 ModelDuel is an Education-category learning experience that turns a learner's explanation into two comparable worlds: the learner's current mental model and the scientific model. The learner commits to a prediction, observes both worlds under the same conditions, revises the explanation, and demonstrates transfer. The goal is evidence of conceptual change—not another generated answer.
 
-The first complete challenge focuses on the common misconception that Earth's shadow causes the phases of the Moon. A second challenge reuses the same solar-system foundation to contrast distance-based and axial-tilt explanations of the seasons.
+The two complete challenges focus on common astronomy misconceptions: that Earth's shadow causes the phases of the Moon, and that Earth-Sun distance causes the seasons. Both use the same protected learning sequence and deterministic solar-system foundation.
 
 ## Current scope
 
-The repository implements the complete Moon-phases browser journey: text or sketch capture, explicit live or verified analysis, two protected models, prediction locking, deterministic Three.js observation, revision feedback, server-authenticated transfer grading, and a Model Revision Trace. Live analysis uses GPT-5.6 Sol; live revision feedback uses GPT-5.6 Terra. The seasons misconception is implemented in the deterministic registry and verified server sample so it can reuse the same solar-system foundation, while the judged browser hero remains the Moon challenge.
+The repository implements complete Moon-phases and seasons browser journeys: text or sketch capture, explicit live or verified analysis, two protected models, prediction locking, deterministic Three.js observation, revision feedback, server-authenticated transfer grading, and a Model Revision Trace. Live analysis uses GPT-5.6 Sol; live revision feedback uses GPT-5.6 Terra. Each scenario has strict server-owned cases, world specifications, transfer questions, and authored verified samples.
 
-Live and verified paths are deliberately separate. A failed live request never becomes an authored result automatically, and the UI labels the source of analysis and revision feedback. The public transfer token keeps the answer key and live revision context encrypted on the server boundary.
+Live and verified paths are deliberately separate for both scenarios. Live analysis accepts learner text, a sketch, or both. The verified path is explicitly selected and may start from an empty capture; a failed live request never becomes an authored result automatically. The UI labels the source of analysis and revision feedback. The public transfer token keeps the answer key and live revision context encrypted on the server boundary.
 
 ## Requirements
 
@@ -26,7 +26,7 @@ cp .env.example .env.local
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). For live AI flows, add the API key and a random evaluation secret of at least 32 characters to `.env.local`. The verified path works without an OpenAI key in development.
+Open [http://localhost:3000](http://localhost:3000). For live AI flows, add the API key to `.env.local`. Also set a random evaluation secret of at least 32 characters to match production, where that secret is required. Both verified scenarios work without an OpenAI key in development.
 
 ## Environment
 
@@ -84,15 +84,15 @@ OpenAI does not generate or execute arbitrary Three.js code. It produces schema-
 ## Codex, GPT-5.6, and human judgment
 
 - **Codex** is the build partner: repository creation, implementation, review, tests, documentation, and traceable commits. The submission will link the qualifying Codex session.
-- **GPT-5.6 Terra** is the default runtime tier for structured interpretation, grading, and transfer-question work.
-- **GPT-5.6 Sol** is an explicit hero-flow override for the strongest sketch interpretation and reasoning quality.
+- **GPT-5.6 Sol** interprets live learner text and sketches into a strict scenario-specific model.
+- **GPT-5.6 Terra** produces bounded live revision feedback; transfer questions and grading remain server-owned and deterministic.
 - **Humans** define the science boundaries, approve misconception cases, select the pedagogical sequence, review safety and privacy behavior, and decide whether generated feedback is suitable for learners.
 
 Neither Codex nor GPT-5.6 is treated as the authority on astronomy. Deterministic application rules and human-reviewed content remain the source of truth.
 
 ## Authored samples and live responses
 
-An authored fixture may keep a demo coherent when network access is unavailable, but it must be visibly labeled as a sample. A cached or authored response must never be presented as a live GPT response. Live mode must disclose failures rather than silently replacing them with a fixture. Demo capture and submission copy must preserve this distinction.
+Each scenario has an explicit authored verified path for a coherent network-independent demonstration, and it is visibly labeled as a sample. A cached or authored response must never be presented as a live GPT response. Live mode discloses failures rather than silently replacing them with a fixture. Demo capture and submission copy must preserve this distinction.
 
 ## Runtime trust boundaries
 
@@ -116,8 +116,8 @@ This repository was initialized from an empty root commit during the eligible Bu
 
 ## Submission checklist
 
-- [ ] Complete the Moon-phases input → predict → observe → revise → transfer flow.
-- [ ] Complete and label the seasons comparison as the second challenge.
+- [x] Complete the Moon-phases input → predict → observe → revise → transfer → trace flow.
+- [x] Complete and label the seasons input → predict → observe → revise → transfer → trace flow.
 - [ ] Verify live GPT-5.6 requests use the Responses API and `store: false`.
 - [ ] Verify authored samples cannot be mistaken for live responses.
 - [ ] Run `pnpm check` and `pnpm test:e2e` on the submission commit.

@@ -53,6 +53,19 @@ describe("learner input validation", () => {
     ).toContain("1,500");
   });
 
+  it("accepts a word-bounded bare so connector without matching unrelated substrings", () => {
+    expect(
+      validateRevision(
+        "Earth's axial tilt changes the sunlight angle, so the Northern and Southern Hemispheres receive different energy and experience opposite seasons.",
+      ),
+    ).toBeNull();
+    expect(
+      validateRevision(
+        "Some observations compare the sunlight angle across opposite hemispheres without explaining the connection.",
+      ),
+    ).toMatch(/causal language/i);
+  });
+
   it("requires a causal, substantial revision without prescribing the answer", () => {
     expect(validateRevision("The angle changed.")).toContain("40");
     expect(

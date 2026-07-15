@@ -65,7 +65,7 @@ export function validateCaptureInput(
 }
 
 const CAUSAL_LANGUAGE =
-  /\b(because|cause(?:s|d)?|therefore|so that|which means|due to|result(?:s|ed)? in|leads? to)\b/i;
+  /\b(because|cause(?:s|d)?|therefore|so(?:\s+that)?|which means|due to|result(?:s|ed)? in|leads? to)\b/i;
 
 export function validateRevision(revision: string): string | null {
   const value = revision.trim();

@@ -13,10 +13,10 @@ import {
   createInitialSession,
   reduceSession,
   type ModelDuelSession,
-  type MoonSimulationObservation,
+  type ScenarioId,
   type SessionAction,
 } from "@/lib/modelduel";
-import { PRODUCT, SAMPLE_MISCONCEPTION } from "@/lib/product";
+import { PRODUCT, SCENARIO_CONTENT } from "@/lib/product";
 
 import {
   ModelDuelApiError,
@@ -144,10 +144,14 @@ function SourceNotice({
 
 function ExperienceProgress({
   activeStage,
-}: Readonly<{ activeStage: (typeof EXPERIENCE_STEPS)[number]["id"] }>) {
+  progressLabel,
+}: Readonly<{
+  activeStage: (typeof EXPERIENCE_STEPS)[number]["id"];
+  progressLabel: string;
+}>) {
   const activeIndex = stageIndex(activeStage);
   return (
-    <nav className="experience-progress" aria-label="Moon challenge progress">
+    <nav className="experience-progress" aria-label={progressLabel}>
       <ol>
         {EXPERIENCE_STEPS.map((step, index) => (
           <li
@@ -182,7 +186,13 @@ export function ModelDuelExperience() {
   const activeTransports = useRef(new Map<string, TransportGuard>());
   const analysisPreparationActive = useRef(false);
   const hydrationReady = useHydrationReady();
-  const [explanation, setExplanation] = useState(SAMPLE_MISCONCEPTION);
+  const [selectedScenarioId, setSelectedScenarioId] =
+    useState<ScenarioId>("moon-phases");
+  const activeScenarioId = session.scenarioId ?? selectedScenarioId;
+  const scenarioContent = SCENARIO_CONTENT[activeScenarioId];
+  const [explanation, setExplanation] = useState<string>(
+    SCENARIO_CONTENT["moon-phases"].sampleMisconception,
+  );
   const [sketch, setSketch] = useState<Readonly<{ file: File; previewUrl: string }> | null>(null);
   const [inputError, setInputError] = useState<string | null>(null);
   const [sketchError, setSketchError] = useState<string | null>(null);
@@ -271,14 +281,23 @@ export function ModelDuelExperience() {
   const stage = experienceStageForSession(session.stage, observationReviewed);
   const analysis = session.analysis;
   const activeStep = stageIndex(stage);
-  const moonComparison =
-    session.comparison?.learner.scenario === "moon-phases" &&
-    session.comparison.scientific.scenario === "moon-phases"
+  const comparison = session.comparison;
+  const scenarioComparison =
+    comparison?.learner.scenario === "moon-phases" &&
+    comparison.scientific.scenario === "moon-phases"
       ? {
-          learner: session.comparison.learner as MoonSimulationObservation,
-          scientific: session.comparison.scientific as MoonSimulationObservation,
+          scenario: "moon-phases" as const,
+          learner: comparison.learner,
+          scientific: comparison.scientific,
         }
-      : null;
+      : comparison?.learner.scenario === "seasons" &&
+          comparison.scientific.scenario === "seasons"
+        ? {
+            scenario: "seasons" as const,
+            learner: comparison.learner,
+            scientific: comparison.scientific,
+          }
+        : null;
 
   function handleSketch(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -297,11 +316,12 @@ export function ModelDuelExperience() {
   async function requestValidatedChallenge(
     requestId: string,
     sessionId: string,
+    scenarioId: ScenarioId,
   ) {
     const transport = beginTransport("analysis", sessionId, requestId);
     if (!transport) return;
     setAnalysisAttempt("verified-sample");
-    setStatus("Loading the validated verified Moon challenge.");
+    setStatus(`Loading the validated ${SCENARIO_CONTENT[scenarioId].label} challenge.`);
     setAnalysisPending(true);
     setAnalysisError(null);
     setAnalysisErrorCode(null);
@@ -309,6 +329,7 @@ export function ModelDuelExperience() {
     try {
       const loaded = await loadVerifiedDemo(
         sessionId,
+        scenarioId,
         fetch,
         transport.controller.signal,
       );
@@ -418,6 +439,7 @@ export function ModelDuelExperience() {
     setAnalysisPending(true);
     const preparationGeneration = attemptGeneration.current;
     const preparationSessionId = session.sessionId;
+    const preparationScenarioId = selectedScenarioId;
 
     let encodedSketch: LiveAnalysisRequest["sketch"] = null;
     if (mode === "live" && sketch) {
@@ -460,7 +482,7 @@ export function ModelDuelExperience() {
         : explanation;
     dispatch({
       type: "START_INPUT",
-      scenarioId: "moon-phases",
+      scenarioId: preparationScenarioId,
       explanation: domainExplanation,
       sketchReference,
       submittedAt,
@@ -479,9 +501,9 @@ export function ModelDuelExperience() {
       const request: LiveAnalysisRequest = {
         schemaVersion: "1.0",
         requestId,
-        sessionId: session.sessionId,
-        requestedAt: analysisStartedAt,
-        scenarioId: "moon-phases",
+      sessionId: session.sessionId,
+      requestedAt: analysisStartedAt,
+      scenarioId: preparationScenarioId,
         explanation: explanation.trim(),
         sketch: encodedSketch,
       };
@@ -493,7 +515,11 @@ export function ModelDuelExperience() {
 
     setLiveAnalysisRequest(null);
     analysisPreparationActive.current = false;
-    await requestValidatedChallenge(requestId, session.sessionId);
+      await requestValidatedChallenge(
+        requestId,
+        session.sessionId,
+        preparationScenarioId,
+      );
   }
 
   async function handleCapture(event: FormEvent<HTMLFormElement>) {
@@ -554,7 +580,7 @@ export function ModelDuelExperience() {
       return {
         ...common,
         mode: "verified-sample",
-        scenarioId: "moon-phases",
+        scenarioId: revisionAnalysis.scenarioId,
         caseFingerprint: comparison.caseFingerprint,
       };
     };
@@ -699,7 +725,10 @@ export function ModelDuelExperience() {
     }
   }
 
-  function handleReset() {
+  function resetExperience(
+    nextScenarioId: ScenarioId,
+    nextStatus = "New attempt ready.",
+  ) {
     cancelPendingTransports();
     analysisPreparationActive.current = false;
     const newSessionId = createStableId("session");
@@ -709,7 +738,8 @@ export function ModelDuelExperience() {
       newSessionId,
       restartedAt: nextTimestamp(clock),
     });
-    setExplanation(SAMPLE_MISCONCEPTION);
+    setSelectedScenarioId(nextScenarioId);
+    setExplanation(SCENARIO_CONTENT[nextScenarioId].sampleMisconception);
     setSketch(null);
     setInputError(null);
     setSketchError(null);
@@ -727,7 +757,11 @@ export function ModelDuelExperience() {
     setRevisionResult(null);
     setTransferError(null);
     setTransferPending(false);
-    setStatus("New attempt ready.");
+    setStatus(nextStatus);
+  }
+
+  function handleReset() {
+    resetExperience(activeScenarioId);
   }
 
   return (
@@ -738,7 +772,7 @@ export function ModelDuelExperience() {
           <span>{PRODUCT.name}</span>
         </a>
         <div className="header-meta">
-          <span>Education · Moon phases</span>
+        <span>Education · {scenarioContent.label}</span>
           {activeStep > 0 ? (
             <button type="button" className="quiet-button" onClick={handleReset}>
               New attempt
@@ -747,7 +781,10 @@ export function ModelDuelExperience() {
         </div>
       </header>
 
-      <ExperienceProgress activeStage={stage} />
+    <ExperienceProgress
+      activeStage={stage}
+      progressLabel={scenarioContent.progressLabel}
+    />
 
       <p className="sr-only" role="status" aria-live="polite">
         {status}
@@ -774,10 +811,7 @@ export function ModelDuelExperience() {
                 <span>Two models predict.</span>
                 <span className="gradient-text">Evidence decides.</span>
               </h1>
-              <p className="hero-summary">
-                Put your Moon-phase idea into words, lock a prediction, then run two
-                worlds under exactly the same conditions.
-              </p>
+            <p className="hero-summary">{scenarioContent.heroSummary}</p>
               <ul className="promise-list">
                 <li>Evidence stays hidden until you commit.</li>
                 <li>Physical observation stays separate from model claims.</li>
@@ -788,13 +822,39 @@ export function ModelDuelExperience() {
             <form
               className="capture-card"
               onSubmit={handleCapture}
-              noValidate
-              aria-busy={analysisPending}
-            >
-              <div className="card-heading">
+            noValidate
+            aria-busy={analysisPending}
+          >
+            <fieldset className="scenario-selector" disabled={analysisPending}>
+              <legend>Choose a science challenge</legend>
+              {(["moon-phases", "seasons"] as const).map((scenarioId) => {
+                const content = SCENARIO_CONTENT[scenarioId];
+                return (
+                  <label key={scenarioId}>
+                    <input
+                      type="radio"
+                      name="scenario"
+                      value={scenarioId}
+                      checked={selectedScenarioId === scenarioId}
+                      onChange={() =>
+                        resetExperience(
+                          scenarioId,
+                          `${content.label} challenge ready.`,
+                        )
+                      }
+                    />
+                    <span>
+                      <strong>{content.label}</strong>
+                      <small>{content.topic}</small>
+                    </span>
+                  </label>
+                );
+              })}
+            </fieldset>
+            <div className="card-heading">
                 <div>
                   <p className="micro-label">Capture · step 1 of 7</p>
-                  <h2>What causes the Moon&apos;s phases?</h2>
+                <h2>{scenarioContent.capturePrompt}</h2>
                 </div>
                 <span className="sample-pill">Editable sample</span>
               </div>
@@ -936,14 +996,19 @@ export function ModelDuelExperience() {
                       <button
                         className="secondary-button"
                         type="button"
-                        disabled={analysisPending || !session.analysisRequestId}
+                  disabled={
+                    analysisPending ||
+                    !session.analysisRequestId ||
+                    !session.scenarioId
+                  }
                         onClick={() => {
-                          if (session.analysisRequestId) {
+                    if (session.analysisRequestId && session.scenarioId) {
                             setLiveAnalysisRequest(null);
-                            void requestValidatedChallenge(
-                              session.analysisRequestId,
-                              session.sessionId,
-                            );
+                      void requestValidatedChallenge(
+                        session.analysisRequestId,
+                        session.sessionId,
+                        session.scenarioId,
+                      );
                           }
                         }}
                       >
@@ -954,13 +1019,18 @@ export function ModelDuelExperience() {
                     <button
                       className="primary-button"
                       type="button"
-                      disabled={analysisPending || !session.analysisRequestId}
+                disabled={
+                  analysisPending ||
+                  !session.analysisRequestId ||
+                  !session.scenarioId
+                }
                       onClick={() => {
-                        if (session.analysisRequestId) {
-                          void requestValidatedChallenge(
-                            session.analysisRequestId,
-                            session.sessionId,
-                          );
+                  if (session.analysisRequestId && session.scenarioId) {
+                    void requestValidatedChallenge(
+                      session.analysisRequestId,
+                      session.sessionId,
+                      session.scenarioId,
+                    );
                         }
                       }}
                     >
@@ -976,10 +1046,7 @@ export function ModelDuelExperience() {
                     Interpret · {analysisLoad?.source === "live" ? "live analysis" : "authored challenge"}
                   </p>
                   <h1 id="interpret-title">Turn one disagreement into a fair test.</h1>
-                  <p>
-                    These are competing claims for the same first-quarter Moon case. Review
-                    their assumptions before you predict what the test will show.
-                  </p>
+                  <p>{scenarioContent.interpretSummary}</p>
                 </header>
                 {analysisLoad ? (
                   <SourceNotice
@@ -1009,12 +1076,12 @@ export function ModelDuelExperience() {
                   <article className="science-card">
                     <span className="world-letter">B</span>
                     <p className="micro-label">Scientific challenger</p>
-                    <h2>Sunlight illuminates half of the Moon while our viewing angle changes.</h2>
-                    <ul>
-                      <li>Same Sun, Earth, and Moon</li>
-                      <li>Same elongation and orbital latitude</li>
-                      <li>Different causal claim</li>
-                    </ul>
+                  <h2>{scenarioContent.scientificTitle}</h2>
+                  <ul>
+                    {scenarioContent.scientificBullets.map((bullet) => (
+                      <li key={bullet}>{bullet}</li>
+                    ))}
+                  </ul>
                   </article>
                 </div>
                 <div className="stage-action-row">
@@ -1080,31 +1147,55 @@ export function ModelDuelExperience() {
             <header className="stage-heading-block compact">
               <p className="eyebrow">Observe · same case, two predictions</p>
               <h1 id="observe-title">
-                {moonComparison ? "Evidence is now visible." : "Your prediction is locked."}
+                {scenarioComparison
+                  ? "Evidence is now visible."
+                  : "Your prediction is locked."}
               </h1>
               <p>
-                Locked choice: <strong>{optionLabel(analysis.predictionQuestion.options, session.prediction?.optionId)}</strong>
+                Locked choice:{" "}
+                <strong>
+                  {optionLabel(
+                    analysis.predictionQuestion.options,
+                    session.prediction?.optionId,
+                  )}
+                </strong>
               </p>
             </header>
-            {!moonComparison ? (
+            {!scenarioComparison ? (
               <div className="sealed-observation">
-                <div className="sealed-worlds" aria-hidden="true"><span>A</span><i>VS</i><span>B</span></div>
+                <div className="sealed-worlds" aria-hidden="true">
+                  <span>A</span><i>VS</i><span>B</span>
+                </div>
                 <h2>Ready to run one validated CaseSpec.</h2>
-                <p>
-                  Both worlds receive the same first-quarter geometry. The deterministic
-                  simulator—not the 3D renderer—computes the physical observation.
-                </p>
-                <button className="primary-button" type="button" onClick={handleRevealEvidence}>
+                <p>{scenarioContent.sealedCaseCopy}</p>
+                <button
+                  className="primary-button"
+                  type="button"
+                  onClick={handleRevealEvidence}
+                  disabled={session.stage !== "PREDICTION_LOCKED"}
+                >
                   Run both worlds and reveal evidence
                 </button>
               </div>
-            ) : analysis.caseSpec.scenario === "moon-phases" ? (
+            ) : analysis.caseSpec.scenario === scenarioComparison.scenario ? (
               <>
-                <WorldComparison
-                  caseSpec={analysis.caseSpec}
-                  learner={moonComparison.learner}
-                  scientific={moonComparison.scientific}
-                />
+                {analysis.caseSpec.scenario === "moon-phases" &&
+                scenarioComparison.scenario === "moon-phases" ? (
+                  <WorldComparison
+                    scenario="moon-phases"
+                    caseSpec={analysis.caseSpec}
+                    learner={scenarioComparison.learner}
+                    scientific={scenarioComparison.scientific}
+                  />
+                ) : analysis.caseSpec.scenario === "seasons" &&
+                  scenarioComparison.scenario === "seasons" ? (
+                  <WorldComparison
+                    scenario="seasons"
+                    caseSpec={analysis.caseSpec}
+                    learner={scenarioComparison.learner}
+                    scientific={scenarioComparison.scientific}
+                  />
+                ) : null}
                 <div className="stage-action-row">
                   <p>Observation recorded. Your locked prediction remains unchanged.</p>
                   <button
@@ -1112,7 +1203,9 @@ export function ModelDuelExperience() {
                     type="button"
                     onClick={() => {
                       setObservationReviewed(true);
-                      setStatus("Use the verified observation to revise your causal explanation.");
+                      setStatus(
+                        "Use the verified observation to revise your causal explanation.",
+                      );
                     }}
                   >
                     Revise my explanation <span aria-hidden="true">→</span>
@@ -1123,16 +1216,91 @@ export function ModelDuelExperience() {
           </section>
         ) : null}
 
-        {stage === "revise" && analysis && moonComparison ? (
+        {stage === "revise" &&
+        analysis &&
+        scenarioComparison &&
+        analysis.caseSpec.scenario === scenarioComparison.scenario ? (
           <section className="revision-layout" aria-labelledby="revise-title">
             <aside className="evidence-brief">
               <p className="micro-label">Evidence to explain</p>
-              <h2>{Math.round(moonComparison.scientific.physicalObservation.illuminationFraction * 100)}% illuminated</h2>
-              <dl>
-                <div><dt>Earth-shadow intersection</dt><dd>{moonComparison.scientific.physicalObservation.earthShadowIntersection}</dd></div>
-                <div><dt>Elongation</dt><dd>{analysis.caseSpec.scenario === "moon-phases" ? analysis.caseSpec.elongationDeg : 0}°</dd></div>
-                <div><dt>Your locked prediction</dt><dd>{optionLabel(analysis.predictionQuestion.options, session.prediction?.optionId)}</dd></div>
-              </dl>
+              {scenarioComparison.scenario === "moon-phases" &&
+              analysis.caseSpec.scenario === "moon-phases" ? (
+                <>
+                  <h2>
+                    {Math.round(
+                      scenarioComparison.scientific.physicalObservation
+                        .illuminationFraction * 100,
+                    )}
+                    % illuminated
+                  </h2>
+                  <dl>
+                    <div>
+                      <dt>Earth-shadow intersection</dt>
+                      <dd>
+                        {
+                          scenarioComparison.scientific.physicalObservation
+                            .earthShadowIntersection
+                        }
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Elongation</dt>
+                      <dd>{analysis.caseSpec.elongationDeg}°</dd>
+                    </div>
+                    <div>
+                      <dt>Your locked prediction</dt>
+                      <dd>
+                        {optionLabel(
+                          analysis.predictionQuestion.options,
+                          session.prediction?.optionId,
+                        )}
+                      </dd>
+                    </div>
+                  </dl>
+                </>
+              ) : scenarioComparison.scenario === "seasons" &&
+                analysis.caseSpec.scenario === "seasons" ? (
+                <>
+                  <h2>
+                    North {scenarioComparison.scientific.physicalObservation.northernSeason}
+                    {" · "}South{" "}
+                    {scenarioComparison.scientific.physicalObservation.southernSeason}
+                  </h2>
+                  <dl>
+                    <div>
+                      <dt>Solar declination</dt>
+                      <dd>
+                        {scenarioComparison.scientific.physicalObservation.solarDeclinationDeg.toFixed(
+                          2,
+                        )}
+                        °
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Relative incident energy</dt>
+                      <dd>
+                        North{" "}
+                        {scenarioComparison.scientific.physicalObservation.northernEnergy.toFixed(
+                          2,
+                        )}
+                        ; South{" "}
+                        {scenarioComparison.scientific.physicalObservation.southernEnergy.toFixed(
+                          2,
+                        )}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Your locked prediction</dt>
+                      <dd>
+                        {optionLabel(
+                          analysis.predictionQuestion.options,
+                          session.prediction?.optionId,
+                        )}
+                      </dd>
+                    </div>
+                  </dl>
+                </>
+              ) : null}
               <p>These values are the verified observation, not either model&apos;s claim.</p>
             </aside>
             <form className="revision-card" onSubmit={handleRevision} noValidate>
@@ -1153,7 +1321,7 @@ export function ModelDuelExperience() {
                 disabled={Boolean(session.revision)}
                 aria-describedby={`revision-help${revisionError ? " revision-error" : ""}`}
                 aria-invalid={Boolean(revisionError)}
-                placeholder="The Moon appears half lit because…"
+                  placeholder={scenarioContent.revisionPlaceholder}
               />
               <div className="field-meta" id="revision-help">
                 <span>Use evidence plus causal language such as “because” or “therefore.”</span>
@@ -1183,7 +1351,7 @@ export function ModelDuelExperience() {
         {stage === "transfer" && analysis ? (
           <section className="narrow-stage" aria-labelledby="transfer-title">
             <header className="stage-heading-block">
-              <p className="eyebrow">Transfer · a new Moon case</p>
+                <p className="eyebrow">{scenarioContent.transferEyebrow}</p>
               <h1 id="transfer-title">Can your revised model travel?</h1>
               <p>{analysis.transferQuestion.prompt}</p>
             </header>
@@ -1278,11 +1446,11 @@ export function ModelDuelExperience() {
               </li>
               <li>
                 <span className="trace-number">03</span>
-                <div><p>Verified observation</p><h2>
-                  {session.trace.observation.scientific.scenario === "moon-phases"
-                    ? `${Math.round(session.trace.observation.scientific.physicalObservation.illuminationFraction * 100)}% illuminated; Earth-shadow intersection: ${session.trace.observation.scientific.physicalObservation.earthShadowIntersection}`
-                    : "Verified physical observation recorded"}
-                </h2></div>
+                    <div><p>{scenarioContent.traceObservationLabel}</p><h2>
+                      {session.trace.observation.scientific.scenario === "moon-phases"
+                        ? `${Math.round(session.trace.observation.scientific.physicalObservation.illuminationFraction * 100)}% illuminated; Earth-shadow intersection: ${session.trace.observation.scientific.physicalObservation.earthShadowIntersection}`
+                        : `Northern ${session.trace.observation.scientific.physicalObservation.northernSeason}; Southern ${session.trace.observation.scientific.physicalObservation.southernSeason}; relative incident energy ${session.trace.observation.scientific.physicalObservation.northernEnergy.toFixed(2)} vs ${session.trace.observation.scientific.physicalObservation.southernEnergy.toFixed(2)}`}
+                    </h2></div>
               </li>
               <li>
                 <span className="trace-number">04</span>

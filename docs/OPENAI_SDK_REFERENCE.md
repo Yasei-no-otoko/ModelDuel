@@ -21,6 +21,8 @@ These choices differ from the original concept note, which treated GPT-5.6 Sol a
 
 Missing or invalid live configuration produces a safe error. It never silently switches a live request to the verified sample.
 
+The current UI and API support both `moon-phases` and `seasons` through the live path and an explicitly selected verified-sample path. Browser requests carry the selected scenario ID; the server applies the matching strict schema and resolves private case, world, and transfer IDs from its registry. Examples below sometimes use Moon phases for readability, not as a limit on the shipped scope.
+
 ## Server-only client
 
 ```ts
@@ -46,7 +48,7 @@ const response = await openai.responses.create({
   input: [{
     role: "user",
     content: [
-      { type: "input_text", text: "Infer the learner's moon-phase model." },
+      { type: "input_text", text: "Infer the learner's causal model for the selected astronomy scenario." },
       { type: "input_image", image_url: sketchDataUrl, detail: "high" },
     ],
   }],
@@ -57,7 +59,7 @@ Production accepts only canonical local PNG, JPEG, or WebP data URLs. It validat
 
 ## Structured output in TypeScript
 
-For Zod-backed structured output, use `responses.parse` with `zodTextFormat`. The format belongs under `text.format`; do not copy the older `response_format` placement.
+For Zod-backed structured output, use `responses.parse` with `zodTextFormat`. The format belongs under `text.format`; do not copy the older `response_format` placement. The snippet below uses a Moon-phases statement as one input example; seasons uses the same request shape with its scenario-specific schema.
 
 ```ts
 import { zodTextFormat } from "openai/helpers/zod";
@@ -87,7 +89,7 @@ Treat `output_parsed === null`, refusals, incomplete responses, and a second sch
 
 ## Function tools use the Responses flat shape
 
-Responses function tools put `name`, `description`, `parameters`, and `strict` directly on the tool object. Do **not** use the Chat Completions `{ type: "function", function: { ... } }` wrapper.
+Responses function tools put `name`, `description`, `parameters`, and `strict` directly on the tool object. Do **not** use the Chat Completions `{ type: "function", function: { ... } }` wrapper. The illustrative schema below is the Moon-phases branch; production also enforces a strict seasons branch with Sun/Earth bodies, a distance-only learner claim, axial tilt, and server-owned registry IDs.
 
 ```ts
 const tools = [{

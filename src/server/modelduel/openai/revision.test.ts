@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { MOON_HERO_SAMPLE } from "../../../lib/modelduel/samples";
+import {
+  MOON_HERO_SAMPLE,
+  SEASONS_SAMPLE,
+} from "../../../lib/modelduel/samples";
 import { createCaseFingerprint } from "../../../lib/modelduel/simulation";
 import { evaluateRevisionRequest } from "../revision";
 import { issueEvaluationToken } from "../evaluation-core";
@@ -63,6 +66,41 @@ function liveRequest(input: {
   };
 }
 
+function seasonsLiveRequest() {
+  const sessionId = "seasons-live-revision-session";
+  const evaluationId = issueEvaluationToken(SECRET, {
+    sessionId,
+    questionId: SEASONS_SAMPLE.transferQuestion.questionId,
+    questionVersion: SEASONS_SAMPLE.transferQuestion.version,
+    optionIds: SEASONS_SAMPLE.transferQuestion.options.map(
+      (option) => option.id,
+    ),
+    correctOptionId: "reverse",
+    rationale: "Private Seasons test rationale.",
+    source: "deterministic-question-bank",
+    issuedAt: NOW,
+    expiresAt: NOW + 20 * 60 * 1_000,
+    revisionContext: {
+      scenarioId: "seasons",
+      caseId: SEASONS_SAMPLE.caseSpec.id,
+      caseFingerprint: createCaseFingerprint(SEASONS_SAMPLE.caseSpec),
+      learnerWorldId: SEASONS_SAMPLE.learnerWorld.worldId,
+      scientificWorldId: SEASONS_SAMPLE.scientificWorld.worldId,
+      misconceptionType: "distance-causes-seasons",
+    },
+  });
+  return {
+    mode: "live" as const,
+    requestId: "seasons-live-revision-request",
+    idempotencyKey: "seasons-live-revision-idempotency",
+    requestedAt: NOW,
+    sessionId,
+    revisionText:
+      "Earth's axial tilt changes the sunlight angle, so the Northern and Southern Hemispheres have opposite seasons rather than distance causing them.",
+    evaluationId,
+  };
+}
+
 function gatewayWithRevisionAttempts(
   attempts: Array<{
     status: string;
@@ -100,6 +138,42 @@ describe("live revision service", () => {
 
   afterEach(() => {
     vi.unstubAllEnvs();
+  });
+
+  it("authenticates the signed Seasons revision context before the live call", async () => {
+    const requests: RevisionParseRequest[] = [];
+    const request = seasonsLiveRequest();
+    const response = await evaluateRevisionRequest(request, NOW, {
+      gateway: gatewayWithRevisionAttempts(
+        [
+          {
+            status: "completed",
+            hasError: false,
+            hasRefusal: false,
+            parsed: FEEDBACK,
+            outputText: "",
+          },
+        ],
+        requests,
+      ),
+      signal: AbortSignal.timeout(10_000),
+    });
+
+    expect(response).toMatchObject({
+      source: "gpt-5.6",
+      requestId: request.requestId,
+      modelId: "gpt-5.6-terra",
+      evaluatedAt: NOW,
+    });
+    expect(requests).toHaveLength(1);
+    expect(requests[0]).toMatchObject({
+      scenarioId: "seasons",
+      misconceptionType: "distance-causes-seasons",
+    });
+    expect(requests[0]?.rubric.toLowerCase()).toContain("axial tilt");
+    expect(requests[0]?.observations).toContain(
+      createCaseFingerprint(SEASONS_SAMPLE.caseSpec),
+    );
   });
 
   it("returns strict correlated live feedback", async () => {

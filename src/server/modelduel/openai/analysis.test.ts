@@ -1,17 +1,17 @@
 import type * as Responses from "openai/resources/responses/responses";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { MOON_HERO_SAMPLE } from "../../../lib/modelduel/samples";
+import {
+  MOON_HERO_SAMPLE,
+  SEASONS_SAMPLE,
+} from "../../../lib/modelduel/samples";
+import { verifyLiveRevisionToken } from "../evaluation";
 import { analyzeSubmission } from "./analysis";
 import { ModelDuelUpstreamError } from "./errors";
 import type { ModelDuelGateway } from "./gateway";
 import { SketchImageError } from "./image";
 import { resolveRegistryPlan } from "./registry";
 
-const PLAN = resolveRegistryPlan({
-  scenarioId: "moon-phases",
-  learnerModel: MOON_HERO_SAMPLE.learnerModel,
-});
 const CALLER = { caller_id: "analysis-program-call", type: "program" } as const;
 
 function call(callId: string, name: string, args: object) {
@@ -26,13 +26,19 @@ function call(callId: string, name: string, args: object) {
   } satisfies Responses.ResponseOutputItem;
 }
 
-function successfulGateway(): ModelDuelGateway {
+function successfulGateway(
+  sample: typeof MOON_HERO_SAMPLE | typeof SEASONS_SAMPLE = MOON_HERO_SAMPLE,
+): ModelDuelGateway {
   let turn = 0;
+  const plan = resolveRegistryPlan({
+    scenarioId: sample.scenarioId,
+    learnerModel: sample.learnerModel,
+  });
   const worldArgs = {
-    learnerWorldId: PLAN.learnerWorldId,
-    scientificWorldId: PLAN.scientificWorldId,
+    learnerWorldId: plan.learnerWorldId,
+    scientificWorldId: plan.scientificWorldId,
   };
-  const simulationArgs = { ...worldArgs, caseId: PLAN.caseId };
+  const simulationArgs = { ...worldArgs, caseId: plan.caseId };
   return {
     analysisModel: "gpt-5.6-sol",
     revisionModel: "gpt-5.6-terra",
@@ -43,7 +49,7 @@ function successfulGateway(): ModelDuelGateway {
         hasRefusal: false,
         parsed: {
           schemaVersion: "1.0",
-          learnerModel: MOON_HERO_SAMPLE.learnerModel,
+          learnerModel: sample.learnerModel,
         },
         outputText: "",
       };
@@ -69,7 +75,7 @@ function successfulGateway(): ModelDuelGateway {
                 call("compare", "compare_predictions", simulationArgs),
                 call("select", "select_discriminating_case", {
                   ...simulationArgs,
-                  comparisonId: `comparison-${PLAN.caseId}`,
+                  comparisonId: `comparison-${plan.caseId}`,
                 }),
               ]
             : [],
@@ -230,6 +236,87 @@ describe("live analysis service", () => {
     ).rejects.toMatchObject({ code: "RATE_LIMITED" });
     expect(beforeModelCall).toHaveBeenCalledTimes(1);
     expect(modelCalls).toBe(0);
+  });
+
+  it("returns the exact Seasons registry plan and four-tool live ledger", async () => {
+    vi.stubEnv(
+      "MODELDUEL_EVALUATION_SECRET",
+      "analysis-test-evaluation-secret-long-enough",
+    );
+    const beforeModelCall = vi.fn();
+    const response = await analyzeSubmission(
+      {
+        schemaVersion: "1.0",
+        requestId: "analysis-seasons-live-request",
+        sessionId: "analysis-seasons-live-session",
+        requestedAt: 1_800_000_000_000,
+        scenarioId: "seasons",
+        explanation:
+          "Summer happens because Earth moves closer to the Sun, so both hemispheres should warm together.",
+        sketch: null,
+      },
+      {
+        gateway: successfulGateway(SEASONS_SAMPLE),
+        signal: AbortSignal.timeout(10_000),
+        now: 1_800_000_000_000,
+        beforeModelCall,
+      },
+    );
+    const serialized = JSON.stringify(response);
+
+    expect(response).toMatchObject({
+      source: "live",
+      requestId: "analysis-seasons-live-request",
+      analysis: {
+        scenarioId: "seasons",
+        learnerModel: {
+          misconceptionType: "distance-causes-seasons",
+        },
+        learnerWorld: {
+          worldId: "seasons-learner-distance-v1",
+        },
+        scientificWorld: {
+          worldId: "seasons-scientific-tilt-v1",
+        },
+        caseSpec: {
+          id: "seasons-june-solstice",
+        },
+        metadata: {
+          mode: "live",
+          modelId: "gpt-5.6-sol",
+          analyzedSubmission: true,
+          orchestrationToolNames: [
+            "validate_world_spec",
+            "simulate_world",
+            "compare_predictions",
+            "select_discriminating_case",
+          ],
+        },
+      },
+    });
+    expect(response.analysis.transferQuestion.evaluationId).toMatch(/^v1\./);
+    expect(response.analysis.transferQuestion.evaluationId).not.toBe(
+      "seasons-transfer-evaluation-v1",
+    );
+    expect(
+      verifyLiveRevisionToken({
+        evaluationId: response.analysis.transferQuestion.evaluationId,
+        sessionId: "analysis-seasons-live-session",
+        requestedAt: 1_800_000_000_000,
+        now: 1_800_000_000_000,
+      }),
+    ).toMatchObject({
+      scenarioId: "seasons",
+      caseId: "seasons-june-solstice",
+      caseFingerprint:
+        "case-v1|seasons|id=seasons-june-solstice|longitude=90.000000|distance=1.017000|latitude=45.000000|observed-tilt=23.440000",
+      learnerWorldId: "seasons-learner-distance-v1",
+      scientificWorldId: "seasons-scientific-tilt-v1",
+      misconceptionType: "distance-causes-seasons",
+    });
+    expect(serialized).not.toContain("correctOptionId");
+    expect(serialized).not.toContain("revisionContext");
+    expect(beforeModelCall).toHaveBeenCalledTimes(1);
   });
 
   it("returns strict live metadata and an opaque deterministic grading token", async () => {

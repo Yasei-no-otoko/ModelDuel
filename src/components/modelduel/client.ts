@@ -7,6 +7,7 @@ import {
   TransferResultSchema,
   type AnalysisResult,
   type RevisionFeedback,
+  type ScenarioId,
   type TransferQuestion,
   type TransferResult,
 } from "@/lib/modelduel";
@@ -113,7 +114,7 @@ export type LiveAnalysisRequest = Readonly<{
   requestId: string;
   sessionId: string;
   requestedAt: number;
-  scenarioId: "moon-phases";
+  scenarioId: ScenarioId;
   explanation: string;
   sketch: AnalyzeSketch | null;
 }>;
@@ -139,7 +140,7 @@ export type RevisionSubmissionRequest =
   | (RevisionSubmissionCommon &
       Readonly<{
         mode: "verified-sample";
-        scenarioId: "moon-phases";
+      scenarioId: ScenarioId;
         caseFingerprint: string;
       }>)
   | (RevisionSubmissionCommon &
@@ -287,12 +288,13 @@ export function parseLiveAnalysisEnvelope(
 
 export async function loadVerifiedDemo(
   sessionId: string,
+  scenarioId: ScenarioId,
   fetchImplementation: typeof fetch = fetch,
   signal?: AbortSignal,
 ): Promise<AnalysisLoad> {
   const query = new URLSearchParams({
     sessionId,
-    scenarioId: "moon-phases",
+    scenarioId,
   });
   const response = await fetchImplementation(`/api/demo?${query.toString()}`, {
     headers: { Accept: "application/json" },
@@ -303,7 +305,13 @@ export async function loadVerifiedDemo(
   if (!response.ok) {
     throwApiError(payload, "The authored challenge is temporarily unavailable.");
   }
-  return parseDemoEnvelope(payload);
+  const load = parseDemoEnvelope(payload);
+  if (load.analysis.scenarioId !== scenarioId) {
+    throw new ModelDuelApiError(
+      "The authored challenge did not match the requested scenario.",
+    );
+  }
+  return load;
 }
 
 export async function analyzeSubmission(

@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { MOON_HERO_SAMPLE } from "../../../lib/modelduel/samples";
+import {
+  MOON_HERO_SAMPLE,
+  SEASONS_SAMPLE,
+} from "../../../lib/modelduel/samples";
 import { createCaseFingerprint } from "../../../lib/modelduel/simulation";
 import { evaluateRevisionRequest } from "../revision";
 import { issueEvaluationToken } from "../evaluation-core";
@@ -9,6 +12,41 @@ import type { ModelDuelGateway } from "./gateway";
 
 const NOW = 1_800_000_000_000;
 const SECRET = "live-revision-token-test-secret-long-enough";
+
+function seasonsLiveRequest() {
+  const sessionId = "seasons-live-revision-cost-session";
+  const evaluationId = issueEvaluationToken(SECRET, {
+    sessionId,
+    questionId: SEASONS_SAMPLE.transferQuestion.questionId,
+    questionVersion: SEASONS_SAMPLE.transferQuestion.version,
+    optionIds: SEASONS_SAMPLE.transferQuestion.options.map(
+      (option) => option.id,
+    ),
+    correctOptionId: "reverse",
+    rationale: "Private Seasons cost-boundary rationale.",
+    source: "deterministic-question-bank",
+    issuedAt: NOW,
+    expiresAt: NOW + 20 * 60 * 1_000,
+    revisionContext: {
+      scenarioId: "seasons",
+      caseId: SEASONS_SAMPLE.caseSpec.id,
+      caseFingerprint: createCaseFingerprint(SEASONS_SAMPLE.caseSpec),
+      learnerWorldId: SEASONS_SAMPLE.learnerWorld.worldId,
+      scientificWorldId: SEASONS_SAMPLE.scientificWorld.worldId,
+      misconceptionType: "distance-causes-seasons",
+    },
+  });
+  return {
+    mode: "live" as const,
+    requestId: "seasons-live-revision-cost-request",
+    idempotencyKey: "seasons-live-revision-cost-idempotency",
+    requestedAt: NOW,
+    sessionId,
+    revisionText:
+      "Earth's axial tilt changes sunlight angle, creating opposite seasons in the two hemispheres rather than distance warming both together.",
+    evaluationId,
+  };
+}
 
 function liveRequest(
   input: {
@@ -92,6 +130,22 @@ describe("live revision cost boundary", () => {
         beforeLiveGateway,
       }),
     ).rejects.toThrow("Model boundary reached");
+    expect(beforeLiveGateway).toHaveBeenCalledTimes(1);
+    expect(counter.calls).toBe(1);
+  });
+
+  it("invokes the limiter exactly once for a valid signed Seasons context", async () => {
+    const counter = { calls: 0 };
+    const beforeLiveGateway = vi.fn();
+
+    await expect(
+      evaluateRevisionRequest(seasonsLiveRequest(), NOW, {
+        gateway: countingGateway(counter),
+        signal: AbortSignal.timeout(10_000),
+        beforeLiveGateway,
+      }),
+    ).rejects.toThrow("Model boundary reached");
+
     expect(beforeLiveGateway).toHaveBeenCalledTimes(1);
     expect(counter.calls).toBe(1);
   });

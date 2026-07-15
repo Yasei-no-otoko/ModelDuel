@@ -1618,6 +1618,145 @@ textarea:disabled {
   margin: 0;
 }
 
+.scenario-selector {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  border: 0;
+}
+
+.scenario-selector legend {
+  margin-bottom: 0.55rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.scenario-selector label {
+  position: relative;
+  display: block;
+  cursor: pointer;
+}
+
+.scenario-selector input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+}
+
+.scenario-selector span {
+  display: grid;
+  gap: 0.2rem;
+  min-height: 4.4rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.scenario-selector small {
+  color: var(--muted);
+}
+
+.scenario-selector input:checked + span {
+  border-color: var(--cyan);
+  background: rgba(140, 231, 255, 0.1);
+}
+
+.scenario-selector input:focus-visible + span {
+  outline: 3px solid var(--cyan);
+  outline-offset: 3px;
+}
+
+.scenario-selector label:hover span {
+  transform: translateY(-1px);
+}
+
+.scenario-selector:disabled label {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.seasons-world-viewport {
+  display: grid;
+  min-height: 24rem;
+  overflow: hidden;
+  border-radius: 1.15rem;
+  background:
+    radial-gradient(circle at 22% 45%, rgba(255, 205, 94, 0.12), transparent 28%),
+    linear-gradient(160deg, rgba(9, 18, 38, 0.98), rgba(4, 8, 20, 0.98));
+}
+
+.seasons-world-viewport canvas {
+  min-height: 16rem;
+}
+
+.seasons-html-fallback {
+  position: relative;
+  inset: auto;
+  display: grid;
+  gap: 0.45rem;
+  min-height: 8rem;
+  padding: 0.9rem 1rem 1rem;
+  color: var(--muted);
+  background: rgba(5, 10, 24, 0.74);
+}
+
+.seasons-html-fallback p {
+  position: static;
+  inset: auto;
+  margin: 0;
+  text-align: left;
+}
+
+.seasons-fallback-orbit {
+  position: relative;
+  min-height: 3rem;
+}
+
+.seasons-fallback-sun,
+.seasons-fallback-earth {
+  position: absolute;
+  top: 50%;
+  display: block;
+  border-radius: 50%;
+  transform: translateY(-50%);
+}
+
+.seasons-fallback-sun {
+  left: 8%;
+  width: 2.4rem;
+  height: 2.4rem;
+  background: #ffd36a;
+  box-shadow: 0 0 1.5rem rgba(255, 211, 106, 0.55);
+}
+
+.seasons-fallback-earth {
+  right: 20%;
+  width: 2.1rem;
+  height: 2.1rem;
+  background: linear-gradient(90deg, #4b9ee5 50%, #183a72 50%);
+}
+
+.seasons-fallback-axis {
+  position: absolute;
+  left: 50%;
+  top: -0.45rem;
+  width: 2px;
+  height: 3rem;
+  background: #f4f8ff;
+  transform: translateX(-50%);
+}
+
 @media (max-width: 1040px) {
   .capture-layout {
     grid-template-columns: 1fr;
@@ -1627,7 +1766,7 @@ textarea:disabled {
     max-width: 760px;
   }
 
-  .capture-card {
+.capture-card {
     max-width: 760px;
   }
 
@@ -1696,6 +1835,10 @@ textarea:disabled {
 }
 
 @media (max-width: 520px) {
+  .scenario-selector {
+    grid-template-columns: 1fr;
+  }
+
   .app-header,
   .experience-progress,
   .experience-main,
