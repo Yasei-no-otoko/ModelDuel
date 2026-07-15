@@ -1166,6 +1166,30 @@ describe("session identity, evidence timing, and evaluation receipts", () => {
     expect(trace.completedAt).toBe(15);
   });
 
+  it("accepts a complete trace with one long opaque evaluation identity", () => {
+    const trace = requireTrace(reachTrace());
+    const evaluationId = `v1.${"A".repeat(16)}.${"A".repeat(512)}.${"A".repeat(22)}`;
+
+    const parsed = RevisionTraceSchema.parse({
+      ...trace,
+      transfer: {
+        ...trace.transfer,
+        evaluationId,
+        result: {
+          ...trace.transfer.result,
+          evaluationId,
+        },
+      },
+    });
+
+    expect(parsed.transfer.evaluationId).toBe(evaluationId);
+    expect(parsed.transfer.result.evaluationId).toBe(evaluationId);
+    expect(parsed.transfer.questionId).toBe(parsed.transfer.result.questionId);
+    expect(parsed.transfer.questionVersion).toBe(
+      parsed.transfer.result.questionVersion,
+    );
+  });
+
   it("restart replaces identity and clears all accumulated data", () => {
     const completed = reachTrace();
     const restarted = accept(completed, {

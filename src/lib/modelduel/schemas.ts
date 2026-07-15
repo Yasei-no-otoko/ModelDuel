@@ -20,6 +20,13 @@ export const SessionIdSchema = z
   .max(128)
   .regex(/^[A-Za-z0-9_-]+$/);
 
+export const EvaluationIdSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(2_048)
+  .regex(/^[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*$/);
+
 export const SketchReferenceSchema = z.strictObject({
   id: SessionIdSchema,
   mime: z.enum(["png", "jpeg", "webp"]),
@@ -189,7 +196,7 @@ const QuestionFields = {
 
 export const PredictionQuestionSchema = z.strictObject(QuestionFields);
 export const TransferQuestionSchema = z.strictObject({
-  evaluationId: stableId,
+  evaluationId: EvaluationIdSchema,
   questionId: stableId,
   version: stableId,
   prompt: boundedText(500),
@@ -420,7 +427,7 @@ export const SimulationObservationSchema = z.discriminatedUnion("scenario", [
 
 export const TransferResultSchema = z.strictObject({
   receiptId: stableId,
-  evaluationId: stableId,
+  evaluationId: EvaluationIdSchema,
   questionId: stableId,
   questionVersion: stableId,
   selectedOptionId: stableId,
@@ -478,7 +485,7 @@ export const RevisionTraceSchema = z
       feedback: RevisionFeedbackSchema,
     }),
     transfer: z.strictObject({
-      evaluationId: stableId,
+      evaluationId: EvaluationIdSchema,
       questionId: stableId,
       questionVersion: stableId,
       selectedOptionId: stableId,
