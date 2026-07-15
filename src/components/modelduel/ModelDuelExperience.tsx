@@ -152,6 +152,7 @@ function ExperienceProgress({
   progressLabel: string;
 }>) {
   const activeIndex = stageIndex(activeStage);
+  const activeStep = EXPERIENCE_STEPS[activeIndex] ?? EXPERIENCE_STEPS[0];
   return (
     <nav className="experience-progress" aria-label={progressLabel}>
       <ol>
@@ -168,6 +169,10 @@ function ExperienceProgress({
           </li>
         ))}
       </ol>
+      <p className="progress-current" aria-hidden="true">
+        Step {activeIndex + 1} of {EXPERIENCE_STEPS.length} ·{" "}
+        {activeStep.label}
+      </p>
     </nav>
   );
 }
