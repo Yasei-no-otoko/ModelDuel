@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 
+import { MAX_SKETCH_BYTES } from "@/lib/modelduel/input";
+
 import {
   createStableId,
   experienceStageForSession,
   stageIndex,
-  validateExplanation,
+  validateCaptureInput,
   validateRevision,
   validateSketchFile,
 } from "./flow";
@@ -25,10 +27,30 @@ describe("ModelDuel experience mapping", () => {
 });
 
 describe("learner input validation", () => {
-  it("requires a useful starting explanation and enforces the domain limit", () => {
-    expect(validateExplanation("too short")).toContain("at least 20");
-    expect(validateExplanation("A clear initial explanation about Moon phases.")).toBeNull();
-    expect(validateExplanation("x".repeat(1_501))).toContain("1,500");
+  it("requires meaningful text or a sketch for live analysis", () => {
+    expect(validateCaptureInput("", false, "live")).toContain(
+      "explanation or a valid sketch",
+    );
+    expect(validateCaptureInput("too short", false, "live")).toContain(
+      "at least 20",
+    );
+    expect(
+      validateCaptureInput("12345678901234567890", false, "live"),
+    ).toBeNull();
+    expect(validateCaptureInput("", true, "live")).toBeNull();
+    expect(validateCaptureInput("short note", true, "live")).toBeNull();
+  });
+
+  it("allows an empty verified-sample input while enforcing the shared maximum", () => {
+    expect(validateCaptureInput("", false, "verified-sample")).toBeNull();
+    expect(validateCaptureInput("short", false, "verified-sample")).toBeNull();
+    expect(validateCaptureInput("x".repeat(1_500), true, "live")).toBeNull();
+    expect(validateCaptureInput("x".repeat(1_501), true, "live")).toContain(
+      "1,500",
+    );
+    expect(
+      validateCaptureInput("x".repeat(1_501), false, "verified-sample"),
+    ).toContain("1,500");
   });
 
   it("requires a causal, substantial revision without prescribing the answer", () => {
@@ -45,9 +67,14 @@ describe("learner input validation", () => {
 
   it("accepts only bounded browser-preview image formats", () => {
     expect(validateSketchFile({ type: "image/png", size: 2_048 })).toBeNull();
+    expect(
+      validateSketchFile({ type: "image/webp", size: MAX_SKETCH_BYTES }),
+    ).toBeNull();
     expect(validateSketchFile({ type: "image/gif", size: 2_048 })).toContain("PNG");
-    expect(validateSketchFile({ type: "image/webp", size: 11 * 1024 * 1024 })).toContain(
-      "10 MB",
+    expect(
+      validateSketchFile({ type: "image/webp", size: MAX_SKETCH_BYTES + 1 }),
+    ).toContain(
+      "3 MB",
     );
   });
 

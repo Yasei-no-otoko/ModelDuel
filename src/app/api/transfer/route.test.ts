@@ -124,6 +124,6 @@ describe("POST /api/transfer", () => {
     ).toBe("INVALID_REQUEST");
     expect(
       ((await contentTypeResponse.json()) as { error: { code: string } }).error.code,
-    ).toBe("INVALID_REQUEST");
+    ).toBe("UNSUPPORTED_MEDIA_TYPE");
   });
 });

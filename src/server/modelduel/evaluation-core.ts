@@ -11,6 +11,7 @@ import {
 import { z } from "zod";
 
 import {
+  ScenarioIdSchema,
   SessionIdSchema,
   TransferResultSchema,
 } from "../../lib/modelduel/schemas";
@@ -49,6 +50,18 @@ const EvaluationSourceSchema = z.enum([
 
 const TimestampSchema = z.number().finite().nonnegative();
 
+export const RevisionContextSchema = z.strictObject({
+  scenarioId: ScenarioIdSchema,
+  caseId: StableIdSchema,
+  caseFingerprint: z.string().trim().min(1).max(220),
+  learnerWorldId: StableIdSchema,
+  scientificWorldId: StableIdSchema,
+  misconceptionType: z.enum([
+    "earth-shadow-phases",
+    "distance-causes-seasons",
+  ]),
+});
+
 const CanonicalOptionIdsSchema = z
   .array(StableIdSchema)
   .min(2)
@@ -81,6 +94,7 @@ const EvaluationPayloadSchema = z
     expiresAt: TimestampSchema,
     iat: TimestampSchema,
     exp: TimestampSchema,
+    revisionContext: RevisionContextSchema.optional(),
   })
   .strict()
   .superRefine((payload, context) => {
@@ -122,6 +136,7 @@ const IssueEvaluationInputSchema = z
     issuedAt: TimestampSchema.optional(),
     expiresAt: TimestampSchema.optional(),
     ttlMs: z.number().finite().positive().max(MAX_TTL_MS).optional(),
+    revisionContext: RevisionContextSchema.optional(),
   })
   .strict();
 
@@ -310,6 +325,7 @@ export function issueEvaluationToken(
     expiresAt,
     iat: issuedAt,
     exp: expiresAt,
+    revisionContext: parsed.data.revisionContext,
   });
   if (!payload.success) {
     throw new EvaluationCoreError("INVALID_REQUEST");
@@ -339,6 +355,39 @@ export function issueEvaluationToken(
     throw new EvaluationCoreError("INVALID_REQUEST");
   }
   return token;
+}
+
+const VerifyRevisionContextInputSchema = z.strictObject({
+  evaluationId: z.string(),
+  sessionId: SessionIdSchema,
+  requestedAt: TimestampSchema,
+  now: TimestampSchema.optional(),
+});
+
+export function verifyRevisionContextToken(
+  secret: string,
+  input: z.input<typeof VerifyRevisionContextInputSchema>,
+): z.output<typeof RevisionContextSchema> {
+  const parsed = VerifyRevisionContextInputSchema.safeParse(input);
+  if (!parsed.success) {
+    throw new EvaluationCoreError("INVALID_REQUEST");
+  }
+  const payload = decryptPayload(secret, parsed.data.evaluationId);
+  const now = parsed.data.now ?? Date.now();
+  const tokenIsCurrent =
+    now + DEFAULT_CLOCK_SKEW_MS >= payload.issuedAt &&
+    now <= payload.expiresAt + DEFAULT_CLOCK_SKEW_MS;
+  const requestTimeIsPlausible =
+    parsed.data.requestedAt <= now + MAX_CLIENT_FUTURE_SKEW_MS;
+  if (
+    payload.sessionId !== parsed.data.sessionId ||
+    !payload.revisionContext ||
+    !tokenIsCurrent ||
+    !requestTimeIsPlausible
+  ) {
+    invalidToken();
+  }
+  return RevisionContextSchema.parse(payload.revisionContext);
 }
 
 export function evaluateEvaluationToken(

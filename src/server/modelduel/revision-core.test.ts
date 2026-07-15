@@ -4,6 +4,22 @@ import { RevisionFeedbackSchema } from "../../lib/modelduel/schemas";
 import { evaluateRevisionRubric } from "./revision-core";
 
 describe("authored deterministic revision rubric", () => {
+  it.each([
+    ["retained", 1],
+    ["partial", 0],
+    ["revised", 0.5],
+  ] as const)("rejects contradictory %s and %s feedback", (conceptualChange, score) => {
+    expect(
+      RevisionFeedbackSchema.safeParse({
+        conceptualChange,
+        score,
+        summary: "Contradictory fixture.",
+        strengths: [],
+        nextStep: "Revise the explanation.",
+      }).success,
+    ).toBe(false);
+  });
+
   it("marks a causal Moon model revision as revised", () => {
     const feedback = evaluateRevisionRubric({
       scenarioId: "moon-phases",

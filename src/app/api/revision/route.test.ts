@@ -6,6 +6,7 @@ import { POST } from "./route";
 
 function validBody(now = Date.now()): Record<string, unknown> {
   return {
+    mode: "verified-sample",
     requestId: "revision-route-request-1",
     idempotencyKey: "revision-route-idempotency-1",
     requestedAt: now,
@@ -76,6 +77,6 @@ describe("POST /api/revision", () => {
     const response = await POST(request(validBody(), "text/plain"));
     expect(
       ((await response.json()) as { error: { code: string } }).error.code,
-    ).toBe("INVALID_REQUEST");
+    ).toBe("UNSUPPORTED_MEDIA_TYPE");
   });
 });

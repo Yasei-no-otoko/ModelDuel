@@ -4,10 +4,13 @@ import { MOON_HERO_SAMPLE } from "@/lib/modelduel";
 
 import {
   ModelDuelApiError,
+  analyzeSubmission,
   buildTransferRequest,
   evaluateTransfer,
+  fileToAnalyzeSketch,
   loadVerifiedDemo,
   parseDemoEnvelope,
+  parseLiveAnalysisEnvelope,
   submitRevision,
 } from "./client";
 
@@ -16,6 +19,21 @@ const jsonResponse = (payload: unknown, status = 200) =>
     status,
     headers: { "Content-Type": "application/json" },
   });
+
+const LIVE_MOON_ANALYSIS = {
+  ...MOON_HERO_SAMPLE,
+  metadata: {
+    mode: "live" as const,
+    modelId: "gpt-5.6-sol" as const,
+    analyzedSubmission: true,
+    orchestrationToolNames: [
+      "validate_world_spec",
+      "simulate_world",
+      "compare_predictions",
+      "select_discriminating_case",
+    ] as const,
+  },
+};
 
 describe("verified demo adapter", () => {
   it("strictly parses the server-authored analysis envelope", () => {
@@ -41,6 +59,7 @@ describe("verified demo adapter", () => {
   });
 
   it("requests the Moon demo with a no-store query contract", async () => {
+    const controller = new AbortController();
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
       jsonResponse({
         source: "verified-sample",
@@ -49,11 +68,11 @@ describe("verified demo adapter", () => {
       }),
     );
 
-    await loadVerifiedDemo("session-abc", fetchMock);
+    await loadVerifiedDemo("session-abc", fetchMock, controller.signal);
 
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/demo?sessionId=session-abc&scenarioId=moon-phases",
-      expect.objectContaining({ cache: "no-store" }),
+      expect.objectContaining({ cache: "no-store", signal: controller.signal }),
     );
   });
 
@@ -78,9 +97,236 @@ describe("verified demo adapter", () => {
   });
 });
 
+describe("live analysis adapter", () => {
+  const request = {
+    schemaVersion: "1.0" as const,
+    requestId: "analysis-request",
+    sessionId: "session-abc",
+    requestedAt: 50,
+    scenarioId: "moon-phases" as const,
+    explanation: "Earth's shadow moves across the Moon and causes each phase.",
+    sketch: null,
+  };
+
+  it("posts the exact request with no-store and correlates the live response", async () => {
+    const controller = new AbortController();
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      jsonResponse({
+        source: "live",
+        notice: "Analyzed with GPT-5.6 using validated orchestration.",
+        requestId: request.requestId,
+        analysis: LIVE_MOON_ANALYSIS,
+      }),
+    );
+
+    const result = await analyzeSubmission(request, fetchMock, controller.signal);
+
+    expect(result.source).toBe("live");
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/analyze",
+      expect.objectContaining({
+        method: "POST",
+        cache: "no-store",
+        body: JSON.stringify(request),
+        signal: controller.signal,
+      }),
+    );
+  });
+
+  it("rejects a live envelope correlated to another request", () => {
+    expect(() =>
+      parseLiveAnalysisEnvelope(
+        {
+          source: "live",
+          notice: "Live analysis.",
+          requestId: "other-request",
+          analysis: LIVE_MOON_ANALYSIS,
+        },
+        request.requestId,
+      ),
+    ).toThrow("did not match");
+  });
+
+  it("does not accept a verified analysis mislabeled as live", () => {
+    expect(() =>
+      parseLiveAnalysisEnvelope(
+        {
+          source: "live",
+          notice: "Incorrect source wrapper.",
+          requestId: request.requestId,
+          analysis: MOON_HERO_SAMPLE,
+        },
+        request.requestId,
+      ),
+    ).toThrow(ModelDuelApiError);
+  });
+
+  it.each([
+    {
+      label: "omitted",
+      tools: [
+        "validate_world_spec",
+        "simulate_world",
+        "compare_predictions",
+      ],
+    },
+    {
+      label: "duplicate",
+      tools: [
+        "validate_world_spec",
+        "validate_world_spec",
+        "simulate_world",
+        "compare_predictions",
+      ],
+    },
+    {
+      label: "wrong",
+      tools: [
+        "validate_world_spec",
+        "simulate_world",
+        "compare_predictions",
+        "generate_transfer_question",
+      ],
+    },
+    {
+      label: "extra",
+      tools: [
+        "validate_world_spec",
+        "simulate_world",
+        "compare_predictions",
+        "select_discriminating_case",
+        "generate_transfer_question",
+      ],
+    },
+  ])("rejects a $label live orchestration ledger", ({ tools }) => {
+    expect(() =>
+      parseLiveAnalysisEnvelope(
+        {
+          source: "live",
+          notice: "Live analysis.",
+          requestId: request.requestId,
+          analysis: {
+            ...LIVE_MOON_ANALYSIS,
+            metadata: {
+              ...LIVE_MOON_ANALYSIS.metadata,
+              orchestrationToolNames: tools,
+            },
+          },
+        },
+        request.requestId,
+      ),
+    ).toThrow("did not match");
+  });
+
+  it("preserves the expanded safe error taxonomy", async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      jsonResponse(
+        {
+          error: {
+            code: "CONFIGURATION_REQUIRED",
+            message: "Live analysis is not configured.",
+            retryable: false,
+          },
+        },
+        503,
+      ),
+    );
+
+    await expect(analyzeSubmission(request, fetchMock)).rejects.toMatchObject({
+      code: "CONFIGURATION_REQUIRED",
+      retryable: false,
+    });
+  });
+
+  it("propagates transport abort without synthesizing an analysis result", async () => {
+    const controller = new AbortController();
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(
+      (_input, init) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => {
+            const abortError = new Error("aborted");
+            abortError.name = "AbortError";
+            reject(abortError);
+          });
+        }),
+    );
+
+    const pending = analyzeSubmission(request, fetchMock, controller.signal);
+    controller.abort();
+
+    await expect(pending).rejects.toMatchObject({ name: "AbortError" });
+  });
+
+  it.each([
+    "PAYLOAD_TOO_LARGE",
+    "UNSUPPORTED_MEDIA_TYPE",
+    "MODEL_REFUSAL",
+    "RATE_LIMITED",
+    "MODEL_OUTPUT_INVALID",
+    "UPSTREAM_INCOMPLETE",
+    "ORCHESTRATION_INVALID",
+    "UPSTREAM_UNAVAILABLE",
+    "UPSTREAM_AUTHENTICATION",
+    "MODEL_ACCESS_REQUIRED",
+    "REQUEST_TIMEOUT",
+    "UPSTREAM_TIMEOUT",
+  ] as const)("preserves the %s safe error code", async (code) => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      jsonResponse(
+        {
+          error: {
+            code,
+            message: "Safe upstream failure.",
+            retryable: true,
+          },
+        },
+        502,
+      ),
+    );
+
+    await expect(analyzeSubmission(request, fetchMock)).rejects.toMatchObject({
+      code,
+    });
+  });
+
+  it("encodes a validated local image as a canonical base64 data URL", async () => {
+    const bytes = Uint8Array.from([1, 2, 3]);
+    await expect(
+      fileToAnalyzeSketch({
+        type: "image/png",
+        size: bytes.byteLength,
+        arrayBuffer: async () => bytes.buffer,
+      }),
+    ).resolves.toEqual({
+      mimeType: "image/png",
+      dataUrl: "data:image/png;base64,AQID",
+    });
+  });
+
+  it("rejects invalid media and inconsistent reads before generating a data URL", async () => {
+    await expect(
+      fileToAnalyzeSketch({
+        type: "image/gif",
+        size: 3,
+        arrayBuffer: async () => Uint8Array.from([1, 2, 3]).buffer,
+      }),
+    ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+
+    await expect(
+      fileToAnalyzeSketch({
+        type: "image/webp",
+        size: 4,
+        arrayBuffer: async () => Uint8Array.from([1, 2, 3]).buffer,
+      }),
+    ).rejects.toThrow("read safely");
+  });
+});
+
 describe("revision adapter", () => {
   it("accepts only correlated, explicitly authored rubric feedback", async () => {
+    const controller = new AbortController();
     const request = {
+      mode: "verified-sample" as const,
       requestId: "revision-request",
       idempotencyKey: "revision-key",
       requestedAt: 100,
@@ -106,12 +352,16 @@ describe("revision adapter", () => {
       }),
     );
 
-    const result = await submitRevision(request, fetchMock);
+    const result = await submitRevision(request, fetchMock, controller.signal);
 
     expect(result.feedback.conceptualChange).toBe("revised");
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/revision",
-      expect.objectContaining({ method: "POST", cache: "no-store" }),
+      expect.objectContaining({
+        method: "POST",
+        cache: "no-store",
+        signal: controller.signal,
+      }),
     );
   });
 
@@ -135,6 +385,7 @@ describe("revision adapter", () => {
     await expect(
       submitRevision(
         {
+          mode: "verified-sample",
           requestId: "revision-request",
           idempotencyKey: "revision-key",
           requestedAt: 100,
@@ -146,6 +397,144 @@ describe("revision adapter", () => {
         fetchMock,
       ),
     ).rejects.toThrow("did not match");
+  });
+
+  it("sends live revision context and accepts only GPT-5.6 source metadata", async () => {
+    const request = {
+      mode: "live" as const,
+      requestId: "revision-live-request",
+      idempotencyKey: "revision-live-key",
+      requestedAt: 110,
+      sessionId: "session-live",
+      revisionText:
+        "The Moon appears half lit because sunlight and our viewing angle determine the phase.",
+      evaluationId: LIVE_MOON_ANALYSIS.transferQuestion.evaluationId,
+    };
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      jsonResponse({
+        source: "gpt-5.6",
+        notice: "Structured live revision feedback.",
+        requestId: request.requestId,
+        modelId: "gpt-5.6-sol",
+        evaluatedAt: 111,
+        feedback: {
+          conceptualChange: "revised",
+          score: 1,
+          summary: "The revision uses the observed evidence causally.",
+          strengths: ["Connects illumination and viewpoint"],
+          nextStep: "Apply the model to the transfer case.",
+        },
+      }),
+    );
+
+    const result = await submitRevision(request, fetchMock);
+
+    expect(result).toMatchObject({ source: "gpt-5.6", modelId: "gpt-5.6-sol" });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/revision",
+      expect.objectContaining({ body: JSON.stringify(request), cache: "no-store" }),
+    );
+  });
+
+  it("rejects GPT-5.6 feedback for a verified-sample revision request", async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      jsonResponse({
+        source: "gpt-5.6",
+        notice: "Mismatched live feedback.",
+        requestId: "revision-verified-request",
+        modelId: "gpt-5.6-sol",
+        evaluatedAt: 121,
+        feedback: {
+          conceptualChange: "revised",
+          score: 1,
+          summary: "This response has the wrong provenance.",
+          strengths: [],
+          nextStep: "Do not accept this response.",
+        },
+      }),
+    );
+
+    await expect(
+      submitRevision(
+        {
+          mode: "verified-sample",
+          requestId: "revision-verified-request",
+          idempotencyKey: "revision-verified-key",
+          requestedAt: 120,
+          sessionId: "session-verified",
+          scenarioId: "moon-phases",
+          caseFingerprint: "case-fingerprint",
+          revisionText:
+            "The Moon appears half lit because sunlight and viewpoint determine the phase.",
+        },
+        fetchMock,
+      ),
+    ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+  });
+
+  it("rejects deterministic feedback for a live revision request", async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      jsonResponse({
+        source: "deterministic-authored-rubric",
+        notice: "Mismatched authored feedback.",
+        requestId: "revision-live-request",
+        evaluatedAt: 131,
+        feedback: {
+          conceptualChange: "revised",
+          score: 1,
+          summary: "This response has the wrong provenance.",
+          strengths: [],
+          nextStep: "Do not accept this response.",
+        },
+      }),
+    );
+
+    await expect(
+      submitRevision(
+        {
+          mode: "live",
+          requestId: "revision-live-request",
+          idempotencyKey: "revision-live-key",
+          requestedAt: 130,
+          sessionId: "session-live",
+          revisionText:
+            "The Moon appears half lit because sunlight and viewpoint determine the phase.",
+          evaluationId: LIVE_MOON_ANALYSIS.transferQuestion.evaluationId,
+        },
+        fetchMock,
+      ),
+    ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+  });
+
+  it("does not synthesize authored feedback when live revision fails", async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      jsonResponse(
+        {
+          error: {
+            code: "MODEL_OUTPUT_INVALID",
+            message: "The model response could not be validated.",
+            retryable: true,
+          },
+        },
+        502,
+      ),
+    );
+
+    await expect(
+      submitRevision(
+        {
+          mode: "live",
+          requestId: "revision-live-request",
+          idempotencyKey: "revision-live-key",
+          requestedAt: 110,
+          sessionId: "session-live",
+          revisionText:
+            "The Moon appears half lit because sunlight and viewpoint determine the phase.",
+          evaluationId: LIVE_MOON_ANALYSIS.transferQuestion.evaluationId,
+        },
+        fetchMock,
+      ),
+    ).rejects.toMatchObject({ code: "MODEL_OUTPUT_INVALID" });
   });
 });
 
@@ -173,6 +562,7 @@ describe("transfer adapter", () => {
   });
 
   it("accepts only a result matching the locked question and selection", async () => {
+    const controller = new AbortController();
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
       jsonResponse({
         receiptId: "receipt-valid",
@@ -188,10 +578,16 @@ describe("transfer adapter", () => {
       }),
     );
 
-    await expect(evaluateTransfer(transferRequest, fetchMock)).resolves.toMatchObject({
+    await expect(
+      evaluateTransfer(transferRequest, fetchMock, controller.signal),
+    ).resolves.toMatchObject({
       isCorrect: true,
       receiptId: "receipt-valid",
     });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/transfer",
+      expect.objectContaining({ signal: controller.signal }),
+    );
   });
 
   it("surfaces structured server failure without inferring a result", async () => {

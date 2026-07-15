@@ -17,10 +17,12 @@ import {
   MOON_HERO_SAMPLE,
   SEASONS_SAMPLE,
 } from "../../lib/modelduel/samples";
+import { createCaseFingerprint } from "../../lib/modelduel/simulation";
 import {
   EvaluationCoreError,
   evaluateEvaluationToken,
   issueEvaluationToken,
+  verifyRevisionContextToken,
 } from "./evaluation-core";
 
 const StableIdSchema = z
@@ -81,6 +83,10 @@ function getEvaluationSecret(): string {
   return developmentSecret;
 }
 
+export function assertEvaluationReady(): void {
+  getEvaluationSecret();
+}
+
 type VerifiedAnswer = Readonly<{
   correctOptionId: string;
   rationale: string;
@@ -127,6 +133,84 @@ function translateCoreError(error: unknown): never {
   throw new EvaluationServiceError("SERVER_CONFIGURATION");
 }
 
+export function attachTransferEvaluationToken(input: {
+  sessionId: string;
+  analysis: AnalysisResult;
+  issuedAt?: number;
+}): AnalysisResult {
+  const sessionId = SessionIdSchema.safeParse(input.sessionId);
+  const analysis = AnalysisResultSchema.safeParse(input.analysis);
+  const issuedAt = z.number().finite().nonnegative().optional().safeParse(input.issuedAt);
+  if (!sessionId.success || !analysis.success || !issuedAt.success) {
+    throw new EvaluationServiceError("INVALID_REQUEST");
+  }
+
+  const answer = VERIFIED_ANSWERS.get(analysis.data.scenarioId);
+  const optionIds = analysis.data.transferQuestion.options.map(
+    (option) => option.id,
+  );
+  if (!answer || !optionIds.includes(answer.correctOptionId)) {
+    throw new EvaluationServiceError("SERVER_CONFIGURATION");
+  }
+  const misconceptionType = analysis.data.learnerModel.misconceptionType;
+  if (analysis.data.metadata.mode === "live" && misconceptionType === "other") {
+    throw new EvaluationServiceError("INVALID_REQUEST");
+  }
+  const revisionContext =
+    analysis.data.metadata.mode === "live" && misconceptionType !== "other"
+      ? {
+          scenarioId: analysis.data.scenarioId,
+          caseId: analysis.data.caseSpec.id,
+          caseFingerprint: createCaseFingerprint(analysis.data.caseSpec),
+          learnerWorldId: analysis.data.learnerWorld.worldId,
+          scientificWorldId: analysis.data.scientificWorld.worldId,
+          misconceptionType,
+        }
+      : undefined;
+
+  let evaluationId: string;
+  try {
+    evaluationId = issueEvaluationToken(getEvaluationSecret(), {
+      sessionId: sessionId.data,
+      questionId: analysis.data.transferQuestion.questionId,
+      questionVersion: analysis.data.transferQuestion.version,
+      optionIds,
+      correctOptionId: answer.correctOptionId,
+      rationale: answer.rationale,
+      source: "deterministic-question-bank",
+      issuedAt: issuedAt.data,
+      revisionContext,
+    });
+  } catch (error) {
+    translateCoreError(error);
+  }
+
+  const attached = AnalysisResultSchema.safeParse({
+    ...analysis.data,
+    transferQuestion: {
+      ...analysis.data.transferQuestion,
+      evaluationId,
+    },
+  });
+  if (!attached.success) {
+    throw new EvaluationServiceError("SERVER_CONFIGURATION");
+  }
+  return attached.data;
+}
+
+export function verifyLiveRevisionToken(input: {
+  evaluationId: string;
+  sessionId: string;
+  requestedAt: number;
+  now?: number;
+}) {
+  try {
+    return verifyRevisionContextToken(getEvaluationSecret(), input);
+  } catch (error) {
+    translateCoreError(error);
+  }
+}
+
 export function issueVerifiedDemo(input: {
   sessionId: string;
   scenarioId: string;
@@ -149,44 +233,17 @@ export function issueVerifiedDemo(input: {
   }
 
   const sample = getVerifiedSample(parsedInput.data.scenarioId);
-  const answer = VERIFIED_ANSWERS.get(parsedInput.data.scenarioId);
-  const optionIds = sample.transferQuestion.options.map((option) => option.id);
-  if (!answer || !optionIds.includes(answer.correctOptionId)) {
-    throw new EvaluationServiceError("SERVER_CONFIGURATION");
-  }
-
-  let evaluationId: string;
-  try {
-    evaluationId = issueEvaluationToken(getEvaluationSecret(), {
-      sessionId: parsedInput.data.sessionId,
-      questionId: sample.transferQuestion.questionId,
-      questionVersion: sample.transferQuestion.version,
-      optionIds,
-      correctOptionId: answer.correctOptionId,
-      rationale: answer.rationale,
-      source: "deterministic-question-bank",
-      issuedAt: parsedInput.data.now,
-    });
-  } catch (error) {
-    translateCoreError(error);
-  }
-
-  const analysis = AnalysisResultSchema.safeParse({
-    ...sample,
-    transferQuestion: {
-      ...sample.transferQuestion,
-      evaluationId,
-    },
+  const analysis = attachTransferEvaluationToken({
+    sessionId: parsedInput.data.sessionId,
+    analysis: sample,
+    issuedAt: parsedInput.data.now,
   });
-  if (!analysis.success) {
-    throw new EvaluationServiceError("SERVER_CONFIGURATION");
-  }
 
   return {
     source: "verified-sample",
     notice:
       "This is a deterministic verified sample, not a live GPT response.",
-    analysis: analysis.data,
+    analysis,
   };
 }
 

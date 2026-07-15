@@ -157,7 +157,7 @@ describe("/api/demo verified issuance", () => {
     );
 
     expect(((await badType.json()) as { error: { code: string } }).error.code).toBe(
-      "INVALID_REQUEST",
+      "UNSUPPORTED_MEDIA_TYPE",
     );
     expect(((await unknown.json()) as { error: { code: string } }).error.code).toBe(
       "INVALID_REQUEST",

@@ -397,6 +397,16 @@ dd {
   white-space: nowrap;
 }
 
+.source-badge.live {
+  border-color: rgba(114, 239, 195, 0.45);
+  color: #bdf7df;
+  background: rgba(8, 55, 49, 0.62);
+}
+
+.source-badge.verified {
+  border-color: rgba(87, 226, 242, 0.3);
+}
+
 .capture-card > label,
 .revision-card > label {
   display: block;
@@ -562,6 +572,32 @@ textarea:disabled {
   transition: transform 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
 }
 
+.secondary-button {
+  min-height: 48px;
+  padding: 0.76rem 1.1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.72rem;
+  color: #e1e7f8;
+  background: rgba(17, 29, 62, 0.88);
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: border-color 180ms ease, background 180ms ease, opacity 180ms ease;
+}
+
+.secondary-button:hover:not(:disabled) {
+  border-color: rgba(87, 226, 242, 0.58);
+  background: rgba(23, 43, 78, 0.94);
+}
+
+.secondary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
 .primary-button:hover:not(:disabled) {
   box-shadow: 0 13px 42px rgba(87, 226, 242, 0.3);
   transform: translateY(-2px);
@@ -574,6 +610,12 @@ textarea:disabled {
 
 .full-button {
   width: 100%;
+}
+
+.capture-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: 0.65rem;
 }
 
 .form-disclosure {
@@ -1406,6 +1448,29 @@ textarea:disabled {
   margin-top: 1.4rem;
 }
 
+.error-actions {
+  width: min(100%, 520px);
+  margin-top: 1.4rem;
+  display: flex;
+  justify-content: center;
+  gap: 0.65rem;
+}
+
+.challenge-error-panel .error-actions .primary-button {
+  margin-top: 0;
+}
+
+.trace-source {
+  width: fit-content;
+  margin: 0 auto 0.8rem;
+}
+
+.trace-source-notice {
+  margin-top: 0.65rem !important;
+  color: var(--faint) !important;
+  font-size: 0.66rem;
+}
+
 .api-error strong,
 .api-error p {
   margin: 0;
@@ -1654,6 +1719,15 @@ textarea:disabled {
   .card-heading,
   .sketch-field,
   .field-meta {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .capture-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .error-actions {
     align-items: stretch;
     flex-direction: column;
   }

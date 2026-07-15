@@ -1,7 +1,5 @@
-import {
-  evaluateRevisionRequest,
-  RevisionEvaluationRequestSchema,
-} from "../../../server/modelduel/revision";
+import { AnalyzeRequestSchema, MAX_ANALYZE_JSON_BYTES } from "../../../lib/modelduel/input";
+import { analyzeSubmission } from "../../../server/modelduel/openai/analysis";
 import type { ModelDuelGateway } from "../../../server/modelduel/openai/gateway";
 import { enforceRateLimit } from "../../../server/modelduel/rate-limit";
 import type { RateLimitStore } from "../../../server/modelduel/rate-limit";
@@ -15,7 +13,7 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
-export async function handleRevisionRequest(
+export async function handleAnalyzeRequest(
   request: Request,
   dependencies: Readonly<{
     gateway?: ModelDuelGateway;
@@ -28,17 +26,17 @@ export async function handleRevisionRequest(
       request.signal,
       AbortSignal.timeout(50_000),
     ]);
-    const input = await readStrictJson(
-      request,
-      RevisionEvaluationRequestSchema,
-      { signal },
-    );
+    const input = await readStrictJson(request, AnalyzeRequestSchema, {
+      maxBytes: MAX_ANALYZE_JSON_BYTES,
+      signal,
+    });
     return jsonResponse(
-      await evaluateRevisionRequest(input, dependencies.now ?? Date.now(), {
+      await analyzeSubmission(input, {
         signal,
         gateway: dependencies.gateway,
-        beforeLiveGateway: () =>
-          enforceRateLimit("live-revision", request, {
+        now: dependencies.now,
+        beforeModelCall: () =>
+          enforceRateLimit("analysis", request, {
             now: dependencies.now,
             store: dependencies.rateLimitStore,
           }),
@@ -50,5 +48,5 @@ export async function handleRevisionRequest(
 }
 
 export async function POST(request: Request): Promise<Response> {
-  return handleRevisionRequest(request);
+  return handleAnalyzeRequest(request);
 }

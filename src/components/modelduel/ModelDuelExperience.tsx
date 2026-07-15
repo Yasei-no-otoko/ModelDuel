@@ -20,12 +20,18 @@ import { PRODUCT, SAMPLE_MISCONCEPTION } from "@/lib/product";
 
 import {
   ModelDuelApiError,
+  analyzeSubmission,
   buildTransferRequest,
   evaluateTransfer,
+  fileToAnalyzeSketch,
   loadVerifiedDemo,
   submitRevision,
   type AnalysisLoad,
+  type ApiErrorCode,
+  type LiveAnalysisRequest,
+  type RevisionSubmissionCommon,
   type RevisionSubmissionRequest,
+  type RevisionSubmissionResult,
   type TransferEvaluationRequest,
 } from "./client";
 import {
@@ -33,7 +39,7 @@ import {
   createStableId,
   experienceStageForSession,
   stageIndex,
-  validateExplanation,
+  validateCaptureInput,
   validateRevision,
   validateSketchFile,
 } from "./flow";
@@ -44,6 +50,19 @@ type SessionContainer = Readonly<{
   value: ModelDuelSession;
   rejection: string | null;
 }>;
+
+type TransportKind = "analysis" | "revision" | "transfer";
+
+type TransportGuard = Readonly<{
+  key: string;
+  generation: number;
+  sessionId: string;
+  requestId: string;
+  controller: AbortController;
+}>;
+
+const VERIFIED_EMPTY_INPUT_TRACE =
+  "No learner explanation was submitted; the verified sample was selected explicitly.";
 
 function sessionReducer(
   state: SessionContainer,
@@ -68,6 +87,15 @@ function humanError(error: unknown, fallback: string) {
     : fallback;
 }
 
+function isAbortError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "name" in error &&
+    error.name === "AbortError"
+  );
+}
+
 function optionLabel(
   options: ReadonlyArray<Readonly<{ id: string; label: string }>>,
   optionId: string | null | undefined,
@@ -83,14 +111,32 @@ function formatReceipt(receiptId: string) {
 
 function SourceNotice({
   load,
-}: Readonly<{ load: AnalysisLoad }>) {
+  hadExplanation,
+  hadSketch,
+}: Readonly<{
+  load: AnalysisLoad;
+  hadExplanation: boolean;
+  hadSketch: boolean;
+}>) {
+  const isLive = load.source === "live";
+  const modelId = load.analysis.metadata.modelId ?? "model-id-unavailable";
+  const analyzedInput = hadExplanation
+    ? hadSketch
+      ? "your typed explanation and attached sketch"
+      : "your typed explanation"
+    : hadSketch
+      ? "your attached sketch"
+      : "the submitted input";
   return (
     <aside className="source-notice">
-      <span className="source-badge">Verified authored sample</span>
+      <span className={`source-badge ${isLive ? "live" : "verified"}`}>
+        {isLive ? `Live analysis · ${modelId}` : "Verified authored sample"}
+      </span>
       <p>{load.notice}</p>
       <p>
-        This P0 challenge does not analyze your typed explanation or sketch. Your
-        explanation and local sketch reference are retained only in this attempt&apos;s trace.
+        {isLive
+          ? `GPT-5.6 analyzed ${analyzedInput} for this attempt.`
+          : "The verified sample did not analyze your typed explanation or sketch; they remain part of your local learning trace."}
       </p>
     </aside>
   );
@@ -131,6 +177,10 @@ export function ModelDuelExperience() {
   );
   const session = container.value;
   const clock = useRef(0);
+  const attemptGeneration = useRef(0);
+  const currentSessionId = useRef(session.sessionId);
+  const activeTransports = useRef(new Map<string, TransportGuard>());
+  const analysisPreparationActive = useRef(false);
   const hydrationReady = useHydrationReady();
   const [explanation, setExplanation] = useState(SAMPLE_MISCONCEPTION);
   const [sketch, setSketch] = useState<Readonly<{ file: File; previewUrl: string }> | null>(null);
@@ -139,20 +189,84 @@ export function ModelDuelExperience() {
   const [analysisLoad, setAnalysisLoad] = useState<AnalysisLoad | null>(null);
   const [analysisPending, setAnalysisPending] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [analysisErrorCode, setAnalysisErrorCode] = useState<ApiErrorCode | null>(null);
+  const [analysisAttempt, setAnalysisAttempt] = useState<
+    "live" | "verified-sample" | null
+  >(null);
+  const [liveAnalysisRequest, setLiveAnalysisRequest] =
+    useState<LiveAnalysisRequest | null>(null);
   const [observationReviewed, setObservationReviewed] = useState(false);
   const [revisionDraft, setRevisionDraft] = useState("");
   const [revisionError, setRevisionError] = useState<string | null>(null);
   const [revisionPending, setRevisionPending] = useState(false);
   const [revisionNotice, setRevisionNotice] = useState<string | null>(null);
+  const [revisionResult, setRevisionResult] =
+    useState<RevisionSubmissionResult | null>(null);
   const [transferPending, setTransferPending] = useState(false);
   const [transferError, setTransferError] = useState<string | null>(null);
   const [status, setStatus] = useState("");
+
+  function beginTransport(
+    kind: TransportKind,
+    sessionId: string,
+    requestId: string,
+  ): TransportGuard | null {
+    if (sessionId !== currentSessionId.current) return null;
+    const key = `${kind}:${sessionId}`;
+    if (activeTransports.current.has(key)) return null;
+    const guard: TransportGuard = {
+      key,
+      generation: attemptGeneration.current,
+      sessionId,
+      requestId,
+      controller: new AbortController(),
+    };
+    activeTransports.current.set(key, guard);
+    return guard;
+  }
+
+  function isTransportCurrent(guard: TransportGuard) {
+    const active = activeTransports.current.get(guard.key);
+    return (
+      !guard.controller.signal.aborted &&
+      guard.generation === attemptGeneration.current &&
+      guard.sessionId === currentSessionId.current &&
+      active === guard &&
+      active.requestId === guard.requestId
+    );
+  }
+
+  function finishTransport(guard: TransportGuard) {
+    if (activeTransports.current.get(guard.key) === guard) {
+      activeTransports.current.delete(guard.key);
+    }
+  }
+
+  function cancelPendingTransports() {
+    attemptGeneration.current += 1;
+    for (const guard of activeTransports.current.values()) {
+      guard.controller.abort();
+    }
+    activeTransports.current.clear();
+  }
 
   useEffect(() => {
     return () => {
       if (sketch) URL.revokeObjectURL(sketch.previewUrl);
     };
   }, [sketch]);
+
+  useEffect(() => {
+    const transports = activeTransports.current;
+    const generation = attemptGeneration;
+    return () => {
+      generation.current += 1;
+      for (const guard of transports.values()) {
+        guard.controller.abort();
+      }
+      transports.clear();
+    };
+  }, []);
 
   const stage = experienceStageForSession(session.stage, observationReviewed);
   const analysis = session.analysis;
@@ -184,12 +298,21 @@ export function ModelDuelExperience() {
     requestId: string,
     sessionId: string,
   ) {
-    setStatus("Loading the validated authored Moon challenge.");
+    const transport = beginTransport("analysis", sessionId, requestId);
+    if (!transport) return;
+    setAnalysisAttempt("verified-sample");
+    setStatus("Loading the validated verified Moon challenge.");
     setAnalysisPending(true);
     setAnalysisError(null);
+    setAnalysisErrorCode(null);
 
     try {
-      const loaded = await loadVerifiedDemo(sessionId);
+      const loaded = await loadVerifiedDemo(
+        sessionId,
+        fetch,
+        transport.controller.signal,
+      );
+      if (!isTransportCurrent(transport)) return;
       setAnalysisLoad(loaded);
       dispatch({
         type: "RECEIVE_ANALYSIS",
@@ -198,27 +321,130 @@ export function ModelDuelExperience() {
         analysis: loaded.analysis,
         receivedAt: nextTimestamp(clock),
       });
-      setStatus("Challenge response received and passed to the protected session.");
+      setStatus("Verified challenge response passed to the protected session.");
     } catch (error) {
+      if (!isTransportCurrent(transport) || isAbortError(error)) return;
       setAnalysisLoad(null);
+      setAnalysisErrorCode(
+        error instanceof ModelDuelApiError && error.code !== "INVALID_RESPONSE"
+          ? error.code
+          : null,
+      );
       setAnalysisError(
         humanError(error, "The validated authored challenge could not be loaded."),
       );
       setStatus("Authored challenge unavailable. No evidence or score was shown.");
     } finally {
-      setAnalysisPending(false);
+      const isCurrent = isTransportCurrent(transport);
+      finishTransport(transport);
+      if (isCurrent) setAnalysisPending(false);
     }
   }
 
-  async function handleCapture(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!hydrationReady || analysisPending) return;
-    const validationError = validateExplanation(explanation);
+  async function requestLiveAnalysis(request: LiveAnalysisRequest) {
+    const transport = beginTransport(
+      "analysis",
+      request.sessionId,
+      request.requestId,
+    );
+    if (!transport) return;
+    setAnalysisAttempt("live");
+    setStatus("GPT-5.6 is analyzing the submitted explanation and sketch.");
+    setAnalysisPending(true);
+    setAnalysisError(null);
+    setAnalysisErrorCode(null);
+
+    try {
+      const loaded = await analyzeSubmission(
+        request,
+        fetch,
+        transport.controller.signal,
+      );
+      if (!isTransportCurrent(transport)) return;
+      setAnalysisLoad(loaded);
+      dispatch({
+        type: "RECEIVE_ANALYSIS",
+        sessionId: request.sessionId,
+        requestId: request.requestId,
+        analysis: loaded.analysis,
+        receivedAt: nextTimestamp(clock),
+      });
+      setStatus("Live analysis response passed to the protected session.");
+    } catch (error) {
+      if (!isTransportCurrent(transport) || isAbortError(error)) return;
+      const code =
+        error instanceof ModelDuelApiError && error.code !== "INVALID_RESPONSE"
+          ? error.code
+          : null;
+      setAnalysisLoad(null);
+      setAnalysisErrorCode(code);
+      setAnalysisError(
+        code === "CONFIGURATION_REQUIRED"
+          ? "API key is not configured for live GPT-5.6 analysis. You can explicitly run the verified sample instead."
+          : humanError(error, "The GPT-5.6 analysis could not be completed."),
+      );
+      setStatus("Live analysis unavailable. No evidence or score was shown.");
+    } finally {
+      const isCurrent = isTransportCurrent(transport);
+      finishTransport(transport);
+      if (isCurrent) setAnalysisPending(false);
+    }
+  }
+
+  async function beginAnalysis(mode: "live" | "verified-sample") {
+    if (!hydrationReady || analysisPending || analysisPreparationActive.current) {
+      return;
+    }
+    const selectedSketchError = sketch
+      ? validateSketchFile(sketch.file)
+      : null;
+    if (selectedSketchError) {
+      setSketchError(selectedSketchError);
+      return;
+    }
+    setSketchError(null);
+    const validationError = validateCaptureInput(
+      explanation,
+      Boolean(sketch),
+      mode,
+    );
     if (validationError) {
       setInputError(validationError);
       return;
     }
     setInputError(null);
+    analysisPreparationActive.current = true;
+    setAnalysisAttempt(mode);
+    setAnalysisPending(true);
+    const preparationGeneration = attemptGeneration.current;
+    const preparationSessionId = session.sessionId;
+
+    let encodedSketch: LiveAnalysisRequest["sketch"] = null;
+    if (mode === "live" && sketch) {
+      try {
+        encodedSketch = await fileToAnalyzeSketch(sketch.file);
+        if (
+          preparationGeneration !== attemptGeneration.current ||
+          preparationSessionId !== currentSessionId.current
+        ) {
+          analysisPreparationActive.current = false;
+          return;
+        }
+      } catch (error) {
+        if (
+          preparationGeneration !== attemptGeneration.current ||
+          preparationSessionId !== currentSessionId.current ||
+          isAbortError(error)
+        ) {
+          analysisPreparationActive.current = false;
+          return;
+        }
+        setInputError(humanError(error, "The selected sketch could not be read."));
+        setAnalysisPending(false);
+        analysisPreparationActive.current = false;
+        return;
+      }
+    }
 
     const submittedAt = nextTimestamp(clock);
     const sketchReference = sketch
@@ -228,22 +454,51 @@ export function ModelDuelExperience() {
           sizeBytes: sketch.file.size,
         }
       : undefined;
+    const domainExplanation =
+      mode === "verified-sample" && explanation.trim().length === 0 && !sketch
+        ? VERIFIED_EMPTY_INPUT_TRACE
+        : explanation;
     dispatch({
       type: "START_INPUT",
       scenarioId: "moon-phases",
-      explanation,
+      explanation: domainExplanation,
       sketchReference,
       submittedAt,
     });
 
     const requestId = createStableId("analysis");
+    const analysisStartedAt = nextTimestamp(clock);
     dispatch({
       type: "BEGIN_ANALYSIS",
       sessionId: session.sessionId,
       requestId,
-      startedAt: nextTimestamp(clock),
+      startedAt: analysisStartedAt,
     });
+
+    if (mode === "live") {
+      const request: LiveAnalysisRequest = {
+        schemaVersion: "1.0",
+        requestId,
+        sessionId: session.sessionId,
+        requestedAt: analysisStartedAt,
+        scenarioId: "moon-phases",
+        explanation: explanation.trim(),
+        sketch: encodedSketch,
+      };
+      setLiveAnalysisRequest(request);
+      analysisPreparationActive.current = false;
+      await requestLiveAnalysis(request);
+      return;
+    }
+
+    setLiveAnalysisRequest(null);
+    analysisPreparationActive.current = false;
     await requestValidatedChallenge(requestId, session.sessionId);
+  }
+
+  async function handleCapture(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await beginAnalysis("live");
   }
 
   function handleConfirmModels() {
@@ -266,26 +521,51 @@ export function ModelDuelExperience() {
 
   async function handleRevision(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (
+      revisionPending ||
+      activeTransports.current.has(`revision:${session.sessionId}`)
+    ) {
+      return;
+    }
     const validationError = validateRevision(revisionDraft);
     if (validationError) {
       setRevisionError(validationError);
       return;
     }
-    if (!session.comparison || !analysis) return;
+    const comparison = session.comparison;
+    const revisionAnalysis = analysis;
+    if (!comparison || !revisionAnalysis) return;
 
     setRevisionError(null);
     setRevisionPending(true);
     setRevisionNotice(null);
+    setRevisionResult(null);
+
+    const withRevisionMode = (
+      common: RevisionSubmissionCommon,
+    ): RevisionSubmissionRequest => {
+      if (revisionAnalysis.metadata.mode === "live") {
+        return {
+          ...common,
+          mode: "live",
+          evaluationId: revisionAnalysis.transferQuestion.evaluationId,
+        };
+      }
+      return {
+        ...common,
+        mode: "verified-sample",
+        scenarioId: "moon-phases",
+        caseFingerprint: comparison.caseFingerprint,
+      };
+    };
 
     let request: RevisionSubmissionRequest;
     if (session.revision && session.revisionEvaluationRequest) {
-      request = {
+      request = withRevisionMode({
         ...session.revisionEvaluationRequest,
         sessionId: session.sessionId,
-        scenarioId: "moon-phases",
-        caseFingerprint: session.comparison.caseFingerprint,
         revisionText: session.revision.text,
-      };
+      });
     } else {
       const submittedAt = nextTimestamp(clock);
       dispatch({ type: "SUBMIT_REVISION", text: revisionDraft, submittedAt });
@@ -299,19 +579,29 @@ export function ModelDuelExperience() {
         idempotencyKey,
         requestedAt,
       });
-      request = {
+      request = withRevisionMode({
         requestId,
         idempotencyKey,
         requestedAt,
         sessionId: session.sessionId,
-        scenarioId: "moon-phases",
-        caseFingerprint: session.comparison.caseFingerprint,
         revisionText: revisionDraft.trim(),
-      };
+      });
     }
 
+    const transport = beginTransport(
+      "revision",
+      session.sessionId,
+      request.requestId,
+    );
+    if (!transport) return;
+
     try {
-      const result = await submitRevision(request);
+      const result = await submitRevision(
+        request,
+        fetch,
+        transport.controller.signal,
+      );
+      if (!isTransportCurrent(transport)) return;
       dispatch({
         type: "RECEIVE_REVISION_FEEDBACK",
         sessionId: session.sessionId,
@@ -321,16 +611,26 @@ export function ModelDuelExperience() {
       });
       clock.current = Math.max(clock.current, result.evaluatedAt);
       setRevisionNotice(result.notice);
+      setRevisionResult(result);
       setStatus("Revision response received and passed to the protected session.");
     } catch (error) {
+      if (!isTransportCurrent(transport) || isAbortError(error)) return;
       setRevisionError(humanError(error, "The revision could not be checked."));
       setStatus("Revision check failed. No AI feedback was invented.");
     } finally {
-      setRevisionPending(false);
+      const isCurrent = isTransportCurrent(transport);
+      finishTransport(transport);
+      if (isCurrent) setRevisionPending(false);
     }
   }
 
   async function handleTransfer() {
+    if (
+      transferPending ||
+      activeTransports.current.has(`transfer:${session.sessionId}`)
+    ) {
+      return;
+    }
     if (!analysis || !session.transfer) return;
     setTransferError(null);
     setTransferPending(true);
@@ -366,8 +666,20 @@ export function ModelDuelExperience() {
       });
     }
 
+    const transport = beginTransport(
+      "transfer",
+      session.sessionId,
+      request.requestId,
+    );
+    if (!transport) return;
+
     try {
-      const result = await evaluateTransfer(request);
+      const result = await evaluateTransfer(
+        request,
+        fetch,
+        transport.controller.signal,
+      );
+      if (!isTransportCurrent(transport)) return;
       dispatch({
         type: "RECEIVE_TRANSFER_RESULT",
         sessionId: session.sessionId,
@@ -377,15 +689,21 @@ export function ModelDuelExperience() {
       clock.current = Math.max(clock.current, result.evaluatedAt);
       setStatus("Transfer response received and passed to the protected session.");
     } catch (error) {
+      if (!isTransportCurrent(transport) || isAbortError(error)) return;
       setTransferError(humanError(error, "The transfer check could not be completed."));
       setStatus("Transfer check failed. No score was inferred in the browser.");
     } finally {
-      setTransferPending(false);
+      const isCurrent = isTransportCurrent(transport);
+      finishTransport(transport);
+      if (isCurrent) setTransferPending(false);
     }
   }
 
   function handleReset() {
+    cancelPendingTransports();
+    analysisPreparationActive.current = false;
     const newSessionId = createStableId("session");
+    currentSessionId.current = newSessionId;
     dispatch({
       type: "RESTART",
       newSessionId,
@@ -398,10 +716,15 @@ export function ModelDuelExperience() {
     setAnalysisLoad(null);
     setAnalysisPending(false);
     setAnalysisError(null);
+    setAnalysisErrorCode(null);
+    setAnalysisAttempt(null);
+    setLiveAnalysisRequest(null);
     setObservationReviewed(false);
     setRevisionDraft("");
     setRevisionError(null);
+    setRevisionPending(false);
     setRevisionNotice(null);
+    setRevisionResult(null);
     setTransferError(null);
     setTransferPending(false);
     setStatus("New attempt ready.");
@@ -486,7 +809,10 @@ export function ModelDuelExperience() {
                 aria-invalid={Boolean(inputError)}
               />
               <div className="field-meta" id="explanation-help">
-                <span>Start with what you currently believe—certainty is not required.</span>
+                <span>
+                  Live analysis needs a 20+ character explanation or a valid sketch.
+                  Explanation is optional for the verified sample.
+                </span>
                 <span>{explanation.length}/1,500</span>
               </div>
               {inputError ? <p className="field-error" id="explanation-error">{inputError}</p> : null}
@@ -494,7 +820,7 @@ export function ModelDuelExperience() {
               <div className="sketch-field">
                 <div>
                   <label htmlFor="learner-sketch">Add a sketch <span>optional</span></label>
-                  <p>PNG, JPEG, or WebP · up to 10 MB</p>
+                  <p>PNG, JPEG, or WebP · up to 3 MB</p>
                 </div>
                 <input
                   id="learner-sketch"
@@ -511,29 +837,44 @@ export function ModelDuelExperience() {
                   {/* eslint-disable-next-line @next/next/no-img-element -- local object URL preview */}
                   <img src={sketch.previewUrl} alt="Selected learner sketch preview" />
                   <div>
-                    <strong>{sketch.file.name}</strong>
-                    <span>This local preview is not analyzed by the authored P0 demo.</span>
+                  <strong>{sketch.file.name}</strong>
+                    <span>
+                      This local preview is uploaded only if you choose live GPT analysis.
+                      The verified sample never uploads or analyzes it.
+                    </span>
                     <button type="button" onClick={() => setSketch(null)}>Remove sketch</button>
                   </div>
                 </div>
               ) : null}
 
-              <button
-                className="primary-button full-button"
-                type="submit"
-                disabled={!hydrationReady || analysisPending}
-                data-hydrated={hydrationReady ? "true" : "false"}
-              >
-                {!hydrationReady
-                  ? "Preparing challenge…"
-                  : analysisPending
-                    ? "Loading validated challenge…"
-                    : "Build the test"}
-                {hydrationReady && !analysisPending ? <span aria-hidden="true">→</span> : null}
-              </button>
+              <div className="capture-actions">
+                <button
+                  className="primary-button full-button"
+                  type="submit"
+                  disabled={!hydrationReady || analysisPending}
+                  data-hydrated={hydrationReady ? "true" : "false"}
+                >
+                  {!hydrationReady
+                    ? "Preparing challenge…"
+                    : analysisPending && analysisAttempt === "live"
+                      ? "Analyzing with GPT-5.6…"
+                      : "Analyze with GPT-5.6"}
+                  {hydrationReady && !analysisPending ? <span aria-hidden="true">→</span> : null}
+                </button>
+                <button
+                  className="secondary-button full-button"
+                  type="button"
+                  disabled={!hydrationReady || analysisPending}
+                  onClick={() => void beginAnalysis("verified-sample")}
+                >
+                  {analysisPending && analysisAttempt === "verified-sample"
+                    ? "Loading verified sample…"
+                    : "Run verified sample"}
+                </button>
+              </div>
               <p className="form-disclosure">
-                P0 uses a fixed, verified authored challenge. It never presents this sample as
-                a live GPT-5.6 analysis of your input.
+                Live analysis uses your submitted text and optional sketch. The verified sample
+                is a free, authored path and never claims to analyze your input.
               </p>
             </form>
           </section>
@@ -544,15 +885,33 @@ export function ModelDuelExperience() {
             {analysisPending ? (
               <div className="loading-panel" role="status">
                 <span className="loading-orbit" aria-hidden="true" />
-                <p className="micro-label">Validating challenge contract</p>
-                <h1 id="interpret-title">Preparing two testable worlds…</h1>
+                <p className="micro-label">
+                  {analysisAttempt === "live"
+                    ? "Live structured analysis"
+                    : "Validating authored challenge contract"}
+                </p>
+                <h1 id="interpret-title">
+                  {analysisAttempt === "live"
+                    ? "Analyzing with GPT-5.6…"
+                    : "Preparing two testable worlds…"}
+                </h1>
                 <p>No evidence or answer is revealed during this step.</p>
               </div>
             ) : analysisError || !analysis ? (
               <div className="challenge-error-panel" role="alert">
                 <span className="error-orbit" aria-hidden="true">!</span>
-                <p className="eyebrow">Validated source required</p>
-                <h1 id="interpret-title">Authored challenge unavailable</h1>
+                <p className="eyebrow">
+                  {analysisAttempt === "live"
+                    ? "Live analysis unavailable"
+                    : "Validated source required"}
+                </p>
+                <h1 id="interpret-title">
+                  {analysisErrorCode === "CONFIGURATION_REQUIRED"
+                    ? "API key is not configured"
+                    : analysisAttempt === "live"
+                      ? "GPT-5.6 analysis unavailable"
+                      : "Authored challenge unavailable"}
+                </h1>
                 <p>
                   {analysisError ??
                     "The challenge response could not be accepted by the protected session."}
@@ -561,37 +920,82 @@ export function ModelDuelExperience() {
                   No local sample was substituted. Evidence, revision feedback, transfer
                   scoring, and the final trace remain unavailable.
                 </p>
-                <button
-                  className="primary-button"
-                  type="button"
-                  disabled={analysisPending || !session.analysisRequestId}
-                  onClick={() => {
-                    if (session.analysisRequestId) {
-                      void requestValidatedChallenge(
-                        session.analysisRequestId,
-                        session.sessionId,
-                      );
-                    }
-                  }}
-                >
-                  Retry validated challenge
-                </button>
+                <div className="error-actions">
+                  {analysisAttempt === "live" ? (
+                    <>
+                      <button
+                        className="primary-button"
+                        type="button"
+                        disabled={analysisPending || !liveAnalysisRequest}
+                        onClick={() => {
+                          if (liveAnalysisRequest) void requestLiveAnalysis(liveAnalysisRequest);
+                        }}
+                      >
+                        Retry GPT-5.6 analysis
+                      </button>
+                      <button
+                        className="secondary-button"
+                        type="button"
+                        disabled={analysisPending || !session.analysisRequestId}
+                        onClick={() => {
+                          if (session.analysisRequestId) {
+                            setLiveAnalysisRequest(null);
+                            void requestValidatedChallenge(
+                              session.analysisRequestId,
+                              session.sessionId,
+                            );
+                          }
+                        }}
+                      >
+                        Run verified sample instead
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      className="primary-button"
+                      type="button"
+                      disabled={analysisPending || !session.analysisRequestId}
+                      onClick={() => {
+                        if (session.analysisRequestId) {
+                          void requestValidatedChallenge(
+                            session.analysisRequestId,
+                            session.sessionId,
+                          );
+                        }
+                      }}
+                    >
+                      Retry validated challenge
+                    </button>
+                  )}
+                </div>
               </div>
             ) : (
               <>
                 <header className="stage-heading-block">
-                  <p className="eyebrow">Interpret · authored challenge</p>
+                  <p className="eyebrow">
+                    Interpret · {analysisLoad?.source === "live" ? "live analysis" : "authored challenge"}
+                  </p>
                   <h1 id="interpret-title">Turn one disagreement into a fair test.</h1>
                   <p>
                     These are competing claims for the same first-quarter Moon case. Review
                     their assumptions before you predict what the test will show.
                   </p>
                 </header>
-                {analysisLoad ? <SourceNotice load={analysisLoad} /> : null}
+                {analysisLoad ? (
+                  <SourceNotice
+                    load={analysisLoad}
+                    hadExplanation={explanation.trim().length > 0}
+                    hadSketch={Boolean(session.input?.sketchReference)}
+                  />
+                ) : null}
                 <div className="model-review-grid">
                   <article>
                     <span className="world-letter">A</span>
-                    <p className="micro-label">Authored learner model</p>
+                    <p className="micro-label">
+                      {analysisLoad?.source === "live"
+                        ? "Interpreted learner model"
+                        : "Authored learner model"}
+                    </p>
                     <h2>{analysis.learnerModel.summary}</h2>
                     <ul>
                       {analysis.learnerModel.causalRelations.map((relation) => (
@@ -735,8 +1139,9 @@ export function ModelDuelExperience() {
               <p className="eyebrow">Revise · explain the evidence</p>
               <h1 id="revise-title">What changed in your explanation?</h1>
               <p>
-                Connect a cause to the observation. The check below uses a transparent,
-                authored rubric—it is not GPT-5.6 grading.
+                {analysis.metadata.mode === "live"
+                  ? "Connect a cause to the observation. GPT-5.6 will return schema-validated conceptual feedback; no authored score is substituted if it fails."
+                  : "Connect a cause to the observation. The check below uses a transparent, authored rubric—it is not GPT-5.6 grading."}
               </p>
               <label htmlFor="revision-text">Revised causal explanation</label>
               <textarea
@@ -762,9 +1167,13 @@ export function ModelDuelExperience() {
                 disabled={revisionPending}
               >
                 {revisionPending
-                  ? "Checking authored rubric…"
+                  ? analysis.metadata.mode === "live"
+                    ? "Checking with GPT-5.6…"
+                    : "Checking authored rubric…"
                   : session.revision
-                    ? "Retry authored rubric"
+                    ? analysis.metadata.mode === "live"
+                      ? "Retry GPT-5.6 feedback"
+                      : "Retry authored rubric"
                     : "Capture revision and continue"}
               </button>
             </form>
@@ -836,6 +1245,11 @@ export function ModelDuelExperience() {
               <div className={`result-orb ${session.trace.transfer.result.isCorrect ? "correct" : "incorrect"}`}>
                 <span>{session.trace.transfer.result.isCorrect ? "✓" : "↻"}</span>
               </div>
+              <span className={`source-badge trace-source ${analysis.metadata.mode === "live" ? "live" : "verified"}`}>
+                {analysis.metadata.mode === "live"
+                  ? `Live analysis · ${analysis.metadata.modelId}`
+                  : "Verified authored sample"}
+              </span>
               <p className="eyebrow">Model Revision Trace · complete</p>
               <h1 id="trace-title">
                 {session.trace.transfer.result.isCorrect
@@ -843,12 +1257,20 @@ export function ModelDuelExperience() {
                   : "The trace found the next question to test."}
               </h1>
               <p>{session.trace.transfer.result.rationale}</p>
+              {analysisLoad ? <p className="trace-source-notice">{analysisLoad.notice}</p> : null}
             </header>
 
             <ol className="trace-list">
               <li>
                 <span className="trace-number">01</span>
-                <div><p>Initial belief</p><h2>{session.trace.initialExplanation}</h2></div>
+                <div>
+                  <p>
+                    {session.trace.initialExplanation === VERIFIED_EMPTY_INPUT_TRACE
+                      ? "Initial input status"
+                      : "Initial belief"}
+                  </p>
+                  <h2>{session.trace.initialExplanation}</h2>
+                </div>
               </li>
               <li>
                 <span className="trace-number">02</span>
@@ -866,7 +1288,15 @@ export function ModelDuelExperience() {
                 <span className="trace-number">04</span>
                 <div>
                   <p>Revised explanation</p><h2>{session.trace.revision.text}</h2>
-                  <span className="trace-note">Authored deterministic rubric: {session.trace.revision.feedback.conceptualChange} · not AI-graded</span>
+                  <span className="trace-note">
+                    {revisionResult?.source === "gpt-5.6"
+                      ? `GPT-5.6 structured feedback · ${revisionResult.modelId}`
+                      : analysis.metadata.mode === "live"
+                        ? `GPT-5.6 structured feedback · ${analysis.metadata.modelId}`
+                        : "Authored deterministic rubric · not AI-graded"}
+                    {` · ${session.trace.revision.feedback.conceptualChange}`}
+                  </span>
+                  {revisionNotice ? <span className="trace-note">{revisionNotice}</span> : null}
                 </div>
               </li>
               <li>
@@ -874,7 +1304,7 @@ export function ModelDuelExperience() {
                 <div>
                   <p>Transfer result</p>
                   <h2>{session.trace.transfer.result.isCorrect ? "Correct · 1/1" : "Not yet · 0/1"}</h2>
-                  <span className="trace-note">Verified by {session.trace.transfer.result.source} · receipt {formatReceipt(session.trace.transfer.result.receiptId)}</span>
+                  <span className="trace-note">Server-private answer key · verified by {session.trace.transfer.result.source} · receipt {formatReceipt(session.trace.transfer.result.receiptId)}</span>
                 </div>
               </li>
             </ol>
@@ -890,7 +1320,7 @@ export function ModelDuelExperience() {
       <footer className="app-footer">
         <span>{PRODUCT.name}</span>
         <p>Two models predict. Evidence decides.</p>
-        <span>Built with Codex · GPT-5.6 integration in progress</span>
+        <span>Built with Codex · GPT-5.6 live analysis · verified sample available</span>
       </footer>
     </>
   );

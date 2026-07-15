@@ -8,7 +8,9 @@ The first complete challenge focuses on the common misconception that Earth's sh
 
 ## Current scope
 
-This repository currently contains the product contract, an accessible landing experience, shared flow definitions, and automated smoke coverage. Runtime OpenAI calls, the deterministic 3D world engine, prediction locking, revision grading, and the transfer test remain P0 implementation work. The landing-page misconception is an authored example and is never represented as a live model response.
+The repository implements the complete Moon-phases browser journey: text or sketch capture, explicit live or verified analysis, two protected models, prediction locking, deterministic Three.js observation, revision feedback, server-authenticated transfer grading, and a Model Revision Trace. Live analysis uses GPT-5.6 Sol; live revision feedback uses GPT-5.6 Terra. The seasons misconception is implemented in the deterministic registry and verified server sample so it can reuse the same solar-system foundation, while the judged browser hero remains the Moon challenge.
+
+Live and verified paths are deliberately separate. A failed live request never becomes an authored result automatically, and the UI labels the source of analysis and revision feedback. The public transfer token keeps the answer key and live revision context encrypted on the server boundary.
 
 ## Requirements
 
@@ -24,15 +26,19 @@ cp .env.example .env.local
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Add the API key to `.env.local` only when working on the server integration.
+Open [http://localhost:3000](http://localhost:3000). For live AI flows, add the API key and a random evaluation secret of at least 32 characters to `.env.local`. The verified path works without an OpenAI key in development.
 
 ## Environment
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
 | `OPENAI_API_KEY` | For live AI flows | Server-only OpenAI credential. Never prefix with `NEXT_PUBLIC_`. |
-| `OPENAI_MODEL` | No | Normal runtime model; defaults to `gpt-5.6-terra`. |
-| `OPENAI_HERO_MODEL` | No | Explicit hero-flow override; defaults to `gpt-5.6-sol`. |
+| `OPENAI_MODEL` | No | Revision-model fallback; defaults to `gpt-5.6-terra`. |
+| `OPENAI_HERO_MODEL` | No | Analysis-model fallback; defaults to `gpt-5.6-sol`. |
+| `MODELDUEL_ANALYSIS_MODEL` | No | ModelDuel analysis override; defaults to `gpt-5.6-sol`. |
+| `MODELDUEL_REVISION_MODEL` | No | ModelDuel live-revision override; defaults to `gpt-5.6-terra`. |
+| `MODELDUEL_EVALUATION_SECRET` | Production | Server-only secret used to encrypt and authenticate evaluation tokens; minimum 32 characters. |
+| `MODELDUEL_TRUSTED_PROXY` | No | Set only to `cloudflare` when the origin accepts traffic exclusively through Cloudflare. Vercel is detected from its platform environment. |
 
 No browser component may import, serialize, log, or proxy the API key. Browser requests terminate at a validated Next.js server route; only that route may create the OpenAI client. All learner-data requests use `store: false`.
 
@@ -87,6 +93,22 @@ Neither Codex nor GPT-5.6 is treated as the authority on astronomy. Deterministi
 ## Authored samples and live responses
 
 An authored fixture may keep a demo coherent when network access is unavailable, but it must be visibly labeled as a sample. A cached or authored response must never be presented as a live GPT response. Live mode must disclose failures rather than silently replacing them with a fixture. Demo capture and submission copy must preserve this distinction.
+
+## Runtime trust boundaries
+
+Live endpoints are `POST /api/analyze` and `POST /api/revision` with `mode: "live"`. Verified endpoints are `GET` or `POST /api/demo` and `POST /api/revision` with `mode: "verified-sample"`. `POST /api/transfer` verifies the encrypted evaluation token and grades the selected option deterministically on the server.
+
+GPT extracts learner claims and produces revision prose. It does not select physical constants, author a `WorldSpec`, run arbitrary browser code, choose the transfer answer, or grade transfer selections. The server resolves the supported misconception through a private registry, validates both world specifications, reruns deterministic simulations, compares causal prediction codes, selects the discriminating case, and mints the opaque evaluation token from a private answer bank. Unsupported or cross-scenario output fails safely instead of becoming a sample.
+
+Live analysis and live revision use bounded per-client and global in-memory rate limits as defense in depth. These counters are per server instance, so production must also enable distributed platform or WAF rate limiting. Model-call budget is charged only after request, media, configuration, and signed-context preflight succeeds.
+
+Client bucketing has an explicit proxy trust boundary:
+
+- On Vercel (`VERCEL=1`), only `x-vercel-forwarded-for` is used; `CF-Connecting-IP` is ignored.
+- Cloudflare requires `MODELDUEL_TRUSTED_PROXY=cloudflare`; only `CF-Connecting-IP` is used, and the origin must accept traffic exclusively from Cloudflare proxy IP ranges.
+- With neither mode active, forwarding headers are ignored and requests conservatively share the unknown-client bucket.
+
+See [`docs/OPENAI_SDK_REFERENCE.md`](docs/OPENAI_SDK_REFERENCE.md) for the verified SDK shapes, PTC continuation rules, request limits, and source links.
 
 ## Build Week provenance
 

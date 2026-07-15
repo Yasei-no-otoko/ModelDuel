@@ -11,6 +11,7 @@ import {
 
 const NOW = 1_800_000_000_000;
 const VALID_REQUEST = {
+  mode: "verified-sample" as const,
   requestId: "revision-request-1",
   idempotencyKey: "revision-idempotency-1",
   requestedAt: NOW,
@@ -21,9 +22,9 @@ const VALID_REQUEST = {
     "The Moon appears half illuminated because sunlight lights one half and our viewing angle reveals half, while Earth's shadow does not intersect it.",
 };
 
-function expectInvalid(operation: () => unknown): void {
+async function expectInvalid(operation: () => Promise<unknown>): Promise<void> {
   try {
-    operation();
+    await operation();
   } catch (error) {
     expect(error).toBeInstanceOf(RevisionServiceError);
     expect((error as RevisionServiceError).code).toBe("INVALID_REQUEST");
@@ -33,8 +34,8 @@ function expectInvalid(operation: () => unknown): void {
 }
 
 describe("verified revision service", () => {
-  it("returns a strict, truthfully labeled deterministic response", () => {
-    const response = evaluateRevisionRequest(VALID_REQUEST, NOW);
+  it("returns a strict, truthfully labeled deterministic response", async () => {
+    const response = await evaluateRevisionRequest(VALID_REQUEST, NOW);
 
     expect(RevisionEvaluationResponseSchema.parse(response)).toEqual(response);
     expect(response).toMatchObject({
@@ -47,8 +48,8 @@ describe("verified revision service", () => {
     expect(response.feedback.conceptualChange).toBe("revised");
   });
 
-  it("rejects a case fingerprint that does not match the sample", () => {
-    expectInvalid(() =>
+  it("rejects a case fingerprint that does not match the sample", async () => {
+    await expectInvalid(() =>
       evaluateRevisionRequest(
         { ...VALID_REQUEST, caseFingerprint: "case-wrong" },
         NOW,
@@ -65,8 +66,8 @@ describe("verified revision service", () => {
     ).toBe(false);
   });
 
-  it("rejects request timestamps more than five minutes in the future", () => {
-    expectInvalid(() =>
+  it("rejects request timestamps more than five minutes in the future", async () => {
+    await expectInvalid(() =>
       evaluateRevisionRequest(
         { ...VALID_REQUEST, requestedAt: NOW + 5 * 60 * 1_000 + 1 },
         NOW,
@@ -74,9 +75,9 @@ describe("verified revision service", () => {
     );
   });
 
-  it("accepts a client clock two minutes ahead with a monotonic timestamp", () => {
+  it("accepts a client clock two minutes ahead with a monotonic timestamp", async () => {
     const requestedAt = NOW + 2 * 60 * 1_000;
-    const response = evaluateRevisionRequest(
+    const response = await evaluateRevisionRequest(
       { ...VALID_REQUEST, requestedAt },
       NOW,
     );
@@ -84,9 +85,9 @@ describe("verified revision service", () => {
     expect(response.evaluatedAt).toBe(requestedAt);
   });
 
-  it("produces deterministic feedback for an idempotent replay", () => {
-    const first = evaluateRevisionRequest(VALID_REQUEST, NOW);
-    const second = evaluateRevisionRequest(VALID_REQUEST, NOW + 1_000);
+  it("produces deterministic feedback for an idempotent replay", async () => {
+    const first = await evaluateRevisionRequest(VALID_REQUEST, NOW);
+    const second = await evaluateRevisionRequest(VALID_REQUEST, NOW + 1_000);
     expect(second.feedback).toEqual(first.feedback);
   });
 });

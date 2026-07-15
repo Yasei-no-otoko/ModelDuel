@@ -35,7 +35,7 @@ const REVISION_TEXT =
   "We see half because our viewing angle exposes half of the illuminated side.";
 const FEEDBACK: RevisionFeedback = {
   conceptualChange: "revised",
-  score: 0.92,
+  score: 1,
   summary: "The revision now uses illumination and viewing angle.",
   strengths: ["Connects phase to the visible illuminated hemisphere."],
   nextStep: "Apply the same geometry to a new Moon.",

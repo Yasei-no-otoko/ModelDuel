@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { MAX_SKETCH_BYTES } from "./limits";
+
 const boundedText = (maximum: number) => z.string().trim().min(1).max(maximum);
 const finiteNumber = z.number().finite();
 const stableId = boundedText(80).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
@@ -30,7 +32,7 @@ export const EvaluationIdSchema = z
 export const SketchReferenceSchema = z.strictObject({
   id: SessionIdSchema,
   mime: z.enum(["png", "jpeg", "webp"]),
-  sizeBytes: finiteNumber.int().positive().max(10 * 1024 * 1024),
+  sizeBytes: finiteNumber.int().positive().max(MAX_SKETCH_BYTES),
 });
 
 export const CausalRelationSchema = z.strictObject({
@@ -452,6 +454,20 @@ export const RevisionFeedbackSchema = z.strictObject({
   summary: boundedText(500),
   strengths: z.array(boundedText(240)).max(5),
   nextStep: boundedText(300),
+}).superRefine((feedback, context) => {
+  const expectedScore =
+    feedback.conceptualChange === "revised"
+      ? 1
+      : feedback.conceptualChange === "partial"
+        ? 0.5
+        : 0;
+  if (feedback.score !== expectedScore) {
+    context.addIssue({
+      code: "custom",
+      path: ["score"],
+      message: "Score must match conceptual change.",
+    });
+  }
 });
 
 export const RevisionTraceSchema = z
