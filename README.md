@@ -193,7 +193,7 @@ The Cloudflare production candidate was verified locally on 2026-07-17 JST. Main
 | Production dependency audit | **No known vulnerabilities**. |
 | Tracked live-token/private-key scan | **0 matches**. |
 
-Verified samples require no OpenAI key. External gates remain pending: merge to main, a real paid Terra/Luna smoke with a $0.10 first-smoke budget, production deployment and CPU verification, public repository access, the `/feedback` Session ID, final media/video/screenshots, and replacement of all four placeholders. Track the canonical handoff in [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md); the external submission is not yet complete.
+Verified samples require no OpenAI key. External gates remain pending: merge to main, a one-shot paid Terra/Luna smoke with no HTTP retry and post-response usage review, production deployment and CPU verification, public repository access, the `/feedback` Session ID, final media/video/screenshots, and replacement of all four placeholders. The configured dollar ceilings cover output tokens only; input and cache charges are additional, so they are not a hard all-in preflight guarantee. Track the canonical handoff in [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md); the external submission is not yet complete.
 
 ## License
 

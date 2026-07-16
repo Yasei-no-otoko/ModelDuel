@@ -33,6 +33,7 @@ type UsageResponse = Readonly<{
 }>;
 
 export type OpenAIUsageRecord = Readonly<{
+  event: "openai_usage";
   operation: UsageOperation;
   model: string;
   serviceTier: string;
@@ -81,6 +82,7 @@ export function createOpenAIUsageRecord(
     : null;
 
   return {
+    event: "openai_usage",
     operation,
     model,
     serviceTier: response.service_tier ?? "unknown",
@@ -100,10 +102,15 @@ export function logOpenAIUsage(
   operation: UsageOperation,
   model: string,
   response: UsageResponse,
-  sink: (record: OpenAIUsageRecord) => void = console.info,
+  sink?: (record: OpenAIUsageRecord) => void,
 ): void {
   try {
-    sink(createOpenAIUsageRecord(operation, model, response));
+    const record = createOpenAIUsageRecord(operation, model, response);
+    if (sink) {
+      sink(record);
+    } else {
+      console.info(JSON.stringify(record));
+    }
   } catch {
     // Telemetry must never break, retry, or alter a learner request.
   }

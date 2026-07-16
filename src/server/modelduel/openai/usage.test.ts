@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   createOpenAIUsageRecord,
@@ -22,6 +22,10 @@ const RESPONSE = {
 };
 
 describe("OpenAI usage-only telemetry", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("prices Terra standard usage in integer micro-USD", () => {
     expect(
       createOpenAIUsageRecord(
@@ -30,6 +34,7 @@ describe("OpenAI usage-only telemetry", () => {
         RESPONSE,
       ),
     ).toEqual({
+      event: "openai_usage",
       operation: "programmatic_orchestration",
       model: "gpt-5.6-terra",
       serviceTier: "default",
@@ -59,6 +64,7 @@ describe("OpenAI usage-only telemetry", () => {
     );
     expect(record.estimatedMicroUsd).toBe(1_445);
     expect(Object.keys(record)).toEqual([
+      "event",
       "operation",
       "model",
       "serviceTier",
@@ -89,5 +95,19 @@ describe("OpenAI usage-only telemetry", () => {
         },
       ),
     ).not.toThrow();
+  });
+
+  it("writes a single-line JSON record through the default logger", () => {
+    const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
+
+    logOpenAIUsage("learner_extraction", "gpt-5.6-terra", RESPONSE);
+
+    expect(info).toHaveBeenCalledTimes(1);
+    expect(typeof info.mock.calls[0]?.[0]).toBe("string");
+    expect(JSON.parse(String(info.mock.calls[0]?.[0]))).toMatchObject({
+      event: "openai_usage",
+      operation: "learner_extraction",
+      model: "gpt-5.6-terra",
+    });
   });
 });

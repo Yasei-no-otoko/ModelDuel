@@ -1,5 +1,5 @@
 import type * as Responses from "openai/resources/responses/responses";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { MOON_HERO_SAMPLE } from "../../../lib/modelduel/samples";
 import { runDeterministicOrchestration } from "./orchestration";
@@ -72,6 +72,21 @@ function finalAssistantMessage(id = "final-message") {
   } satisfies Responses.ResponseOutputItem;
 }
 
+function programOutput(
+  id = "program-output-1",
+  result = "continuing",
+  status: "completed" | "incomplete" = "completed",
+  callId = "program-call-1",
+) {
+  return {
+    id,
+    call_id: callId,
+    result,
+    status,
+    type: "program_output",
+  } satisfies Responses.ResponseOutputItem;
+}
+
 function fakeGateway(
   turns: ProgramTurnResponse[],
   requests: ProgramTurnRequest[],
@@ -107,21 +122,60 @@ const SIMULATION_ARGS = JSON.stringify({
 });
 const COMPARISON_ID = `comparison-${PLAN.caseId}`;
 
+function sequentialToolTurns(): ProgramTurnResponse[] {
+  return [
+    completedTurn([
+      programItem(),
+      functionCall("call-validate", "validate_world_spec", WORLD_ARGS),
+    ]),
+    completedTurn([
+      functionCall("call-simulate", "simulate_world", SIMULATION_ARGS),
+    ]),
+    completedTurn([
+      functionCall("call-compare", "compare_predictions", SIMULATION_ARGS),
+    ]),
+    completedTurn([
+      functionCall(
+        "call-select",
+        "select_discriminating_case",
+        JSON.stringify({
+          ...JSON.parse(SIMULATION_ARGS),
+          comparisonId: COMPARISON_ID,
+        }),
+      ),
+    ]),
+  ];
+}
+
+function orchestrationInput(
+  overrides: Partial<
+    Parameters<typeof runDeterministicOrchestration>[1]
+  > = {},
+): Parameters<typeof runDeterministicOrchestration>[1] {
+  return {
+    requestId: "orchestration-sequential-test",
+    learnerSummary: MOON_HERO_SAMPLE.learnerModel.summary,
+    misconceptionType: MOON_HERO_SAMPLE.learnerModel.misconceptionType,
+    plan: PLAN,
+    signal: AbortSignal.timeout(10_000),
+    ...overrides,
+  };
+}
+
 describe("programmatic orchestration transcript", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
   it("preserves every output item before appending tool outputs in call order", async () => {
     const requests: ProgramTurnRequest[] = [];
     const program = programItem();
-    const programOutput = {
-      id: "program-output-1",
-      call_id: "program-call-1",
-      result: "continuing",
-      status: "completed",
-      type: "program_output",
-    } satisfies Responses.ResponseOutputItem;
+    const replayedProgramOutput = programOutput();
     const firstOutput = [
       program,
       functionCall("call-validate", "validate_world_spec", WORLD_ARGS),
-      programOutput,
+      replayedProgramOutput,
       functionCall("call-simulate", "simulate_world", SIMULATION_ARGS),
     ];
     const secondOutput = [
@@ -144,14 +198,9 @@ describe("programmatic orchestration transcript", () => {
         ],
         requests,
       ),
-      {
+      orchestrationInput({
         requestId: "orchestration-order-test",
-        learnerSummary: MOON_HERO_SAMPLE.learnerModel.summary,
-        misconceptionType:
-          MOON_HERO_SAMPLE.learnerModel.misconceptionType,
-        plan: PLAN,
-        signal: AbortSignal.timeout(10_000),
-      },
+      }),
     );
 
     expect(result.toolNames).toEqual([
@@ -206,6 +255,365 @@ describe("programmatic orchestration transcript", () => {
     });
     expect(requests[1]?.body.max_output_tokens).toBe(600);
     expect(requests[2]?.body.max_output_tokens).toBe(600);
+    expect(requests.every((request) => !request.body.parallel_tool_calls)).toBe(
+      true,
+    );
+  });
+
+  it("allows one required function per round followed by program output and a final message on round five", async () => {
+    const requests: ProgramTurnRequest[] = [];
+    const result = await runDeterministicOrchestration(
+      fakeGateway(
+        [
+          ...sequentialToolTurns(),
+          completedTurn([
+            programOutput("program-output-round-5", "verified"),
+            finalAssistantMessage(),
+          ]),
+        ],
+        requests,
+      ),
+      orchestrationInput(),
+    );
+
+    expect(result.toolNames).toEqual([
+      "validate_world_spec",
+      "simulate_world",
+      "compare_predictions",
+      "select_discriminating_case",
+    ]);
+    expect(requests).toHaveLength(5);
+    expect(requests.every((request) => !request.body.parallel_tool_calls)).toBe(
+      true,
+    );
+  });
+
+  it("allows program output on round five and the final message on round six", async () => {
+    const requests: ProgramTurnRequest[] = [];
+    const result = await runDeterministicOrchestration(
+      fakeGateway(
+        [
+          ...sequentialToolTurns(),
+          completedTurn([
+            programOutput("program-output-round-5", "verified"),
+          ]),
+          completedTurn([finalAssistantMessage("final-message-round-6")]),
+        ],
+        requests,
+      ),
+      orchestrationInput(),
+    );
+
+    expect(result.toolNames).toHaveLength(4);
+    expect(requests).toHaveLength(6);
+  });
+
+  it("replays an incomplete program output and succeeds after its later completed status", async () => {
+    const requests: ProgramTurnRequest[] = [];
+    const result = await runDeterministicOrchestration(
+      fakeGateway(
+        [
+          ...sequentialToolTurns(),
+          completedTurn([
+            programOutput(
+              "program-output-incomplete",
+              "continuing",
+              "incomplete",
+            ),
+          ]),
+          completedTurn([
+            programOutput(
+              "program-output-completed",
+              "verified",
+              "completed",
+            ),
+            finalAssistantMessage("final-after-completed-program-output"),
+          ]),
+        ],
+        requests,
+      ),
+      orchestrationInput(),
+    );
+
+    expect(result.toolNames).toHaveLength(4);
+    expect(requests).toHaveLength(6);
+    const finalInput = requests[5]?.body.input;
+    expect(Array.isArray(finalInput)).toBe(true);
+    if (!Array.isArray(finalInput)) throw new Error("Expected final input array");
+    expect(finalInput).toContainEqual(
+      expect.objectContaining({
+        id: "program-output-incomplete",
+        type: "program_output",
+        status: "incomplete",
+      }),
+    );
+  });
+
+  it("rejects a final message while the latest program output remains incomplete", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
+
+    await expect(
+      runDeterministicOrchestration(
+        fakeGateway(
+          [
+            ...sequentialToolTurns(),
+            completedTurn([
+              programOutput(
+                "program-output-incomplete",
+                "still-running",
+                "incomplete",
+              ),
+              finalAssistantMessage(),
+            ]),
+          ],
+          [],
+        ),
+        orchestrationInput(),
+      ),
+    ).rejects.toMatchObject({ code: "ORCHESTRATION_INVALID" });
+
+    expect(JSON.parse(String(info.mock.calls.at(-1)?.[0]))).toEqual({
+      event: "ptc_failure",
+      reason: "INCOMPLETE_PROGRAM_OUTPUT",
+    });
+  });
+
+  it("rejects a later final message when an incomplete program output was never resolved", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
+
+    await expect(
+      runDeterministicOrchestration(
+        fakeGateway(
+          [
+            ...sequentialToolTurns(),
+            completedTurn([
+              programOutput(
+                "program-output-incomplete",
+                "still-running",
+                "incomplete",
+              ),
+            ]),
+            completedTurn([finalAssistantMessage()]),
+          ],
+          [],
+        ),
+        orchestrationInput(),
+      ),
+    ).rejects.toMatchObject({ code: "ORCHESTRATION_INVALID" });
+
+    expect(JSON.parse(String(info.mock.calls.at(-1)?.[0]))).toEqual({
+      event: "ptc_failure",
+      reason: "INCOMPLETE_PROGRAM_OUTPUT",
+    });
+  });
+
+  it("rejects an orphan program output with a fixed privacy-safe reason", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
+
+    await expect(
+      runDeterministicOrchestration(
+        fakeGateway(
+          [
+            completedTurn([
+              programOutput(
+                "private-output-id",
+                "private-result-text",
+                "completed",
+                "private-orphan-call-id",
+              ),
+            ]),
+          ],
+          [],
+        ),
+        orchestrationInput({
+          requestId: "private-request-id",
+          learnerSummary: "private learner text",
+        }),
+      ),
+    ).rejects.toMatchObject({ code: "ORCHESTRATION_INVALID" });
+
+    const serialized = String(info.mock.calls.at(-1)?.[0]);
+    expect(JSON.parse(serialized)).toEqual({
+      event: "ptc_failure",
+      reason: "ORPHAN_PROGRAM_OUTPUT",
+    });
+    expect(serialized).not.toContain("private");
+  });
+
+  it("rejects a fifth distinct function call with the fixed call-limit reason", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
+
+    await expect(
+      runDeterministicOrchestration(
+        fakeGateway(
+          [
+            completedTurn([
+              programItem(),
+              functionCall("call-validate", "validate_world_spec", WORLD_ARGS),
+              functionCall("call-simulate", "simulate_world", SIMULATION_ARGS),
+              functionCall("call-compare", "compare_predictions", SIMULATION_ARGS),
+              functionCall(
+                "call-select",
+                "select_discriminating_case",
+                JSON.stringify({
+                  ...JSON.parse(SIMULATION_ARGS),
+                  comparisonId: COMPARISON_ID,
+                }),
+              ),
+              functionCall(
+                "private-fifth-call-id",
+                "validate_world_spec",
+                "private-fifth-call-arguments",
+              ),
+            ]),
+          ],
+          [],
+        ),
+        orchestrationInput(),
+      ),
+    ).rejects.toMatchObject({ code: "ORCHESTRATION_INVALID" });
+
+    const serialized = String(info.mock.calls.at(-1)?.[0]);
+    expect(JSON.parse(serialized)).toEqual({
+      event: "ptc_failure",
+      reason: "CALL_LIMIT",
+    });
+    expect(serialized).not.toContain("private");
+  });
+
+  it("rejects six valid rounds that never produce a final message", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
+
+    await expect(
+      runDeterministicOrchestration(
+        fakeGateway(
+          [
+            ...sequentialToolTurns(),
+            completedTurn([
+              programOutput("program-output-round-5", "verified"),
+            ]),
+            completedTurn([]),
+          ],
+          [],
+        ),
+        orchestrationInput(),
+      ),
+    ).rejects.toMatchObject({ code: "ORCHESTRATION_INVALID" });
+
+    expect(JSON.parse(String(info.mock.calls.at(-1)?.[0]))).toEqual({
+      event: "ptc_failure",
+      reason: "ROUND_LIMIT",
+    });
+  });
+
+  it("emits production-only JSON diagnostics without private payloads", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
+
+    await runDeterministicOrchestration(
+      fakeGateway(
+        [
+          ...sequentialToolTurns(),
+          completedTurn([
+            programOutput("program-output-private-id", "private-result"),
+            finalAssistantMessage("private-final-id"),
+          ]),
+        ],
+        [],
+      ),
+      orchestrationInput({
+        requestId: "private-request-id",
+        learnerSummary: "private learner text",
+      }),
+    );
+
+    expect(info).toHaveBeenCalledTimes(5);
+    const records = info.mock.calls.map(([value]) => JSON.parse(String(value)));
+    expect(records[0]).toEqual({
+      event: "ptc_turn",
+      round: 1,
+      status: "completed",
+      responseBytes: 1_024,
+      transcriptBytes: expect.any(Number),
+      outputTypeCounts: {
+        message: 0,
+        reasoning: 0,
+        function_call: 1,
+        program: 1,
+        program_output: 0,
+      },
+      functionCallCount: 1,
+      functionNames: ["validate_world_spec"],
+      expectedNextTool: "simulate_world",
+      completedToolCount: 1,
+      hasProgramOutput: false,
+      hasFinalMessage: false,
+    });
+    expect(records[4]).toMatchObject({
+      event: "ptc_turn",
+      round: 5,
+      functionCallCount: 0,
+      functionNames: [],
+      expectedNextTool: null,
+      completedToolCount: 4,
+      hasProgramOutput: true,
+      hasFinalMessage: true,
+    });
+    const serialized = JSON.stringify(records);
+    for (const privateValue of [
+      "private-request-id",
+      "private learner text",
+      "private-result",
+      "private-final-id",
+      WORLD_ARGS,
+      "verify_registry_plan",
+      "The deterministic plan is verified.",
+    ]) {
+      expect(serialized).not.toContain(privateValue);
+    }
+  });
+
+  it("does not emit PTC diagnostics outside production", async () => {
+    vi.stubEnv("NODE_ENV", "test");
+    const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
+
+    await runDeterministicOrchestration(
+      fakeGateway(
+        [
+          ...sequentialToolTurns(),
+          completedTurn([finalAssistantMessage()]),
+        ],
+        [],
+      ),
+      orchestrationInput(),
+    );
+
+    expect(info).not.toHaveBeenCalled();
+  });
+
+  it("swallows production diagnostic logger failures", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.spyOn(console, "info").mockImplementation(() => {
+      throw new Error("logger unavailable");
+    });
+
+    await expect(
+      runDeterministicOrchestration(
+        fakeGateway(
+          [
+            ...sequentialToolTurns(),
+            completedTurn([finalAssistantMessage()]),
+          ],
+          [],
+        ),
+        orchestrationInput(),
+      ),
+    ).resolves.toMatchObject({ toolNames: expect.any(Array) });
   });
 
   it("requires a final assistant message after the exact four-tool ledger", async () => {
@@ -229,21 +637,40 @@ describe("programmatic orchestration transcript", () => {
             ]),
             completedTurn([]),
             completedTurn([]),
+            completedTurn([]),
+            completedTurn([]),
+            completedTurn([]),
           ],
           [],
         ),
-        {
+        orchestrationInput({
           requestId: "orchestration-final-message-required",
           learnerSummary: "Learner summary",
-          misconceptionType: "earth-shadow-phases",
-          plan: PLAN,
-          signal: AbortSignal.timeout(10_000),
-        },
+        }),
       ),
     ).rejects.toMatchObject({ code: "ORCHESTRATION_INVALID" });
   });
 
+  it("rejects a final message before the required ledger is complete", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
+
+    await expect(
+      runDeterministicOrchestration(
+        fakeGateway([completedTurn([finalAssistantMessage()])], []),
+        orchestrationInput(),
+      ),
+    ).rejects.toMatchObject({ code: "ORCHESTRATION_INVALID" });
+
+    expect(JSON.parse(String(info.mock.calls.at(-1)?.[0]))).toEqual({
+      event: "ptc_failure",
+      reason: "FINAL_BEFORE_LEDGER",
+    });
+  });
+
   it("rejects a direct function caller", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
     const requests: ProgramTurnRequest[] = [];
     const directCall = {
       type: "function_call",
@@ -268,18 +695,23 @@ describe("programmatic orchestration transcript", () => {
           ],
           requests,
         ),
-        {
+        orchestrationInput({
           requestId: "orchestration-direct-test",
           learnerSummary: "Learner summary",
-          misconceptionType: "earth-shadow-phases",
-          plan: PLAN,
-          signal: AbortSignal.timeout(10_000),
-        },
+        }),
       ),
     ).rejects.toMatchObject({ code: "ORCHESTRATION_INVALID" });
+
+    expect(JSON.parse(String(info.mock.calls.at(-1)?.[0]))).toEqual({
+      event: "ptc_failure",
+      reason: "CALLER_INVALID",
+    });
   });
 
   it("rejects tool calls that skip the required phase order", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
+
     await expect(
       runDeterministicOrchestration(
         fakeGateway(
@@ -291,15 +723,51 @@ describe("programmatic orchestration transcript", () => {
           ],
           [],
         ),
-        {
+        orchestrationInput({
           requestId: "orchestration-order-reject",
           learnerSummary: "Learner summary",
-          misconceptionType: "earth-shadow-phases",
-          plan: PLAN,
-          signal: AbortSignal.timeout(10_000),
-        },
+        }),
       ),
     ).rejects.toMatchObject({ code: "ORCHESTRATION_INVALID" });
+
+    expect(JSON.parse(String(info.mock.calls.at(-1)?.[0]))).toEqual({
+      event: "ptc_failure",
+      reason: "TOOL_ORDER",
+    });
+  });
+
+  it("reports invalid tool JSON with a fixed privacy-safe validation reason", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
+
+    await expect(
+      runDeterministicOrchestration(
+        fakeGateway(
+          [
+            completedTurn([
+              programItem(),
+              functionCall(
+                "private-invalid-call-id",
+                "validate_world_spec",
+                "private-invalid-json",
+              ),
+            ]),
+          ],
+          [],
+        ),
+        orchestrationInput({
+          requestId: "private-request-id",
+          learnerSummary: "private learner text",
+        }),
+      ),
+    ).rejects.toMatchObject({ code: "ORCHESTRATION_INVALID" });
+
+    const serialized = String(info.mock.calls.at(-1)?.[0]);
+    expect(JSON.parse(serialized)).toEqual({
+      event: "ptc_failure",
+      reason: "TOOL_VALIDATION",
+    });
+    expect(serialized).not.toContain("private");
   });
 
   it("rejects duplicate call IDs even when content is identical", async () => {
@@ -314,13 +782,10 @@ describe("programmatic orchestration transcript", () => {
           [completedTurn([programItem(), duplicate, duplicate])],
           [],
         ),
-        {
+        orchestrationInput({
           requestId: "orchestration-duplicate-call",
           learnerSummary: "Learner summary",
-          misconceptionType: "earth-shadow-phases",
-          plan: PLAN,
-          signal: AbortSignal.timeout(10_000),
-        },
+        }),
       ),
     ).rejects.toMatchObject({ code: "ORCHESTRATION_INVALID" });
   });
@@ -341,13 +806,10 @@ describe("programmatic orchestration transcript", () => {
           ],
           [],
         ),
-        {
+        orchestrationInput({
           requestId: "orchestration-duplicate-id",
           learnerSummary: "Learner summary",
-          misconceptionType: "earth-shadow-phases",
-          plan: PLAN,
-          signal: AbortSignal.timeout(10_000),
-        },
+        }),
       ),
     ).rejects.toMatchObject({ code: "ORCHESTRATION_INVALID" });
 
@@ -362,13 +824,10 @@ describe("programmatic orchestration transcript", () => {
           ],
           [],
         ),
-        {
+        orchestrationInput({
           requestId: "orchestration-orphan-caller",
           learnerSummary: "Learner summary",
-          misconceptionType: "earth-shadow-phases",
-          plan: PLAN,
-          signal: AbortSignal.timeout(10_000),
-        },
+        }),
       ),
     ).rejects.toMatchObject({ code: "ORCHESTRATION_INVALID" });
   });
