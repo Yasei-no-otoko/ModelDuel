@@ -3,6 +3,8 @@ node_modules/
 
 # Next.js
 .next/
+.open-next/
+.wrangler/
 out/
 
 # tests
@@ -13,6 +15,7 @@ test-results/
 # local environment files
 .env*
 !.env.example
+.dev.vars*
 
 # tooling
 *.tsbuildinfo

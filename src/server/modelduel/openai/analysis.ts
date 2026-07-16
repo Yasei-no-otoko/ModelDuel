@@ -37,7 +37,7 @@ export async function analyzeSubmission(
     signal: AbortSignal;
     gateway?: ModelDuelGateway;
     now?: number;
-    beforeModelCall?: () => void;
+    beforeModelCall?: () => void | Promise<void>;
   }>,
 ): Promise<LiveAnalysisResponse> {
   const now = options.now ?? Date.now();
@@ -47,7 +47,7 @@ export async function analyzeSubmission(
   assertEvaluationReady();
   const image = input.sketch ? validateSketchImage(input.sketch) : undefined;
   const gateway = options.gateway ?? createProductionModelDuelGateway();
-  options.beforeModelCall?.();
+  await options.beforeModelCall?.();
   const learnerModel = await extractLearnerModel(gateway, {
     scenarioId: input.scenarioId,
     explanation: input.explanation,

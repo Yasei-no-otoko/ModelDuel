@@ -16,6 +16,8 @@ export {
   RevisionFeedbackSchema,
   RevisionTraceSchema,
   RuntimeModelIdSchema,
+  AnalysisModelIdSchema,
+  RevisionModelIdSchema,
   ScenarioIdSchema,
   SessionIdSchema,
   SeasonsCaseSpecSchema,

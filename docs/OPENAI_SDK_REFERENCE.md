@@ -9,15 +9,15 @@ The repository currently pins `openai@6.47.0`; the installed package and its exp
 ## Runtime and model policy
 
 - Pin `openai@6.47.0`.
-- Use `gpt-5.6-sol` for the hero analysis flow, including text and sketch interpretation.
-- Use `gpt-5.6-terra` for live revision feedback.
+- Use `gpt-5.6-terra` for the hero analysis and PTC flow, including text and sketch interpretation.
+- Use `gpt-5.6-luna` for live revision feedback.
 - Resolve model IDs at request time so imports and production builds do not instantiate an OpenAI client.
 - Validate configured model IDs before sending a request.
 
-These choices differ from the original concept note, which treated GPT-5.6 Sol as a general-purpose default. ModelDuel now reserves Sol for the judged analysis path and uses Terra for revision feedback. The exact routing order is:
+These choices supersede the original concept note's Sol/Terra routing. ModelDuel uses Terra for the judged analysis and validated PTC path, then Luna for bounded revision feedback. The exact routing order is:
 
-- Analysis: `MODELDUEL_ANALYSIS_MODEL`, then `OPENAI_HERO_MODEL`, then `gpt-5.6-sol`.
-- Revision: `MODELDUEL_REVISION_MODEL`, then `OPENAI_MODEL`, then `gpt-5.6-terra`.
+- Analysis: `MODELDUEL_ANALYSIS_MODEL`, then `OPENAI_HERO_MODEL`, then `gpt-5.6-terra`.
+- Revision: `MODELDUEL_REVISION_MODEL`, then `OPENAI_MODEL`, then `gpt-5.6-luna`.
 
 Missing or invalid live configuration produces a safe error. It never silently switches a live request to the verified sample.
 
@@ -27,18 +27,18 @@ GPT-5.6 defaults to medium reasoning when `reasoning.effort` is omitted. ModelDu
 
 | Operation | Model | Reasoning | Verbosity | Output ceiling |
 | --- | --- | --- | --- | ---: |
-| Learner-model extraction | Sol | `none` | `low` | 650 |
-| Revision feedback | Terra | `none` | `low` | 450 |
-| PTC first round | Sol | `low` | `low` | 900 |
-| PTC continuation | Sol | `low` | `low` | 600 |
+| Learner-model extraction | Terra | `none` | `low` | 650 |
+| Revision feedback | Luna | `none` | `low` | 450 |
+| PTC first round | Terra | `low` | `low` | 900 |
+| PTC continuation | Terra | `low` | `low` | 600 |
 
-All requests use the standard service tier, zero SDK retries, `store: false`, and a stable prompt-cache key. Structured requests opt into a 30-minute prompt-cache retention policy. The PTC cache key is scenario-scoped (`modelduel:ptc:v1:<scenario>`), so stable instructions and tool schemas can be reused without mixing scenario semantics. Learner sketches use low-detail vision because the task requires a coarse causal diagram, not fine text or photographic inspection.
+All requests use the standard service tier, zero SDK retries, and `store: false`. Structured extraction and revision requests select explicit 30-minute cache mode but intentionally define neither a cache key nor a breakpoint, so unique learner content does not cause an explicit cache write. PTC alone uses implicit 30-minute caching with a scenario-scoped key (`modelduel:ptc:v1:<scenario>`), so stable instructions and tool schemas can be reused without mixing scenario semantics. Learner sketches use low-detail vision because the task requires a coarse causal diagram, not fine text or photographic inspection.
 
 The production orchestrator is capped at three rounds and four tool calls. Success requires the exact ledger `validate_world_spec` → `simulate_world` → `compare_predictions` → `select_discriminating_case` plus a final assistant message; tool completion alone is not a successful response. Continuations remain enabled because the final message can arrive after the last tool output.
 
-The output ceilings are paired with bounded schemas rather than truncating a larger contract: learner summaries are at most 240 characters, causal and spatial relation lists contain at most four entries, predicted observations contain at most three 160-character entries, revision summaries are at most 280 characters, strengths contain at most three 160-character entries, and the next step is at most 200 characters.
+The output ceilings are paired with bounded schemas rather than truncating a larger contract: learner summaries are at most 240 characters, causal and spatial relation lists contain at most four entries, predicted observations contain at most three 160-character entries, revision summaries are at most 280 characters, strengths contain at most three 160-character entries, and the next step is at most 200 characters. A no-repair success can emit at most 2,750 Terra tokens plus 450 Luna tokens, or **$0.04395 maximum output spend** at standard prices. Including one allowed structured repair in both stages raises the hard ceiling to 3,400 Terra tokens plus 900 Luna tokens, or **$0.0564**, before input and cache charges. The first text-only production smoke is stopped if its preflight estimate exceeds $0.10.
 
-Usage telemetry is emitted once per upstream call and contains only aggregate token counters and a versioned price estimate. Standard-tier estimates use the prices verified on 2026-07-17: Sol $5/M input, $0.50/M cached input, and $30/M output; Terra $2.50/M input, $0.25/M cached input, and $15/M output. Cache-write and reasoning counters are recorded separately when present. Learner content, images, raw identifiers, reasoning, transcripts, response bodies, and exception messages are prohibited from telemetry.
+Usage telemetry is emitted once per upstream call and contains only aggregate token counters and a versioned price estimate. Standard-tier estimates use the prices verified on 2026-07-17: Terra $2.50/M input, $0.25/M cached input, $3.125/M cache-write input, and $15/M output; Luna $1/M input, $0.10/M cached input, $1.25/M cache-write input, and $6/M output. Cache-write and reasoning counters are recorded separately when present. Learner content, images, raw identifiers, reasoning, transcripts, response bodies, and exception messages are prohibited from telemetry.
 
 The current UI and API support both `moon-phases` and `seasons` through the live path and an explicitly selected verified-sample path. Browser requests carry the selected scenario ID; the server applies the matching strict schema and resolves private case, world, and transfer IDs from its registry. Examples below sometimes use Moon phases for readability, not as a limit on the shipped scope.
 
@@ -62,13 +62,13 @@ Use `client.responses.create` or `client.responses.parse`, not Chat Completions.
 
 ```ts
 const response = await openai.responses.create({
-  model: "gpt-5.6-sol",
+  model: "gpt-5.6-terra",
   store: false,
   input: [{
     role: "user",
     content: [
       { type: "input_text", text: "Infer the learner's causal model for the selected astronomy scenario." },
-      { type: "input_image", image_url: sketchDataUrl, detail: "high" },
+      { type: "input_image", image_url: sketchDataUrl, detail: "low" },
     ],
   }],
 });
@@ -91,7 +91,7 @@ const LearnerModel = z.object({
 });
 
 const response = await openai.responses.parse({
-  model: "gpt-5.6-sol",
+  model: "gpt-5.6-terra",
   store: false,
   input: "The Moon changes shape because Earth's shadow covers it.",
   text: {
@@ -149,7 +149,7 @@ const tools = [{
 }];
 
 const response = await openai.responses.create({
-  model: "gpt-5.6-sol",
+  model: "gpt-5.6-terra",
   store: false,
   input: "Validate this constrained learner world.",
   tools,
@@ -202,7 +202,7 @@ When appending a function-call output, preserve the exact `caller` value from it
 
 ```ts
 const first = await openai.responses.create({
-  model: "gpt-5.6-sol",
+  model: "gpt-5.6-terra",
   store: false,
   include: ["reasoning.encrypted_content"],
   input: initialInput,
@@ -211,7 +211,7 @@ const first = await openai.responses.create({
 
 // Each validated output keeps the emitted call_id and caller unchanged.
 const continued = await openai.responses.create({
-  model: "gpt-5.6-sol",
+  model: "gpt-5.6-terra",
   store: false,
   include: ["reasoning.encrypted_content"],
   input: [
@@ -232,17 +232,17 @@ PTC does not make arbitrary generated code safe for the browser. ModelDuel's sim
 - OpenAI SDK timeout: 20 seconds per call.
 - SDK retries: zero; application retries are explicit and retain the same request identifiers.
 - Route-wide signal: client abort combined with a 50-second timeout.
-- Orchestration: at most five rounds, twelve calls, and 32 response output items per turn.
+- Orchestration: at most three rounds, four calls, and 32 response output items per turn.
 - Function arguments: 4 KiB; deterministic tool output: 8 KiB.
 - Raw SDK response serialization: 128 KiB; accumulated transcript: 512 KiB.
 - Sketch: canonical PNG, JPEG, or WebP data URL, maximum decoded size 3 MiB.
 - Analyze JSON request body: 4,300,000 bytes, enforced while streaming even without `Content-Length`.
-- Live analysis and live revision have bounded per-client and global in-memory rate limits. These are per-instance defense in depth, not distributed production enforcement.
+- Local tests may inject an isolated in-memory rate-limit store explicitly; runtime code has no module-global mutable counter. Cloudflare production uses fail-closed per-POP bindings for a hashed-client limit followed by an aggregate ceiling.
 - Vercel mode is inferred only from its platform-provided `VERCEL=1` environment variable and trusts only `x-vercel-forwarded-for`.
 - Cloudflare mode requires `MODELDUEL_TRUSTED_PROXY=cloudflare`, trusts only `CF-Connecting-IP`, and requires an origin restricted to Cloudflare proxy traffic.
 - Without a trusted proxy mode, forwarded address headers are ignored and requests share the conservative unknown-client bucket.
 
-Rate-limit accounting happens immediately before the first model call. Invalid configuration, invalid images, invalid signed revision context, and verified-sample revision requests do not consume the live-model request budget. Production must add distributed platform or WAF rate limiting.
+Rate-limit accounting happens immediately before the first paid model call and only after gateway configuration and request-specific validation. Invalid configuration, invalid images, invalid signed revision context, and verified-sample revision requests do not consume the live-model request budget. A rejected or failed client binding does not consume aggregate capacity; an accepted client then passes the per-POP aggregate ceiling. These bindings are eventually consistent soft guards, so OpenAI request, retry, and output caps remain the hard application-side cost controls.
 
 The public transfer token is an AES-256-GCM encrypted, server-authenticated envelope. It binds the session, question identity, option set, answer, rationale, expiry, and—for live analysis only—the private revision context. Browser revision requests return that opaque token rather than resubmitting trusted world, case, or misconception fields. Transfer grading remains deterministic on the server.
 
@@ -253,8 +253,8 @@ No raw SDK response, reasoning item, sketch data URL, evaluation token, exceptio
 | Concern | Adopted decision |
 | --- | --- |
 | API surface | Responses API only |
-| Analysis model | `gpt-5.6-sol` by default |
-| Revision model | `gpt-5.6-terra` by default |
+| Analysis model | `gpt-5.6-terra` by default |
+| Revision model | `gpt-5.6-luna` by default |
 | Structured data | `responses.parse` plus `zodTextFormat` under `text.format` |
 | Schema repair | At most once, text-only, and only for local JSON or Zod failures |
 | Simulation | Private registry and deterministic application code |
@@ -275,6 +275,8 @@ No raw SDK response, reasoning item, sketch data URL, evaluation token, exceptio
 - [Programmatic Tool Calling guide](https://developers.openai.com/api/docs/guides/tools-programmatic-tool-calling)
 - [Conversation state and stateless encrypted reasoning](https://developers.openai.com/api/docs/guides/conversation-state)
 - [Model catalog](https://developers.openai.com/api/docs/models)
+- [GPT-5.6 Terra model](https://developers.openai.com/api/docs/models/gpt-5.6-terra)
+- [GPT-5.6 Luna model](https://developers.openai.com/api/docs/models/gpt-5.6-luna)
 - [Your data and API retention controls](https://developers.openai.com/api/docs/guides/your-data)
 - [API key safety guidance](https://help.openai.com/en/articles/5112595-best-practices-for-api-key-safety)
 - [Vercel request headers](https://vercel.com/docs/headers/request-headers)

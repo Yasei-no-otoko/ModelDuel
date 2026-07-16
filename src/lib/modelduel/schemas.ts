@@ -60,11 +60,11 @@ export const SpatialRelationSchema = z.strictObject({
 });
 
 export const LearnerModelSchema = z.strictObject({
-  summary: boundedText(500),
+  summary: boundedText(240),
   entities: z.array(BodySchema).min(1).max(3),
-  causalRelations: z.array(CausalRelationSchema).max(12),
-  spatialRelations: z.array(SpatialRelationSchema).max(12),
-  predictedObservations: z.array(boundedText(240)).min(1).max(8),
+  causalRelations: z.array(CausalRelationSchema).max(4),
+  spatialRelations: z.array(SpatialRelationSchema).max(4),
+  predictedObservations: z.array(boundedText(160)).min(1).max(3),
   confidence: finiteNumber.min(0).max(1),
   misconceptionType: MisconceptionTypeSchema,
 });
@@ -214,16 +214,17 @@ export const OrchestrationToolNameSchema = z.enum([
   "generate_transfer_question",
 ]);
 
-export const RuntimeModelIdSchema = z.enum([
-  "gpt-5.6-sol",
-  "gpt-5.6-terra",
-  "gpt-5.6-luna",
+export const AnalysisModelIdSchema = z.literal("gpt-5.6-terra");
+export const RevisionModelIdSchema = z.literal("gpt-5.6-luna");
+export const RuntimeModelIdSchema = z.union([
+  AnalysisModelIdSchema,
+  RevisionModelIdSchema,
 ]);
 
 export const AnalysisMetadataSchema = z
   .strictObject({
     mode: z.enum(["live", "verified-sample"]),
-    modelId: RuntimeModelIdSchema.nullable(),
+    modelId: AnalysisModelIdSchema.nullable(),
     analyzedSubmission: z.boolean(),
     orchestrationToolNames: z.array(OrchestrationToolNameSchema).max(6),
   })
@@ -451,9 +452,9 @@ export const TransferResultSchema = z.strictObject({
 export const RevisionFeedbackSchema = z.strictObject({
   conceptualChange: z.enum(["retained", "partial", "revised"]),
   score: finiteNumber.min(0).max(1),
-  summary: boundedText(500),
-  strengths: z.array(boundedText(240)).max(5),
-  nextStep: boundedText(300),
+  summary: boundedText(280),
+  strengths: z.array(boundedText(160)).max(3),
+  nextStep: boundedText(200),
 }).superRefine((feedback, context) => {
   const expectedScore =
     feedback.conceptualChange === "revised"

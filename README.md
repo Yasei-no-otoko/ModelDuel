@@ -17,7 +17,7 @@ Replace all four placeholders before submission. The Codex Feedback Session ID m
 
 ## Current scope
 
-The repository implements complete Moon-phases and seasons browser journeys: text or sketch capture, explicit live or verified analysis, two protected models, prediction locking, deterministic simulation with Three.js rendering, revision feedback, server-authenticated transfer grading, and a Model Revision Trace. The default configuration routes analysis to GPT-5.6 Sol and live revision feedback to GPT-5.6 Terra. Each scenario has strict server-owned cases, world specifications, transfer questions, and authored verified samples.
+The repository implements complete Moon-phases and seasons browser journeys: text or sketch capture, explicit live or verified analysis, two protected models, prediction locking, deterministic simulation with Three.js rendering, revision feedback, server-authenticated transfer grading, and a Model Revision Trace. The production configuration routes analysis and PTC to GPT-5.6 Terra and live revision feedback to GPT-5.6 Luna. Each scenario has strict server-owned cases, world specifications, transfer questions, and authored verified samples.
 
 Live and verified paths are deliberately separate for both scenarios. Live analysis accepts learner text, a sketch, or both. The verified path is explicitly selected and may start from an empty capture; a failed live request never becomes an authored result automatically. The UI labels the source of analysis and revision feedback. The public transfer token keeps the answer key and live revision context encrypted on the server boundary.
 
@@ -40,7 +40,7 @@ Live and verified paths are deliberately separate for both scenarios. Live analy
 
 ### Configured live path
 
-Live analysis requires a server-side `OPENAI_API_KEY`. Enter at least 20 characters of learner text, attach a PNG, JPEG, or WebP sketch up to 3 MiB decoded, or provide both, then deliberately choose the live path. A failed live request remains a disclosed error and never silently falls back to an authored sample. This repository documents a configured live path; it does not claim that a real paid Sol or Terra smoke has succeeded.
+Live analysis requires a server-side `OPENAI_API_KEY`. Enter at least 20 characters of learner text, attach a PNG, JPEG, or WebP sketch up to 3 MiB decoded, or provide both, then deliberately choose the live path. A failed live request remains a disclosed error and never silently falls back to an authored sample. This repository documents a configured live path; it does not claim that a real paid Terra or Luna smoke has succeeded.
 
 ## Requirements
 
@@ -71,14 +71,15 @@ Do not commit `.env.local` or expose its values in screenshots, videos, logs, or
 | Variable | Required | Purpose and fallback |
 | --- | --- | --- |
 | `OPENAI_API_KEY` | Live flows only | Server-side key for live analysis and live revision. Verified samples require no key. Missing or blank live configuration fails closed. |
-| `OPENAI_MODEL` | Optional | Revision fallback; defaults to `gpt-5.6-terra`. |
-| `OPENAI_HERO_MODEL` | Optional | Analysis fallback; defaults to `gpt-5.6-sol`. |
-| `MODELDUEL_ANALYSIS_MODEL` | Optional | First analysis override. Exact chain: `MODELDUEL_ANALYSIS_MODEL` → `OPENAI_HERO_MODEL` → `gpt-5.6-sol`. |
-| `MODELDUEL_REVISION_MODEL` | Optional | First revision override. Exact chain: `MODELDUEL_REVISION_MODEL` → `OPENAI_MODEL` → `gpt-5.6-terra`. |
+| `OPENAI_MODEL` | Optional | Revision fallback; defaults to `gpt-5.6-luna`. |
+| `OPENAI_HERO_MODEL` | Optional | Analysis fallback; defaults to `gpt-5.6-terra`. |
+| `MODELDUEL_ANALYSIS_MODEL` | Optional | First analysis override. Exact chain: `MODELDUEL_ANALYSIS_MODEL` → `OPENAI_HERO_MODEL` → `gpt-5.6-terra`. |
+| `MODELDUEL_REVISION_MODEL` | Optional | First revision override. Exact chain: `MODELDUEL_REVISION_MODEL` → `OPENAI_MODEL` → `gpt-5.6-luna`. |
 | `MODELDUEL_EVALUATION_SECRET` | Production | Private AES evaluation-token secret. It is required in production and must be at least 32 characters; development alone may generate an ephemeral secret. |
 | `MODELDUEL_TRUSTED_PROXY` | Optional | Only `cloudflare` is accepted and requires origin restriction. Vercel is detected internally with `VERCEL=1`; otherwise forwarded headers are ignored. |
+| `MODELDUEL_CLOUDFLARE_RATE_LIMITS` | Cloudflare production | `wrangler.jsonc` sets `enabled`; leave blank under `next dev`. Production fails closed if any required Rate Limiting binding is absent or unavailable. |
 
-All learner-data Responses requests use `store: false`. Live analysis and revision budgets are charged only after validation, configuration, and signed-context preflight. The live routes include bounded per-client and global in-memory limits per instance; production must also enable distributed platform or WAF rate limiting.
+All learner-data Responses requests use `store: false`. Live analysis and revision budgets are charged only after validation, configuration, and signed-context preflight. Local tests may inject an isolated in-memory store explicitly; runtime code keeps no module-global mutable counter. Cloudflare production is configured with fail-closed Rate Limiting bindings that check the hashed client before the per-POP aggregate ceiling.
 
 ## Commands
 
@@ -93,6 +94,14 @@ All learner-data Responses requests use `store: false`. Live analysis and revisi
 | `pnpm test:watch` | Run tests in watch mode. |
 | `pnpm test:e2e` | Run Playwright journeys. |
 | `pnpm check` | Run `lint && typecheck && test && build`. |
+| `pnpm cf:typegen` | Build the OpenNext entrypoint, then regenerate checked-in Workers binding and runtime types. |
+| `pnpm cf:typecheck` | Rebuild the OpenNext entrypoint and verify checked-in Workers types have no drift. |
+| `pnpm cf:build` | Build the OpenNext Worker and static assets. |
+| `pnpm cf:preview` | Build and run locally in the Workers `workerd` runtime. |
+| `pnpm cf:upload` | Build and upload a preview Worker version without deploying it. |
+| `pnpm cf:deploy` | Build and deploy the production Worker. |
+
+Cloudflare deployment requires both server secrets already configured for the Worker. Never place them in `vars` or command-line history. Before deployment, run the normal checks, `pnpm cf:typegen`, `pnpm cf:typecheck`, and `wrangler deploy --dry-run`; both type commands rebuild the OpenNext entrypoint before asking Wrangler to generate or compare types. Verify the compressed Worker is below the conservative 3 MiB Free-plan limit. The public URL and real Terra/Luna smoke outcome remain intentionally undocumented until production verification succeeds.
 
 ## Architecture
 
@@ -118,6 +127,7 @@ The server routes are:
 
 - [Devpost submission working document](docs/DEVPOST_SUBMISSION.md)
 - [OpenAI SDK integration reference](docs/OPENAI_SDK_REFERENCE.md)
+- [Cloudflare Workers deployment reference](docs/CLOUDFLARE_DEPLOYMENT_REFERENCE.md)
 - [Product specification](docs/PRODUCT_SPEC.md)
 
 ### Authored samples
@@ -140,7 +150,7 @@ Codex performed these implementation roles under human direction:
 - Found and addressed tests, stale-response races, accessibility issues, responsive breakpoints, and design-review findings.
 - Kept implementation, review fixes, tests, and documentation in scoped commits.
 
-Human-owned decisions include the Education category, target learners and misconceptions, pedagogical sequence, Moon and Seasons scope, privacy stance, trust boundary, experience priorities, and final release acceptance. GPT-5.6 Sol is configured by default for strict learner-model analysis, and GPT-5.6 Terra is configured by default for bounded revision feedback; these defaults are not role-enforced restrictions on validated model overrides. The deterministic application owns cases, WorldSpecs, simulation, evidence, transfer keys, and grading. Learner-data Responses calls use `store: false`.
+Human-owned decisions include the Education category, target learners and misconceptions, pedagogical sequence, Moon and Seasons scope, privacy stance, trust boundary, experience priorities, and final release acceptance. GPT-5.6 Terra is configured for strict learner-model analysis and PTC, and GPT-5.6 Luna is configured for bounded revision feedback. The deterministic application owns cases, WorldSpecs, simulation, evidence, transfer keys, and grading. Learner-data Responses calls use `store: false`.
 
 The configured live integration and its tests do not prove that a real paid live call succeeded. That smoke check remains a submission gate. Codex Feedback Session ID: `{{CODEX_FEEDBACK_SESSION_ID}}` — replace it with the value returned by `/feedback` in the primary build task.
 
@@ -168,19 +178,22 @@ The runtime ships no third-party image, audio, video, or 3D media. Astronomy vis
 
 ## Submission verification
 
-The application tree merged at `89941ff` was verified on main on 2026-07-16 JST.
+The Cloudflare production candidate was verified locally on 2026-07-17 JST. Main merge, production deployment, and paid API smoke remain separate gates.
 
 | Verification | Result |
 | --- | --- |
 | ESLint | **Pass** — zero warnings. |
 | Strict TypeScript | **Pass**. |
-| Vitest unit/API | **283/283** across **26 files**. |
+| Vitest unit/API | **295/295** across **27 files**. |
 | Next.js 16.2.10 production build | **Pass**. |
-| Chromium E2E against `next start` | **23/23 Pass**. |
+| Chromium E2E | **23/23 Pass**. |
+| OpenNext/Workers build | **Pass** with `@opennextjs/cloudflare@1.20.1`. |
+| Wrangler dry run | **Pass** — 1,613.37 KiB gzip and all bindings resolved. |
+| Local workerd smoke | **Pass** — `/` and `/api/demo` returned HTTP 200. |
 | Production dependency audit | **No known vulnerabilities**. |
 | Tracked live-token/private-key scan | **0 matches**. |
 
-Verified samples require no OpenAI key. External gates remain pending: a real paid Sol/Terra smoke, distributed production rate limiting, deployment, public repository access, the `/feedback` Session ID, final media/video/screenshots, and replacement of all four placeholders. Track the canonical handoff in [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md); the external submission is not yet complete.
+Verified samples require no OpenAI key. External gates remain pending: merge to main, a real paid Terra/Luna smoke with a $0.10 first-smoke budget, production deployment and CPU verification, public repository access, the `/feedback` Session ID, final media/video/screenshots, and replacement of all four placeholders. Track the canonical handoff in [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md); the external submission is not yet complete.
 
 ## License
 

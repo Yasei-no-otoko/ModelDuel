@@ -3,8 +3,11 @@ import {
   RevisionEvaluationRequestSchema,
 } from "../../../server/modelduel/revision";
 import type { ModelDuelGateway } from "../../../server/modelduel/openai/gateway";
-import { enforceRateLimit } from "../../../server/modelduel/rate-limit";
-import type { RateLimitStore } from "../../../server/modelduel/rate-limit";
+import { enforcePaidApiRateLimit } from "../../../server/modelduel/rate-limit";
+import type {
+  CloudflareRateLimitBindings,
+  RateLimitStore,
+} from "../../../server/modelduel/rate-limit";
 import {
   jsonResponse,
   readStrictJson,
@@ -21,6 +24,7 @@ export async function handleRevisionRequest(
     gateway?: ModelDuelGateway;
     now?: number;
     rateLimitStore?: RateLimitStore;
+    cloudflareRateLimitBindings?: CloudflareRateLimitBindings;
   }> = {},
 ): Promise<Response> {
   try {
@@ -38,9 +42,10 @@ export async function handleRevisionRequest(
         signal,
         gateway: dependencies.gateway,
         beforeLiveGateway: () =>
-          enforceRateLimit("live-revision", request, {
+          enforcePaidApiRateLimit("live-revision", request, {
             now: dependencies.now,
             store: dependencies.rateLimitStore,
+            cloudflareBindings: dependencies.cloudflareRateLimitBindings,
           }),
       }),
     );

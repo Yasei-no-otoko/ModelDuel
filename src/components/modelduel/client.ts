@@ -3,7 +3,7 @@ import { z } from "zod";
 import {
   AnalysisResultSchema,
   RevisionFeedbackSchema,
-  RuntimeModelIdSchema,
+  RevisionModelIdSchema,
   TransferResultSchema,
   type AnalysisResult,
   type RevisionFeedback,
@@ -85,7 +85,7 @@ const RevisionEnvelopeSchema = z.discriminatedUnion("source", [
     source: z.literal("gpt-5.6"),
     notice: z.string().trim().min(1).max(500),
     requestId: z.string().trim().min(1).max(128),
-    modelId: RuntimeModelIdSchema,
+    modelId: RevisionModelIdSchema,
     evaluatedAt: z.number().finite().nonnegative(),
     feedback: RevisionFeedbackSchema,
   }),
@@ -161,7 +161,7 @@ export type RevisionSubmissionResult =
       source: "gpt-5.6";
       notice: string;
       requestId: string;
-      modelId: NonNullable<AnalysisResult["metadata"]["modelId"]>;
+      modelId: z.output<typeof RevisionModelIdSchema>;
       evaluatedAt: number;
       feedback: RevisionFeedback;
     }>;

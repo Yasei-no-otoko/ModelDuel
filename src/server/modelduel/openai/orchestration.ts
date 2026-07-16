@@ -13,8 +13,8 @@ import {
 } from "./tools";
 import type { RequiredToolName, ToolExecution } from "./tools";
 
-const MAX_ROUNDS = 5;
-const MAX_CALLS = 12;
+const MAX_ROUNDS = 3;
+const MAX_CALLS = 4;
 const MAX_OUTPUT_ITEMS_PER_TURN = 32;
 const MAX_ARGUMENT_BYTES = 4 * 1_024;
 const MAX_TOOL_OUTPUT_BYTES = 8 * 1_024;
@@ -121,7 +121,12 @@ export async function runDeterministicOrchestration(
       input: [...transcript],
       tools: PROGRAMMATIC_TOOLS,
       parallel_tool_calls: true,
-      max_output_tokens: 2_000,
+      reasoning: { effort: "low" },
+      service_tier: "default",
+      prompt_cache_key: `modelduel:ptc:v1:${input.plan.scenarioId}`,
+      prompt_cache_options: { mode: "implicit", ttl: "30m" },
+      text: { verbosity: "low" },
+      max_output_tokens: round === 1 ? 900 : 600,
     } satisfies Responses.ResponseCreateParamsNonStreaming;
     const response = await gateway.runProgramTurn({
       body,
@@ -202,7 +207,10 @@ export async function runDeterministicOrchestration(
     if (transcriptBytes(transcript) > MAX_TRANSCRIPT_BYTES) {
       throw new ModelDuelUpstreamError("ORCHESTRATION_INVALID");
     }
-    if (functionCallsThisTurn === 0) {
+    const hasFinalAssistantMessage = response.output.some(
+      (item) => item.type === "message" && item.role === "assistant",
+    );
+    if (functionCallsThisTurn === 0 && hasFinalAssistantMessage) {
       validateExecutionLedger(executions);
       return { toolNames };
     }

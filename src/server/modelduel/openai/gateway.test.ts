@@ -1,17 +1,74 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
 import {
   buildLearnerResponseInput,
   classifySdkFailureCode,
+  createProductionModelDuelGateway,
   isLocalStructuredParseFailure,
+  LEARNER_REQUEST_POLICY,
+  REVISION_REQUEST_POLICY,
   tolerantStructuredParse,
 } from "./gateway";
 
 class APIConnectionTimeoutError extends Error {}
 class APIUserAbortError extends Error {}
 
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
 describe("OpenAI gateway safe failure classification", () => {
+  it("defaults to Terra analysis and Luna revision and rejects a Sol override", () => {
+    vi.stubEnv("OPENAI_API_KEY", "test-only-key");
+    vi.stubEnv("MODELDUEL_ANALYSIS_MODEL", "");
+    vi.stubEnv("OPENAI_HERO_MODEL", "");
+    vi.stubEnv("MODELDUEL_REVISION_MODEL", "");
+    vi.stubEnv("OPENAI_MODEL", "");
+    const gateway = createProductionModelDuelGateway();
+    expect(gateway.analysisModel).toBe("gpt-5.6-terra");
+    expect(gateway.revisionModel).toBe("gpt-5.6-luna");
+
+    vi.stubEnv("MODELDUEL_ANALYSIS_MODEL", "gpt-5.6-sol");
+    expect(() => createProductionModelDuelGateway()).toThrowError(
+      expect.objectContaining({ code: "CONFIGURATION_REQUIRED" }),
+    );
+  });
+  it("pins low-cost structured request bodies without cache keys or breakpoints", () => {
+    expect(LEARNER_REQUEST_POLICY).toEqual({
+      reasoning: { effort: "none" },
+      service_tier: "default",
+      prompt_cache_options: { mode: "explicit", ttl: "30m" },
+      text: { verbosity: "low" },
+      max_output_tokens: 650,
+    });
+    expect(REVISION_REQUEST_POLICY).toEqual({
+      reasoning: { effort: "none" },
+      service_tier: "default",
+      prompt_cache_options: { mode: "explicit", ttl: "30m" },
+      text: { verbosity: "low" },
+      max_output_tokens: 450,
+    });
+    expect(JSON.stringify(LEARNER_REQUEST_POLICY)).not.toContain(
+      "prompt_cache_key",
+    );
+    expect(JSON.stringify(REVISION_REQUEST_POLICY)).not.toContain(
+      "prompt_cache_breakpoint",
+    );
+  });
+
+  it("uses low-detail image input for the coarse learner sketch", () => {
+    const input = buildLearnerResponseInput({
+      scenarioId: "moon-phases",
+      explanation: "Earth's shadow causes phases.",
+      imageDataUrl: "data:image/png;base64,iVBORw0KGgo=",
+      repair: false,
+      idempotencyKey: "gateway-image-policy-test",
+      signal: AbortSignal.timeout(10_000),
+    });
+    expect(JSON.stringify(input)).toContain('"detail":"low"');
+    expect(JSON.stringify(input)).not.toContain('"detail":"high"');
+  });
   it("omits an image from every repair request", () => {
     const input = buildLearnerResponseInput({
       scenarioId: "moon-phases",

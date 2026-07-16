@@ -55,13 +55,30 @@ function completedTurn(output: readonly Responses.ResponseOutputItem[]) {
   };
 }
 
+function finalAssistantMessage(id = "final-message") {
+  return {
+    id,
+    type: "message",
+    role: "assistant",
+    status: "completed",
+    phase: "final_answer",
+    content: [
+      {
+        type: "output_text",
+        text: "The deterministic plan is verified.",
+        annotations: [],
+      },
+    ],
+  } satisfies Responses.ResponseOutputItem;
+}
+
 function fakeGateway(
   turns: ProgramTurnResponse[],
   requests: ProgramTurnRequest[],
 ): ModelDuelGateway {
   return {
-    analysisModel: "gpt-5.6-sol",
-    revisionModel: "gpt-5.6-terra",
+    analysisModel: "gpt-5.6-terra",
+    revisionModel: "gpt-5.6-luna",
     async parseLearnerModel() {
       throw new Error("Unexpected extraction");
     },
@@ -123,7 +140,7 @@ describe("programmatic orchestration transcript", () => {
         [
           completedTurn(firstOutput),
           completedTurn(secondOutput),
-          completedTurn([]),
+          completedTurn([finalAssistantMessage()]),
         ],
         requests,
       ),
@@ -178,6 +195,52 @@ describe("programmatic orchestration transcript", () => {
       call_id: "call-simulate",
       caller: CALLER,
     });
+    expect(requests).toHaveLength(3);
+    expect(requests[0]?.body).toMatchObject({
+      reasoning: { effort: "low" },
+      service_tier: "default",
+      prompt_cache_key: "modelduel:ptc:v1:moon-phases",
+      prompt_cache_options: { mode: "implicit", ttl: "30m" },
+      text: { verbosity: "low" },
+      max_output_tokens: 900,
+    });
+    expect(requests[1]?.body.max_output_tokens).toBe(600);
+    expect(requests[2]?.body.max_output_tokens).toBe(600);
+  });
+
+  it("requires a final assistant message after the exact four-tool ledger", async () => {
+    await expect(
+      runDeterministicOrchestration(
+        fakeGateway(
+          [
+            completedTurn([
+              programItem(),
+              functionCall("call-validate", "validate_world_spec", WORLD_ARGS),
+              functionCall("call-simulate", "simulate_world", SIMULATION_ARGS),
+              functionCall("call-compare", "compare_predictions", SIMULATION_ARGS),
+              functionCall(
+                "call-select",
+                "select_discriminating_case",
+                JSON.stringify({
+                  ...JSON.parse(SIMULATION_ARGS),
+                  comparisonId: COMPARISON_ID,
+                }),
+              ),
+            ]),
+            completedTurn([]),
+            completedTurn([]),
+          ],
+          [],
+        ),
+        {
+          requestId: "orchestration-final-message-required",
+          learnerSummary: "Learner summary",
+          misconceptionType: "earth-shadow-phases",
+          plan: PLAN,
+          signal: AbortSignal.timeout(10_000),
+        },
+      ),
+    ).rejects.toMatchObject({ code: "ORCHESTRATION_INVALID" });
   });
 
   it("rejects a direct function caller", async () => {

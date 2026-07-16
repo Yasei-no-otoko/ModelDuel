@@ -6,7 +6,10 @@ import type OpenAIClient from "openai";
 import type * as Responses from "openai/resources/responses/responses";
 import { z } from "zod";
 
-import { RuntimeModelIdSchema } from "../../../lib/modelduel/schemas";
+import {
+  AnalysisModelIdSchema,
+  RevisionModelIdSchema,
+} from "../../../lib/modelduel/schemas";
 import type {
   LearnerModelExtraction,
   RevisionFeedbackExtraction,
@@ -17,8 +20,25 @@ import {
   RevisionFeedbackExtractionSchema,
 } from "./contracts";
 import { ModelDuelUpstreamError } from "./errors";
+import { logOpenAIUsage } from "./usage";
 
 const SDK_TIMEOUT_MS = 20_000;
+
+export const LEARNER_REQUEST_POLICY = {
+  reasoning: { effort: "none" },
+  service_tier: "default",
+  prompt_cache_options: { mode: "explicit", ttl: "30m" },
+  text: { verbosity: "low" },
+  max_output_tokens: 650,
+} as const;
+
+export const REVISION_REQUEST_POLICY = {
+  reasoning: { effort: "none" },
+  service_tier: "default",
+  prompt_cache_options: { mode: "explicit", ttl: "30m" },
+  text: { verbosity: "low" },
+  max_output_tokens: 450,
+} as const;
 
 export type LearnerParseRequest = Readonly<{
   scenarioId: string;
@@ -124,7 +144,7 @@ export function buildLearnerResponseInput(
             {
               type: "input_image",
               image_url: request.imageDataUrl,
-              detail: "high",
+              detail: "low",
             },
           ],
         }
@@ -163,8 +183,12 @@ export function buildRevisionResponseInput(
   ];
 }
 
-function configuredModel(value: string | undefined, fallback: string): string {
-  const parsed = RuntimeModelIdSchema.safeParse(value?.trim() || fallback);
+function configuredModel(
+  value: string | undefined,
+  fallback: string,
+  schema: typeof AnalysisModelIdSchema | typeof RevisionModelIdSchema,
+): string {
+  const parsed = schema.safeParse(value?.trim() || fallback);
   if (!parsed.success) {
     throw new ModelDuelUpstreamError("CONFIGURATION_REQUIRED");
   }
@@ -267,10 +291,11 @@ class ProductionModelDuelGateway implements ModelDuelGateway {
         model: this.analysisModel,
         store: false,
         input: buildLearnerResponseInput(request),
+        ...LEARNER_REQUEST_POLICY,
         text: {
+          ...LEARNER_REQUEST_POLICY.text,
           format: tolerantFormat,
         },
-        max_output_tokens: 1_200,
       } satisfies Responses.ResponseCreateParamsNonStreaming;
       const response = await client.responses.parse<
         typeof body,
@@ -281,6 +306,7 @@ class ProductionModelDuelGateway implements ModelDuelGateway {
         timeout: SDK_TIMEOUT_MS,
         idempotencyKey: request.idempotencyKey,
       });
+      logOpenAIUsage("learner_extraction", this.analysisModel, response);
       return {
         status: response.status ?? "unknown",
         hasError: response.error !== null,
@@ -314,6 +340,11 @@ class ProductionModelDuelGateway implements ModelDuelGateway {
         timeout: SDK_TIMEOUT_MS,
         idempotencyKey: request.idempotencyKey,
       });
+      logOpenAIUsage(
+        "programmatic_orchestration",
+        this.analysisModel,
+        response,
+      );
       return {
         status: response.status ?? "unknown",
         hasError: response.error !== null,
@@ -350,10 +381,11 @@ class ProductionModelDuelGateway implements ModelDuelGateway {
         model: this.revisionModel,
         store: false,
         input: buildRevisionResponseInput(request),
+        ...REVISION_REQUEST_POLICY,
         text: {
+          ...REVISION_REQUEST_POLICY.text,
           format: tolerantFormat,
         },
-        max_output_tokens: 1_200,
       } satisfies Responses.ResponseCreateParamsNonStreaming;
       const response = await client.responses.parse<
         typeof body,
@@ -364,6 +396,7 @@ class ProductionModelDuelGateway implements ModelDuelGateway {
         timeout: SDK_TIMEOUT_MS,
         idempotencyKey: request.idempotencyKey,
       });
+      logOpenAIUsage("revision_feedback", this.revisionModel, response);
       return {
         status: response.status ?? "unknown",
         hasError: response.error !== null,
@@ -398,11 +431,13 @@ export function createProductionModelDuelGateway(): ModelDuelGateway {
     apiKey,
     configuredModel(
       process.env.MODELDUEL_ANALYSIS_MODEL ?? process.env.OPENAI_HERO_MODEL,
-      "gpt-5.6-sol",
+      "gpt-5.6-terra",
+      AnalysisModelIdSchema,
     ),
     configuredModel(
       process.env.MODELDUEL_REVISION_MODEL ?? process.env.OPENAI_MODEL,
-      "gpt-5.6-terra",
+      "gpt-5.6-luna",
+      RevisionModelIdSchema,
     ),
   );
 }

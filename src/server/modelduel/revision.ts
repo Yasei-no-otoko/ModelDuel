@@ -5,7 +5,7 @@ import { z } from "zod";
 import {
   EvaluationIdSchema,
   RevisionFeedbackSchema,
-  RuntimeModelIdSchema,
+  RevisionModelIdSchema,
   ScenarioIdSchema,
   SessionIdSchema,
 } from "../../lib/modelduel/schemas";
@@ -65,7 +65,7 @@ export const LiveRevisionEvaluationResponseSchema = z.strictObject({
   evaluatedAt: z.number().finite().nonnegative(),
   source: z.literal("gpt-5.6"),
   notice: z.literal("Revision feedback generated live with GPT-5.6."),
-  modelId: RuntimeModelIdSchema,
+  modelId: RevisionModelIdSchema,
   feedback: RevisionFeedbackSchema,
 });
 
@@ -106,7 +106,7 @@ export async function evaluateRevisionRequest(
   options: Readonly<{
     signal?: AbortSignal;
     gateway?: ModelDuelGateway;
-    beforeLiveGateway?: () => void;
+    beforeLiveGateway?: () => void | Promise<void>;
   }> = {},
 ): Promise<RevisionEvaluationResponse> {
   const parsed = RevisionEvaluationRequestSchema.safeParse(input);
@@ -144,8 +144,8 @@ export async function evaluateRevisionRequest(
     requestedAt: parsed.data.requestedAt,
     now,
   });
-  options.beforeLiveGateway?.();
   const gateway = options.gateway ?? createProductionModelDuelGateway();
+  await options.beforeLiveGateway?.();
   const feedback = await evaluateLiveRevision(
     gateway,
     {

@@ -1,0 +1,55 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "modelduel",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-07-16",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "workers_dev": true,
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "vars": {
+    "MODELDUEL_TRUSTED_PROXY": "cloudflare",
+    "MODELDUEL_CLOUDFLARE_RATE_LIMITS": "enabled",
+    "MODELDUEL_ANALYSIS_MODEL": "gpt-5.6-terra",
+    "MODELDUEL_REVISION_MODEL": "gpt-5.6-luna"
+  },
+  "secrets": {
+    "required": ["OPENAI_API_KEY", "MODELDUEL_EVALUATION_SECRET"]
+  },
+  "ratelimits": [
+    {
+      "name": "ANALYSIS_AGGREGATE_LIMITER",
+      "namespace_id": "1001",
+      "simple": { "limit": 10, "period": 60 }
+    },
+    {
+      "name": "ANALYSIS_CLIENT_LIMITER",
+      "namespace_id": "1002",
+      "simple": { "limit": 2, "period": 60 }
+    },
+    {
+      "name": "REVISION_AGGREGATE_LIMITER",
+      "namespace_id": "1003",
+      "simple": { "limit": 20, "period": 60 }
+    },
+    {
+      "name": "REVISION_CLIENT_LIMITER",
+      "namespace_id": "1004",
+      "simple": { "limit": 4, "period": 60 }
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 0.05,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 0.05,
+      "invocation_logs": false
+    },
+    "traces": {
+      "enabled": false
+    }
+  }
+}

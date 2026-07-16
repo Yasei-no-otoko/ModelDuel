@@ -21,10 +21,15 @@ export type RateLimitStore = {
   globals: Map<RateLimitKind, RateLimitCounter>;
 };
 
-const defaultStore: RateLimitStore = {
-  clients: new Map(),
-  globals: new Map(),
-};
+export type CloudflareRateLimitBindings = Readonly<
+  Pick<
+    CloudflareEnv,
+    | "ANALYSIS_AGGREGATE_LIMITER"
+    | "ANALYSIS_CLIENT_LIMITER"
+    | "REVISION_AGGREGATE_LIMITER"
+    | "REVISION_CLIENT_LIMITER"
+  >
+>;
 
 export function createRateLimitStore(): RateLimitStore {
   return { clients: new Map(), globals: new Map() };
@@ -67,11 +72,13 @@ export function safeClientAddress(
   return "unknown";
 }
 
-function clientKey(request: Request, trustedProxy: TrustedProxy): string {
+export function hashedClientKey(
+  request: Request,
+  trustedProxy: TrustedProxy = inferredTrustedProxy(),
+): string {
   return createHash("sha256")
     .update(safeClientAddress(request, trustedProxy), "utf8")
-    .digest("hex")
-    .slice(0, 24);
+    .digest("hex");
 }
 
 function cleanup(store: RateLimitStore, now: number): void {
@@ -126,10 +133,13 @@ export function enforceRateLimit(
   if (!Number.isFinite(now) || now < 0) {
     throw new Error("Invalid rate-limit clock");
   }
-  const store = options.store ?? defaultStore;
+  const store = options.store;
+  if (!store) {
+    return;
+  }
   cleanup(store, now);
   const limits = LIMITS[kind];
-  const key = `${kind}:${clientKey(
+  const key = `${kind}:${hashedClientKey(
     request,
     options.trustedProxy ?? inferredTrustedProxy(),
   )}`;
@@ -144,4 +154,87 @@ export function enforceRateLimit(
   store.globals.set(kind, acceptedCounter(global, now));
   store.clients.set(key, acceptedCounter(client, now));
   cleanup(store, now);
+}
+
+function isCloudflareRateLimitBindings(
+  value: unknown,
+): value is CloudflareRateLimitBindings {
+  if (typeof value !== "object" || value === null) return false;
+  return [
+    "ANALYSIS_AGGREGATE_LIMITER",
+    "ANALYSIS_CLIENT_LIMITER",
+    "REVISION_AGGREGATE_LIMITER",
+    "REVISION_CLIENT_LIMITER",
+  ].every((name) => {
+    const binding = (value as Record<string, unknown>)[name];
+    return (
+      typeof binding === "object" &&
+      binding !== null &&
+      typeof (binding as { limit?: unknown }).limit === "function"
+    );
+  });
+}
+
+async function productionCloudflareBindings(): Promise<CloudflareRateLimitBindings> {
+  try {
+    const { getCloudflareContext } = await import("@opennextjs/cloudflare");
+    const { env } = await getCloudflareContext({ async: true });
+    if (!isCloudflareRateLimitBindings(env)) {
+      throw new Error("Cloudflare rate-limit bindings unavailable");
+    }
+    return env;
+  } catch {
+    throw new ModelDuelUpstreamError("RATE_LIMITED");
+  }
+}
+
+export async function enforcePaidApiRateLimit(
+  kind: RateLimitKind,
+  request: Request,
+  options: Readonly<{
+    now?: number;
+    store?: RateLimitStore;
+    trustedProxy?: TrustedProxy;
+    cloudflareBindings?: CloudflareRateLimitBindings;
+  }> = {},
+): Promise<void> {
+  if (options.store) {
+    enforceRateLimit(kind, request, options);
+    return;
+  }
+  if (
+    !options.cloudflareBindings &&
+    process.env.MODELDUEL_CLOUDFLARE_RATE_LIMITS !== "enabled"
+  ) {
+    return;
+  }
+
+  const bindings =
+    options.cloudflareBindings ?? (await productionCloudflareBindings());
+  const aggregate =
+    kind === "analysis"
+      ? bindings.ANALYSIS_AGGREGATE_LIMITER
+      : bindings.REVISION_AGGREGATE_LIMITER;
+  const client =
+    kind === "analysis"
+      ? bindings.ANALYSIS_CLIENT_LIMITER
+      : bindings.REVISION_CLIENT_LIMITER;
+
+  try {
+    const clientResult = await client.limit({
+      key: hashedClientKey(
+        request,
+        options.trustedProxy ?? inferredTrustedProxy(),
+      ),
+    });
+    if (clientResult?.success !== true) {
+      throw new ModelDuelUpstreamError("RATE_LIMITED");
+    }
+    const aggregateResult = await aggregate.limit({ key: kind });
+    if (aggregateResult?.success !== true) {
+      throw new ModelDuelUpstreamError("RATE_LIMITED");
+    }
+  } catch {
+    throw new ModelDuelUpstreamError("RATE_LIMITED");
+  }
 }

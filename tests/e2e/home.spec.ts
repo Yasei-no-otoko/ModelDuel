@@ -605,7 +605,7 @@ test("labels a correlated live analysis with the exact GPT-5.6 model", async ({ 
           ...demo.analysis,
           metadata: {
             mode: "live",
-            modelId: "gpt-5.6-sol",
+            modelId: "gpt-5.6-terra",
             analyzedSubmission: true,
             orchestrationToolNames: [
               "validate_world_spec",
@@ -625,7 +625,7 @@ test("labels a correlated live analysis with the exact GPT-5.6 model", async ({ 
     page.getByRole("heading", { name: "Turn one disagreement into a fair test." }),
   ).toBeVisible();
   await expect(
-    page.getByText("Live analysis · gpt-5.6-sol", { exact: true }),
+    page.getByText("Live analysis · gpt-5.6-terra", { exact: true }),
   ).toBeVisible();
   await expect(page.getByText("GPT-5.6 analyzed your typed explanation", { exact: false })).toBeVisible();
 });

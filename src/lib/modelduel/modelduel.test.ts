@@ -361,7 +361,7 @@ describe("strict schemas and evaluation receipt contracts", () => {
       ...MOON_HERO_SAMPLE,
       metadata: {
         mode: "live",
-        modelId: "gpt-5.6-luna",
+        modelId: "gpt-5.6-terra",
         analyzedSubmission: true,
         orchestrationToolNames: ["validate_world_spec"],
       },
@@ -384,7 +384,7 @@ describe("strict schemas and evaluation receipt contracts", () => {
       ...MOON_HERO_SAMPLE,
       metadata: {
         mode: "live",
-        modelId: "gpt-5.6-sol",
+        modelId: "gpt-5.6-terra",
         analyzedSubmission: false,
         orchestrationToolNames: [],
       },

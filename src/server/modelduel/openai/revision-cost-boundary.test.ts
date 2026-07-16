@@ -95,8 +95,8 @@ function liveRequest(
 
 function countingGateway(counter: { calls: number }): ModelDuelGateway {
   return {
-    analysisModel: "gpt-5.6-sol",
-    revisionModel: "gpt-5.6-terra",
+    analysisModel: "gpt-5.6-terra",
+    revisionModel: "gpt-5.6-luna",
     async parseLearnerModel() {
       throw new Error("Unexpected learner extraction");
     },
@@ -119,6 +119,19 @@ afterEach(() => {
 });
 
 describe("live revision cost boundary", () => {
+  it("does not consume the limiter when production gateway configuration is missing", async () => {
+    vi.stubEnv("OPENAI_API_KEY", "");
+    const beforeLiveGateway = vi.fn();
+
+    await expect(
+      evaluateRevisionRequest(liveRequest(), NOW, {
+        signal: AbortSignal.timeout(10_000),
+        beforeLiveGateway,
+      }),
+    ).rejects.toMatchObject({ code: "CONFIGURATION_REQUIRED" });
+    expect(beforeLiveGateway).not.toHaveBeenCalled();
+  });
+
   it("invokes the limiter exactly once after a valid signed context", async () => {
     const counter = { calls: 0 };
     const beforeLiveGateway = vi.fn();

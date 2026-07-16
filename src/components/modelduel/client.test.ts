@@ -24,7 +24,7 @@ const LIVE_MOON_ANALYSIS = {
   ...MOON_HERO_SAMPLE,
   metadata: {
     mode: "live" as const,
-    modelId: "gpt-5.6-sol" as const,
+    modelId: "gpt-5.6-terra" as const,
     analyzedSubmission: true,
     orchestrationToolNames: [
       "validate_world_spec",
@@ -455,7 +455,7 @@ describe("revision adapter", () => {
         source: "gpt-5.6",
         notice: "Structured live revision feedback.",
         requestId: request.requestId,
-        modelId: "gpt-5.6-sol",
+        modelId: "gpt-5.6-luna",
         evaluatedAt: 111,
         feedback: {
           conceptualChange: "revised",
@@ -469,7 +469,7 @@ describe("revision adapter", () => {
 
     const result = await submitRevision(request, fetchMock);
 
-    expect(result).toMatchObject({ source: "gpt-5.6", modelId: "gpt-5.6-sol" });
+    expect(result).toMatchObject({ source: "gpt-5.6", modelId: "gpt-5.6-luna" });
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/revision",
       expect.objectContaining({ body: JSON.stringify(request), cache: "no-store" }),
@@ -482,7 +482,7 @@ describe("revision adapter", () => {
         source: "gpt-5.6",
         notice: "Mismatched live feedback.",
         requestId: "revision-verified-request",
-        modelId: "gpt-5.6-sol",
+        modelId: "gpt-5.6-luna",
         evaluatedAt: 121,
         feedback: {
           conceptualChange: "revised",

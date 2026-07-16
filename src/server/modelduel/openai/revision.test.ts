@@ -112,8 +112,8 @@ function gatewayWithRevisionAttempts(
   requests: RevisionParseRequest[],
 ): ModelDuelGateway {
   return {
-    analysisModel: "gpt-5.6-sol",
-    revisionModel: "gpt-5.6-terra",
+    analysisModel: "gpt-5.6-terra",
+    revisionModel: "gpt-5.6-luna",
     async parseLearnerModel() {
       throw new Error("Unexpected learner extraction");
     },
@@ -162,7 +162,7 @@ describe("live revision service", () => {
     expect(response).toMatchObject({
       source: "gpt-5.6",
       requestId: request.requestId,
-      modelId: "gpt-5.6-terra",
+      modelId: "gpt-5.6-luna",
       evaluatedAt: NOW,
     });
     expect(requests).toHaveLength(1);
@@ -199,7 +199,7 @@ describe("live revision service", () => {
       source: "gpt-5.6",
       notice: "Revision feedback generated live with GPT-5.6.",
       requestId: request.requestId,
-      modelId: "gpt-5.6-terra",
+      modelId: "gpt-5.6-luna",
       evaluatedAt: NOW,
       feedback: FEEDBACK.feedback,
     });

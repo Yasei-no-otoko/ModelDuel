@@ -25,8 +25,8 @@ function fakeGateway(
   requests: LearnerParseRequest[],
 ): ModelDuelGateway {
   return {
-    analysisModel: "gpt-5.6-sol",
-    revisionModel: "gpt-5.6-terra",
+    analysisModel: "gpt-5.6-terra",
+    revisionModel: "gpt-5.6-luna",
     async parseLearnerModel(request) {
       requests.push(request);
       const next = attempts.shift();
@@ -107,8 +107,8 @@ describe("extractLearnerModel", () => {
   it("propagates arbitrary parser defects without a repair call", async () => {
     const requests: LearnerParseRequest[] = [];
     const gateway: ModelDuelGateway = {
-      analysisModel: "gpt-5.6-sol",
-      revisionModel: "gpt-5.6-terra",
+      analysisModel: "gpt-5.6-terra",
+      revisionModel: "gpt-5.6-luna",
       async parseLearnerModel(request) {
         requests.push(request);
         throw new TypeError("SDK parser defect");

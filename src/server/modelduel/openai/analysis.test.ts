@@ -26,6 +26,23 @@ function call(callId: string, name: string, args: object) {
   } satisfies Responses.ResponseOutputItem;
 }
 
+function finalAssistantMessage() {
+  return {
+    id: "analysis-final-message",
+    type: "message",
+    role: "assistant",
+    status: "completed",
+    phase: "final_answer",
+    content: [
+      {
+        type: "output_text",
+        text: "The deterministic plan is verified.",
+        annotations: [],
+      },
+    ],
+  } satisfies Responses.ResponseOutputItem;
+}
+
 function successfulGateway(
   sample: typeof MOON_HERO_SAMPLE | typeof SEASONS_SAMPLE = MOON_HERO_SAMPLE,
 ): ModelDuelGateway {
@@ -40,8 +57,8 @@ function successfulGateway(
   };
   const simulationArgs = { ...worldArgs, caseId: plan.caseId };
   return {
-    analysisModel: "gpt-5.6-sol",
-    revisionModel: "gpt-5.6-terra",
+    analysisModel: "gpt-5.6-terra",
+    revisionModel: "gpt-5.6-luna",
     async parseLearnerModel() {
       return {
         status: "completed",
@@ -78,7 +95,7 @@ function successfulGateway(
                   comparisonId: `comparison-${plan.caseId}`,
                 }),
               ]
-            : [],
+            : [finalAssistantMessage()],
         responseBytes: 2_048,
       };
     },
@@ -99,8 +116,8 @@ describe("live analysis service", () => {
     let modelCalls = 0;
     const beforeModelCall = vi.fn();
     const gateway: ModelDuelGateway = {
-      analysisModel: "gpt-5.6-sol",
-      revisionModel: "gpt-5.6-terra",
+      analysisModel: "gpt-5.6-terra",
+      revisionModel: "gpt-5.6-luna",
       async parseLearnerModel() {
         modelCalls += 1;
         throw new Error("Must not be called");
@@ -211,7 +228,8 @@ describe("live analysis service", () => {
         throw new Error("Must not be called");
       },
     };
-    const beforeModelCall = vi.fn(() => {
+    const beforeModelCall = vi.fn(async () => {
+      await Promise.resolve();
       throw new ModelDuelUpstreamError("RATE_LIMITED");
     });
 
@@ -283,7 +301,7 @@ describe("live analysis service", () => {
         },
         metadata: {
           mode: "live",
-          modelId: "gpt-5.6-sol",
+          modelId: "gpt-5.6-terra",
           analyzedSubmission: true,
           orchestrationToolNames: [
             "validate_world_spec",
@@ -351,7 +369,7 @@ describe("live analysis service", () => {
       analysis: {
         metadata: {
           mode: "live",
-          modelId: "gpt-5.6-sol",
+          modelId: "gpt-5.6-terra",
           analyzedSubmission: true,
           orchestrationToolNames: [
             "validate_world_spec",

@@ -7,10 +7,13 @@ export default defineConfig([
   ...nextTypeScript,
   globalIgnores([
     ".next/**",
+    ".open-next/**",
+    ".wrangler/**",
     "out/**",
     "coverage/**",
     "playwright-report/**",
     "test-results/**",
     "next-env.d.ts",
+    "cloudflare-env.d.ts",
   ]),
 ]);

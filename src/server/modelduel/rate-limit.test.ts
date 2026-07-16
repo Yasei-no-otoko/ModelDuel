@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { createRateLimitStore, enforceRateLimit } from "./rate-limit";
+import {
+  createRateLimitStore,
+  enforcePaidApiRateLimit,
+  enforceRateLimit,
+  hashedClientKey,
+} from "./rate-limit";
+import type { CloudflareRateLimitBindings } from "./rate-limit";
 
 const CLOUDFLARE = { trustedProxy: "cloudflare" as const };
 
@@ -13,6 +19,17 @@ function request(headers: HeadersInit): Request {
 }
 
 describe("best-effort server rate limiter", () => {
+  it("keeps local limiting disabled unless a store is explicitly injected", () => {
+    for (let index = 0; index < 500; index += 1) {
+      expect(() =>
+        enforceRateLimit("analysis", cloudflareRequest("192.0.2.1"), {
+          now: 1_000,
+          ...CLOUDFLARE,
+        }),
+      ).not.toThrow();
+    }
+  });
+
   it("limits analysis per trusted client and does not charge denials", () => {
     const store = createRateLimitStore();
     for (let index = 0; index < 8; index += 1) {
@@ -190,5 +207,102 @@ describe("best-effort server rate limiter", () => {
         { now: 1_000, store, trustedProxy: "none" },
       ),
     ).toThrowError(expect.objectContaining({ code: "RATE_LIMITED" }));
+  });
+});
+
+function cloudflareBindings(
+  events: string[],
+  results: Partial<Record<string, boolean>> = {},
+): CloudflareRateLimitBindings {
+  const limiter = (name: string) => ({
+    async limit({ key }: { key: string }) {
+      events.push(`${name}:${key}`);
+      return { success: results[name] ?? true };
+    },
+  });
+  return {
+    ANALYSIS_AGGREGATE_LIMITER: limiter("analysis-aggregate"),
+    ANALYSIS_CLIENT_LIMITER: limiter("analysis-client"),
+    REVISION_AGGREGATE_LIMITER: limiter("revision-aggregate"),
+    REVISION_CLIENT_LIMITER: limiter("revision-client"),
+  };
+}
+
+describe("Cloudflare paid-API rate limiter", () => {
+  it("awaits the SHA-256 client bucket before the aggregate ceiling", async () => {
+    const events: string[] = [];
+    const request = cloudflareRequest("192.0.2.44");
+    await enforcePaidApiRateLimit("analysis", request, {
+      cloudflareBindings: cloudflareBindings(events),
+      trustedProxy: "cloudflare",
+    });
+
+    const expectedHash = hashedClientKey(request, "cloudflare");
+    expect(expectedHash).toMatch(/^[a-f0-9]{64}$/);
+    expect(expectedHash).not.toContain("192.0.2.44");
+    expect(events).toEqual([
+      `analysis-client:${expectedHash}`,
+      "analysis-aggregate:analysis",
+    ]);
+  });
+
+  it("fails closed at client denial without charging the aggregate bucket", async () => {
+    const events: string[] = [];
+    const deniedRequest = cloudflareRequest("192.0.2.45");
+    await expect(
+      enforcePaidApiRateLimit("live-revision", deniedRequest, {
+        cloudflareBindings: cloudflareBindings(events, {
+          "revision-client": false,
+        }),
+        trustedProxy: "cloudflare",
+      }),
+    ).rejects.toMatchObject({ code: "RATE_LIMITED" });
+    expect(events).toEqual([
+      `revision-client:${hashedClientKey(deniedRequest, "cloudflare")}`,
+    ]);
+  });
+
+  it("fails closed at aggregate denial after the accepted client check", async () => {
+    const events: string[] = [];
+    const deniedRequest = cloudflareRequest("192.0.2.46");
+    await expect(
+      enforcePaidApiRateLimit("analysis", deniedRequest, {
+        cloudflareBindings: cloudflareBindings(events, {
+          "analysis-aggregate": false,
+        }),
+        trustedProxy: "cloudflare",
+      }),
+    ).rejects.toMatchObject({ code: "RATE_LIMITED" });
+    expect(events).toEqual([
+      `analysis-client:${hashedClientKey(deniedRequest, "cloudflare")}`,
+      "analysis-aggregate:analysis",
+    ]);
+  });
+
+  it("does not consume aggregate capacity when the client binding throws", async () => {
+    const events: string[] = [];
+    const bindings: CloudflareRateLimitBindings = {
+      ...cloudflareBindings(events),
+      ANALYSIS_CLIENT_LIMITER: {
+        async limit() {
+          events.push("analysis-client:throw");
+          throw new Error("binding unavailable");
+        },
+      },
+    };
+    await expect(
+      enforcePaidApiRateLimit("analysis", cloudflareRequest("192.0.2.46"), {
+        cloudflareBindings: bindings,
+        trustedProxy: "cloudflare",
+      }),
+    ).rejects.toMatchObject({ code: "RATE_LIMITED" });
+    expect(events).toEqual(["analysis-client:throw"]);
+  });
+
+  it("shares one privacy-safe unknown-client hash", () => {
+    const first = hashedClientKey(request({ "CF-Connecting-IP": "invalid" }), "cloudflare");
+    const second = hashedClientKey(request({}), "cloudflare");
+    expect(first).toBe(second);
+    expect(first).toMatch(/^[a-f0-9]{64}$/);
   });
 });
