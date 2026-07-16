@@ -1,6 +1,6 @@
 # OpenAI SDK implementation reference
 
-Last verified against first-party documentation and the installed SDK: **2026-07-15**
+Last verified against first-party documentation and the installed SDK: **2026-07-17**
 
 This file is the implementation contract for ModelDuel's OpenAI integration. Keep API calls on the server, pin the SDK version, and prefer the Responses API examples below over older Chat Completions snippets.
 
@@ -20,6 +20,25 @@ These choices differ from the original concept note, which treated GPT-5.6 Sol a
 - Revision: `MODELDUEL_REVISION_MODEL`, then `OPENAI_MODEL`, then `gpt-5.6-terra`.
 
 Missing or invalid live configuration produces a safe error. It never silently switches a live request to the verified sample.
+
+## Token and cost-control contract
+
+GPT-5.6 defaults to medium reasoning when `reasoning.effort` is omitted. ModelDuel therefore sets every request deliberately rather than inheriting that cost-bearing default:
+
+| Operation | Model | Reasoning | Verbosity | Output ceiling |
+| --- | --- | --- | --- | ---: |
+| Learner-model extraction | Sol | `none` | `low` | 650 |
+| Revision feedback | Terra | `none` | `low` | 450 |
+| PTC first round | Sol | `low` | `low` | 900 |
+| PTC continuation | Sol | `low` | `low` | 600 |
+
+All requests use the standard service tier, zero SDK retries, `store: false`, and a stable prompt-cache key. Structured requests opt into a 30-minute prompt-cache retention policy. The PTC cache key is scenario-scoped (`modelduel:ptc:v1:<scenario>`), so stable instructions and tool schemas can be reused without mixing scenario semantics. Learner sketches use low-detail vision because the task requires a coarse causal diagram, not fine text or photographic inspection.
+
+The production orchestrator is capped at three rounds and four tool calls. Success requires the exact ledger `validate_world_spec` → `simulate_world` → `compare_predictions` → `select_discriminating_case` plus a final assistant message; tool completion alone is not a successful response. Continuations remain enabled because the final message can arrive after the last tool output.
+
+The output ceilings are paired with bounded schemas rather than truncating a larger contract: learner summaries are at most 240 characters, causal and spatial relation lists contain at most four entries, predicted observations contain at most three 160-character entries, revision summaries are at most 280 characters, strengths contain at most three 160-character entries, and the next step is at most 200 characters.
+
+Usage telemetry is emitted once per upstream call and contains only aggregate token counters and a versioned price estimate. Standard-tier estimates use the prices verified on 2026-07-17: Sol $5/M input, $0.50/M cached input, and $30/M output; Terra $2.50/M input, $0.25/M cached input, and $15/M output. Cache-write and reasoning counters are recorded separately when present. Learner content, images, raw identifiers, reasoning, transcripts, response bodies, and exception messages are prohibited from telemetry.
 
 The current UI and API support both `moon-phases` and `seasons` through the live path and an explicitly selected verified-sample path. Browser requests carry the selected scenario ID; the server applies the matching strict schema and resolves private case, world, and transfer IDs from its registry. Examples below sometimes use Moon phases for readability, not as a limit on the shipped scope.
 
