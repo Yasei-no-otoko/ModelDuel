@@ -67,7 +67,7 @@ The useful boundary is not “AI versus deterministic code.” It is deciding wh
 
 ### What's next
 
-Before submission, we will complete the final merge and post-merge gates, confirm exact Workers CPU telemetry/account-plan limits, publish the repository, capture only final-build screenshots, record the 2:55 demo, and replace the remaining placeholders. The production deployment and real Terra/Luna smoke checks are complete. After the hackathon, the same constrained-world pattern could expand to additional science misconceptions and a teacher-facing view of Model Revision Traces. Any impact or learning-gain claim would require a separate classroom evaluation.
+Before submission, we will confirm exact Workers CPU telemetry/account-plan limits, publish the repository, capture only final-build screenshots, record the 2:55 demo, and replace the remaining placeholders. The final merge, post-merge gates, production deployment, and real Terra/Luna smoke checks are complete. After the hackathon, the same constrained-world pattern could expand to additional science misconceptions and a teacher-facing view of Model Revision Traces. Any impact or learning-gain claim would require a separate classroom evaluation.
 
 ### Production verification
 
@@ -225,13 +225,13 @@ Capture only the final merged production build. Do not include audit “before�
 
 ### Code and tests
 
-- [ ] Finish on a clean branch and review the final diff.
-- [ ] Merge the approved work to `main`.
-- [ ] Run and record `pnpm check` after the merge.
-- [ ] Run and record `pnpm test:e2e` after the merge.
+- [x] Finish on a clean branch and review the final diff.
+- [x] Merge the approved work to `main`.
+- [x] Run and record `pnpm check` after the merge.
+- [x] Run and record `pnpm test:e2e` after the merge.
 - [ ] Manually verify Moon and Seasons on the final desktop and mobile build.
 
-Latest production-branch gate: Vitest unit/API **311/311** across **27 files**, Chromium E2E **23/23**, Next.js 16.2.10 production build **Pass**, OpenNext/Workers type and build checks **Pass**, and production dependency audit **No known vulnerabilities**. The same gates are rerun after the final merge.
+Final `main` gate: Vitest unit/API **311/311** across **27 files**, Chromium E2E **23/23**, Next.js 16.2.10 production build **Pass**, OpenNext/Workers type and build checks **Pass**, Wrangler strict dry-run **Pass** at 1,614.05 KiB gzip, and production dependency audit **No known vulnerabilities**.
 
 ### GPT-5.6 proof
 

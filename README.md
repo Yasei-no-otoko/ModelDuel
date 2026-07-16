@@ -178,7 +178,7 @@ The runtime ships no third-party image, audio, video, or 3D media. Astronomy vis
 
 ## Submission verification
 
-The Cloudflare production build was verified locally and live on 2026-07-17 JST. The runtime commit is deployed at [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev); the remaining repository gate is the final merge to `main`.
+The Cloudflare production build was verified locally and live on 2026-07-17 JST. The runtime commit is deployed at [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev), merged to `main`, and verified again on `main`.
 
 | Verification | Result |
 | --- | --- |
@@ -196,7 +196,7 @@ The Cloudflare production build was verified locally and live on 2026-07-17 JST.
 | Production dependency audit | **No known vulnerabilities**. |
 | Tracked live-token/private-key scan | **0 matches**. |
 
-The successful live sequence made one Terra HTTP request and one Luna HTTP request with zero HTTP retries. Combined telemetry was 8,074 total tokens and an estimated **$0.014441**; the configured dollar ceilings remain output-only bounds, not an all-in preflight guarantee. External gates still pending are the final merge to `main`, exact Workers CPU telemetry/account-plan confirmation, public repository access, the `/feedback` Session ID, final media/video/screenshots, and placeholder replacement. Track the canonical handoff in [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md); the external submission is not yet complete.
+The successful live sequence made one Terra HTTP request and one Luna HTTP request with zero HTTP retries. Combined telemetry was 8,074 total tokens and an estimated **$0.014441**; the configured dollar ceilings remain output-only bounds, not an all-in preflight guarantee. External gates still pending are exact Workers CPU telemetry/account-plan confirmation, public repository access, the `/feedback` Session ID, final media/video/screenshots, and placeholder replacement. Track the canonical handoff in [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md); the external submission is not yet complete.
 
 ## License
 
