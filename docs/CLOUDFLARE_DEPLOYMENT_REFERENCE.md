@@ -66,7 +66,15 @@ The 2026-07-17 OpenNext build and Wrangler dry run passed without uploading or d
 - Generated Workers types passed Wrangler's `--check` drift validation.
 - Local `workerd` preview returned HTTP 200 for `/` and the Moon verified-sample `/api/demo` route. The initial `2026-07-17` compatibility date failed as future-dated under UTC; rebuilding with `2026-07-16` passed.
 
-These results prove build and configuration readiness only. The Free-plan 10 ms HTTP CPU limit is not proven by a dry run, and per-POP Rate Limiting remains a soft budget boundary. Secret upload, deployment, public URL verification, Workers CPU telemetry, and the minimum paid Terra/Luna smoke remain post-commit release gates.
+These results proved build and configuration readiness before the production release. The Free-plan 10 ms HTTP CPU limit was not proven by the dry run, and per-POP Rate Limiting remains a soft budget boundary. The subsequent production evidence is recorded separately below.
+
+## Production verification snapshot
+
+The final runtime commit was deployed on 2026-07-17 JST to [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev). Wrangler reported a **33 ms startup time**, and deployment status showed one active version receiving **100%** of traffic. The public root returned HTTP 200 to a HEAD check; the root GET returned 9,926 bytes, and the Moon verified-sample route returned HTTP 200 with a 3,098-byte response that passed its source, scenario, two-world, and transfer-question checks.
+
+The paid smoke used no HTTP retry. One text-only Terra analysis returned HTTP 200 in 19,378 ms, produced the exact four-tool ledger over five PTC rounds, and emitted no `ptc_failure`. Its six Responses calls used 7,581 total tokens and an estimated **$0.013358**. The usage gate passed before the application made one Luna revision request, which returned HTTP 200 in 1,742 ms with 493 total tokens and an estimated **$0.001083**. The successful sequence totaled 8,074 tokens and an estimated **$0.014441**. Cloudflare live tail reported `Ok` outcomes for both POST requests without exposing learner data, response bodies, secrets, encrypted evaluation tokens, or request identifiers.
+
+The live tail format did not expose exact Worker CPU time, so CPU duration and the account-plan-specific limit remain unverified operational metadata. The successful `Ok` outcomes show that these requests completed on the deployed Worker, but they are not a substitute for exact CPU telemetry. Per-POP Rate Limiting also remains an eventually consistent abuse guard rather than a global billing cap.
 
 ## First-party references
 

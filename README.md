@@ -8,12 +8,12 @@ The two complete challenges focus on common astronomy misconceptions: that Earth
 
 ## Submission links
 
-- Live demo: `{{LIVE_DEMO_URL}}`
+- Live demo: [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev)
 - Repository: `{{REPOSITORY_URL}}`
 - Demo video: `{{VIDEO_URL}}`
 - Codex Feedback Session ID: `{{CODEX_FEEDBACK_SESSION_ID}}`
 
-Replace all four placeholders before submission. The Codex Feedback Session ID must come from `/feedback` in the primary build task; never substitute an invented value.
+Replace the remaining three placeholders before submission. The Codex Feedback Session ID must come from `/feedback` in the primary build task; never substitute an invented value.
 
 ## Current scope
 
@@ -40,7 +40,7 @@ Live and verified paths are deliberately separate for both scenarios. Live analy
 
 ### Configured live path
 
-Live analysis requires a server-side `OPENAI_API_KEY`. Enter at least 20 characters of learner text, attach a PNG, JPEG, or WebP sketch up to 3 MiB decoded, or provide both, then deliberately choose the live path. A failed live request remains a disclosed error and never silently falls back to an authored sample. This repository documents a configured live path; it does not claim that a real paid Terra or Luna smoke has succeeded.
+Live analysis requires a server-side `OPENAI_API_KEY`. Enter at least 20 characters of learner text, attach a PNG, JPEG, or WebP sketch up to 3 MiB decoded, or provide both, then deliberately choose the live path. A failed live request remains a disclosed error and never silently falls back to an authored sample. The final Cloudflare build completed one paid Terra analysis/PTC smoke and, only after its usage gate passed, one paid Luna revision smoke with no HTTP retry.
 
 ## Requirements
 
@@ -101,7 +101,7 @@ All learner-data Responses requests use `store: false`. Live analysis and revisi
 | `pnpm cf:upload` | Build and upload a preview Worker version without deploying it. |
 | `pnpm cf:deploy` | Build and deploy the production Worker. |
 
-Cloudflare deployment requires both server secrets already configured for the Worker. Never place them in `vars` or command-line history. Before deployment, run the normal checks, `pnpm cf:typegen`, `pnpm cf:typecheck`, and `wrangler deploy --dry-run`; both type commands rebuild the OpenNext entrypoint before asking Wrangler to generate or compare types. Verify the compressed Worker is below the conservative 3 MiB Free-plan limit. The public URL and real Terra/Luna smoke outcome remain intentionally undocumented until production verification succeeds.
+Cloudflare deployment requires both server secrets already configured for the Worker. Never place them in `vars` or command-line history. Before deployment, run the normal checks, `pnpm cf:typegen`, `pnpm cf:typecheck`, and `wrangler deploy --dry-run`; both type commands rebuild the OpenNext entrypoint before asking Wrangler to generate or compare types. Verify the compressed Worker is below the conservative 3 MiB Free-plan limit. The verified production Worker is [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev); deployment and live-call evidence are recorded below without secret or request identifiers.
 
 ## Architecture
 
@@ -152,7 +152,7 @@ Codex performed these implementation roles under human direction:
 
 Human-owned decisions include the Education category, target learners and misconceptions, pedagogical sequence, Moon and Seasons scope, privacy stance, trust boundary, experience priorities, and final release acceptance. GPT-5.6 Terra is configured for strict learner-model analysis and PTC, and GPT-5.6 Luna is configured for bounded revision feedback. The deterministic application owns cases, WorldSpecs, simulation, evidence, transfer keys, and grading. Learner-data Responses calls use `store: false`.
 
-The configured live integration and its tests do not prove that a real paid live call succeeded. That smoke check remains a submission gate. Codex Feedback Session ID: `{{CODEX_FEEDBACK_SESSION_ID}}` — replace it with the value returned by `/feedback` in the primary build task.
+The final Cloudflare build proved the live integration with one successful Terra analysis/PTC request and one successful Luna revision request. Codex Feedback Session ID: `{{CODEX_FEEDBACK_SESSION_ID}}` — replace it with the value returned by `/feedback` in the primary build task.
 
 ## Build Week provenance
 
@@ -178,22 +178,25 @@ The runtime ships no third-party image, audio, video, or 3D media. Astronomy vis
 
 ## Submission verification
 
-The Cloudflare production candidate was verified locally on 2026-07-17 JST. Main merge, production deployment, and paid API smoke remain separate gates.
+The Cloudflare production build was verified locally and live on 2026-07-17 JST. The runtime commit is deployed at [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev); the remaining repository gate is the final merge to `main`.
 
 | Verification | Result |
 | --- | --- |
 | ESLint | **Pass** — zero warnings. |
 | Strict TypeScript | **Pass**. |
-| Vitest unit/API | **295/295** across **27 files**. |
+| Vitest unit/API | **311/311** across **27 files**. |
 | Next.js 16.2.10 production build | **Pass**. |
 | Chromium E2E | **23/23 Pass**. |
 | OpenNext/Workers build | **Pass** with `@opennextjs/cloudflare@1.20.1`. |
-| Wrangler dry run | **Pass** — 1,613.37 KiB gzip and all bindings resolved. |
+| Wrangler dry run | **Pass** — 1,614.05 KiB gzip and all bindings resolved. |
 | Local workerd smoke | **Pass** — `/` and `/api/demo` returned HTTP 200. |
+| Production public smoke | **Pass** — root HEAD and Moon verified demo returned HTTP 200; the deployment is 100% current. |
+| Production Terra smoke | **Pass** — HTTP 200, exact four-tool ledger in five PTC rounds, 7,581 total tokens, estimated **$0.013358**. |
+| Production Luna smoke | **Pass** — HTTP 200, 493 total tokens, estimated **$0.001083**. |
 | Production dependency audit | **No known vulnerabilities**. |
 | Tracked live-token/private-key scan | **0 matches**. |
 
-Verified samples require no OpenAI key. External gates remain pending: merge to main, a one-shot paid Terra/Luna smoke with no HTTP retry and post-response usage review, production deployment and CPU verification, public repository access, the `/feedback` Session ID, final media/video/screenshots, and replacement of all four placeholders. The configured dollar ceilings cover output tokens only; input and cache charges are additional, so they are not a hard all-in preflight guarantee. Track the canonical handoff in [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md); the external submission is not yet complete.
+The successful live sequence made one Terra HTTP request and one Luna HTTP request with zero HTTP retries. Combined telemetry was 8,074 total tokens and an estimated **$0.014441**; the configured dollar ceilings remain output-only bounds, not an all-in preflight guarantee. External gates still pending are the final merge to `main`, exact Workers CPU telemetry/account-plan confirmation, public repository access, the `/feedback` Session ID, final media/video/screenshots, and placeholder replacement. Track the canonical handoff in [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md); the external submission is not yet complete.
 
 ## License
 
