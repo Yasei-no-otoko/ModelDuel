@@ -1106,6 +1106,7 @@ async function showNarrationDisclosure(page) {
       color: "#dffbff",
       background: "rgba(3,7,18,.92)",
       boxShadow: "0 10px 28px rgba(0,0,0,.38)",
+      pointerEvents: "none",
       font: "700 13px/1.2 Inter, ui-sans-serif, system-ui, sans-serif",
       letterSpacing: ".025em",
     });
