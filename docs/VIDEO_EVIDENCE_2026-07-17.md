@@ -66,3 +66,19 @@ The local candidate passed Chromium and WebKit with 69 tests and one intentional
 - Run `/feedback` in the primary Codex build thread and replace `{{CODEX_FEEDBACK_SESSION_ID}}`.
 - Verify repository, video, and production links while logged out.
 - Complete the current official rules/form review and submit before the deadline.
+
+## Post-merge production deployment
+
+After the video candidate was recorded and validated, the submission-quality branch was merged to `main` as `ed433b460e46d02eff272a7e1364bd2f107f1173` and deployed with the documented OpenNext Cloudflare command.
+
+- Cloudflare Worker Version ID: `858c32e8-121f-42bd-b1f4-f422402671a3`
+- Production URL: `https://modelduel.yasei.workers.dev`
+- Post-deploy HTTP status: 200
+- Production BUILD_ID: `La258MjHHcPyAMa5k13Uz`
+- Upload: 8,277.51 KiB raw / 1,619.90 KiB gzip; 18 asset entries, 3 changed assets uploaded
+- Worker startup time reported by Wrangler: 27 ms
+- Remote secret-name inventory retained `OPENAI_API_KEY` and `MODELDUEL_EVALUATION_SECRET`; values were never read or recorded
+- Security response included CSP, HSTS, `X-Content-Type-Options: nosniff`, strict-origin referrer policy, and the restricted permissions policy
+- Free verified-production probe: exact three-request API ledger, 16 transitions, zero analyze/live-revision attempts, zero external HTTP attempts, zero request failures, zero bad responses, zero page errors, and zero paid API calls
+
+This deployment occurred after the recording. It adds the accessible 3D-canvas role and the hardened submission tooling/CI; it does not change the recorded visual story or execute a second paid Terra/Luna canary.
