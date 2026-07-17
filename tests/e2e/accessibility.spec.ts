@@ -35,6 +35,45 @@ test("keeps the capture, evidence, and trace states free of automatic WCAG A/AA 
   await page.getByRole("button", { name: "Lock prediction" }).click();
   await page.getByRole("button", { name: "Run both worlds and reveal evidence" }).click();
   await expect(page.getByTestId("verified-observation")).toBeVisible();
+
+  const learnerWorld = page.locator(".evidence-world.learner");
+  const learnerViewport = learnerWorld.getByRole("img").first();
+  const learnerViewportShell = learnerWorld.locator(".world-viewport[id]");
+  const rotateLearnerLeft = learnerWorld.getByRole("button", {
+    name: "Rotate learner model view left to -22.5 degrees",
+  });
+  await expect(learnerViewport).toBeVisible();
+  await expect(learnerViewport).toHaveAttribute(
+    "aria-label",
+    /Learner model 3D view\. Camera orientation 0 degrees/,
+  );
+  const learnerViewportId = await learnerViewportShell.getAttribute("id");
+  expect(learnerViewportId).toBeTruthy();
+  await expect(rotateLearnerLeft).toHaveAttribute(
+    "aria-controls",
+    learnerViewportId!,
+  );
+  await rotateLearnerLeft.focus();
+  await page.keyboard.press("Enter");
+  await expect(learnerViewport).toHaveAttribute(
+    "aria-label",
+    /Camera orientation -22\.5 degrees/,
+  );
+  await expect(learnerWorld.locator(".camera-view-status")).toHaveText(
+    "Learner model view rotated left. Camera orientation -22.5 degrees.",
+  );
+  const resetLearnerView = learnerWorld.getByRole("button", {
+    name: "Reset learner model view to 0 degrees",
+  });
+  await resetLearnerView.focus();
+  await page.keyboard.press("Enter");
+  await expect(learnerViewport).toHaveAttribute(
+    "aria-label",
+    /Camera orientation 0 degrees/,
+  );
+  await expect(learnerWorld.locator(".camera-view-status")).toHaveText(
+    "Learner model view reset. Camera orientation 0 degrees.",
+  );
   await expectNoAutomaticWcagViolations(page, "evidence");
 
   await page.getByRole("button", { name: "Revise my explanation" }).click();
