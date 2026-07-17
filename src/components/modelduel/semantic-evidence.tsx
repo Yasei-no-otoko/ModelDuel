@@ -161,7 +161,9 @@ function SemanticMoonComparison(
                 kind={kind}
                 title={kind === "learner" ? "Earth-shadow claim" : "Illumination + viewing angle"}
               />
-              <MoonEvidenceDiagram observation={observation} kind={kind} />
+              <div className="world-viewport-shell semantic-evidence-viewport">
+                <MoonEvidenceDiagram observation={observation} kind={kind} />
+              </div>
               <div className="prediction-block">
                 <span>Model prediction</span>
                 <strong>
@@ -222,7 +224,12 @@ function SemanticSeasonsComparison(
                 kind={kind}
                 title={kind === "learner" ? "Distance-only seasonal prediction" : "Axial-tilt seasonal prediction"}
               />
-              <SeasonsEvidenceDiagram caseSpec={props.caseSpec} observation={observation} />
+              <div className="world-viewport-shell semantic-evidence-viewport">
+                <SeasonsEvidenceDiagram
+                  caseSpec={props.caseSpec}
+                  observation={observation}
+                />
+              </div>
               <div className="prediction-block">
                 <span>Model prediction</span>
                 <strong>

@@ -1250,6 +1250,11 @@ textarea:disabled {
   background: #060b1d;
 }
 
+.semantic-evidence-viewport {
+  height: 285px;
+  display: block;
+}
+
 .world-viewport {
   height: 285px;
   cursor: grab;
@@ -2046,6 +2051,27 @@ textarea:disabled {
     height: 250px;
   }
 
+  .world-comparison-loading {
+    min-height: 82rem;
+  }
+
+  .comparison-loading-worlds {
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+  }
+
+  .comparison-loading-worlds span {
+    min-height: 27rem;
+  }
+
+  .comparison-loading-worlds::after {
+    min-height: 10rem;
+    border: 1px solid rgba(114, 239, 195, 0.22);
+    border-radius: 0.8rem;
+    background: rgba(13, 61, 58, 0.22);
+    content: "";
+  }
+
   .protected-state-error {
     width: min(calc(100% - 2rem), var(--max-width));
     grid-template-columns: 1fr;
@@ -2173,6 +2199,15 @@ textarea:disabled {
 
   .world-comparison {
     padding: 0.55rem;
+  }
+
+  .world-comparison-loading {
+    min-height: clamp(88rem, calc(104rem - 62vw), 92rem);
+    padding: 1rem;
+  }
+
+  .semantic-evidence-viewport {
+    height: 11.25rem;
   }
 
   .mobile-evidence-preview {
