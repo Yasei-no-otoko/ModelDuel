@@ -44,6 +44,11 @@ import {
   validateSketchFile,
 } from "./flow";
 import { getTraceHeroCopy } from "./trace-copy";
+import {
+  TRACE_HANDOFF_FILENAME,
+  buildTraceHandoffText,
+  type TraceHandoffContent,
+} from "./trace-handoff";
 import { formatCausalRelation } from "./learner-copy";
 import { useHydrationReady } from "./browser";
 import {
@@ -121,6 +126,13 @@ function formatReceipt(receiptId: string) {
   return receiptId.length > 24
     ? `${receiptId.slice(0, 12)}…${receiptId.slice(-8)}`
     : receiptId;
+}
+
+function traceObservationText(trace: NonNullable<ModelDuelSession["trace"]>) {
+  const observation = trace.observation.scientific;
+  return observation.scenario === "moon-phases"
+    ? `${Math.round(observation.physicalObservation.illuminationFraction * 100)}% illuminated; Earth-shadow intersection: ${observation.physicalObservation.earthShadowIntersection}`
+    : `Northern ${observation.physicalObservation.northernSeason}; Southern ${observation.physicalObservation.southernSeason}; relative incident energy ${observation.physicalObservation.northernEnergy.toFixed(2)} vs ${observation.physicalObservation.southernEnergy.toFixed(2)}`;
 }
 
 function SourceNotice({
@@ -205,6 +217,7 @@ export function ModelDuelExperience() {
   const activeTransports = useRef(new Map<string, TransportGuard>());
   const analysisPreparationActive = useRef(false);
   const sketchInputRef = useRef<HTMLInputElement>(null);
+  const tracePreviewRef = useRef<HTMLTextAreaElement>(null);
   const hydrationReady = useHydrationReady();
   const [selectedScenarioId, setSelectedScenarioId] =
     useState<ScenarioId>("moon-phases");
@@ -235,6 +248,8 @@ export function ModelDuelExperience() {
     useState<RevisionSubmissionResult | null>(null);
   const [transferPending, setTransferPending] = useState(false);
   const [transferError, setTransferError] = useState<string | null>(null);
+  const [traceExportConfirmed, setTraceExportConfirmed] = useState(false);
+  const [traceHandoffStatus, setTraceHandoffStatus] = useState("");
   const [status, setStatus] = useState("");
 
   function beginTransport(
@@ -801,12 +816,109 @@ export function ModelDuelExperience() {
     setRevisionResult(null);
     setTransferError(null);
     setTransferPending(false);
+    setTraceExportConfirmed(false);
+    setTraceHandoffStatus("");
     setStatus(nextStatus);
   }
 
   function handleReset() {
     resetExperience(activeScenarioId);
   }
+
+  function currentTraceHandoff(): TraceHandoffContent | null {
+    if (!session.trace || !analysis) return null;
+    const feedbackSource =
+      revisionResult?.source === "gpt-5.6"
+        ? "GPT-5.6 structured feedback"
+        : analysis.metadata.mode === "live"
+          ? "GPT-5.6 structured feedback"
+          : "Authored deterministic rubric · not AI-graded";
+    return {
+      scenario: scenarioContent.label,
+      evidenceSource:
+        analysis.metadata.mode === "live"
+          ? "Live GPT-5.6 analysis"
+          : "Verified authored sample · no learner input sent to GPT-5.6",
+      initialBeliefLabel:
+        session.trace.initialExplanation === VERIFIED_EMPTY_INPUT_TRACE
+          ? "Initial input status"
+          : "Initial belief",
+      initialBelief: session.trace.initialExplanation,
+      lockedPrediction: optionLabel(
+        analysis.predictionQuestion.options,
+        session.trace.prediction.optionId,
+      ),
+      observationLabel: scenarioContent.traceObservationLabel,
+      observation: traceObservationText(session.trace),
+      revisedExplanation: session.trace.revision.text,
+      revisionFeedback: `${feedbackSource} · ${session.trace.revision.feedback.conceptualChange}`,
+      transferResult: `${session.trace.transfer.result.isCorrect ? "Correct · 1/1" : "Not yet · 0/1"} · server-verified`,
+      transferRationale: session.trace.transfer.result.rationale,
+    };
+  }
+
+  function currentTraceHandoffText() {
+    const handoff = currentTraceHandoff();
+    return handoff ? buildTraceHandoffText(handoff) : null;
+  }
+
+  async function handleCopyTrace() {
+    if (!traceExportConfirmed) {
+      const message = "Review and confirm the learner-text export boundary first.";
+      setTraceHandoffStatus(message);
+      setStatus(message);
+      return;
+    }
+    const text = currentTraceHandoffText();
+    if (!text) return;
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
+      await navigator.clipboard.writeText(text);
+      const message = "Teacher summary copied to the system clipboard. ModelDuel did not send it.";
+      setTraceHandoffStatus(message);
+    } catch {
+      tracePreviewRef.current?.focus();
+      tracePreviewRef.current?.select();
+      const message = "Automatic copy is unavailable. The preview is selected; use your browser's Copy command.";
+      setTraceHandoffStatus(message);
+    }
+  }
+
+  function handleDownloadTrace() {
+    if (!traceExportConfirmed) {
+      const message = "Review and confirm the learner-text export boundary first.";
+      setTraceHandoffStatus(message);
+      setStatus(message);
+      return;
+    }
+    const text = currentTraceHandoffText();
+    if (!text) return;
+    let url: string | null = null;
+    let link: HTMLAnchorElement | null = null;
+    try {
+      const blob = new Blob([text], {
+        type: "text/plain;charset=utf-8",
+      });
+      url = URL.createObjectURL(blob);
+      link = document.createElement("a");
+      link.href = url;
+      link.download = TRACE_HANDOFF_FILENAME;
+      link.rel = "noopener";
+      document.body.appendChild(link);
+      link.click();
+      const message = "Trace downloaded locally. Review the learner text before sharing it.";
+      setTraceHandoffStatus(message);
+    } catch {
+      const message = "The local trace download could not start. Nothing was uploaded.";
+      setTraceHandoffStatus(message);
+    } finally {
+      link?.remove();
+      const urlToRevoke = url;
+      if (urlToRevoke) window.setTimeout(() => URL.revokeObjectURL(urlToRevoke), 1_000);
+    }
+  }
+
+  const traceHandoffPreview = currentTraceHandoffText() ?? "";
 
   return (
     <>
@@ -1532,6 +1644,107 @@ export function ModelDuelExperience() {
               {analysisLoad ? <p className="trace-source-notice">{analysisLoad.notice}</p> : null}
             </header>
 
+            <section className="trace-review-summary" aria-labelledby="trace-review-title">
+              <div className="trace-review-heading">
+                <p className="micro-label">Same-session teacher review</p>
+                <h2 id="trace-review-title">Review what changed—not just whether the answer was right.</h2>
+                <p>
+                  One compact view connects the learner&apos;s claim, committed prediction,
+                  physical evidence, revised explanation, and result on an unseen case.
+                </p>
+              </div>
+              <div className="trace-review-grid">
+                <article>
+                  <span>Before</span>
+                  <strong>{session.trace.initialExplanation}</strong>
+                  <p>{optionLabel(analysis.predictionQuestion.options, session.trace.prediction.optionId)}</p>
+                </article>
+                <article>
+                  <span>Evidence → revision</span>
+                  <strong>{traceObservationText(session.trace)}</strong>
+                  <p>{session.trace.revision.text}</p>
+                </article>
+                <article>
+                  <span>Unseen transfer</span>
+                  <strong>{session.trace.transfer.result.isCorrect ? "Correct · 1/1" : "Not yet · 0/1"}</strong>
+                  <p>{session.trace.transfer.result.rationale}</p>
+                </article>
+              </div>
+              <p className="trace-review-limit">
+                This documents one completed attempt—not a grade, a longitudinal record, or proof
+                of durable learning.
+              </p>
+            </section>
+
+            <aside
+              className="trace-handoff"
+              aria-labelledby="trace-handoff-title"
+              data-testid="trace-handoff"
+            >
+              <div className="trace-handoff-heading">
+                <p className="micro-label">Teacher discussion handoff · learner controlled</p>
+                <h2 id="trace-handoff-title">Let the learner choose what leaves this browser.</h2>
+                <p id="trace-handoff-boundary">
+                  This preview is created only in this browser. It contains the learner&apos;s
+                  explanations, so review it before copying or downloading. Copy writes to the
+                  system clipboard, which the operating system or device policy may retain or
+                  sync. ModelDuel does not send the handoff or create a server-side record; it
+                  remains in this active page until reset, reload, or page close. A downloaded file
+                  may remain on the browser or device. The editable text is a conversation aid,
+                  not a signed, tamper-proof, or teacher-authenticated record.
+                </p>
+              </div>
+              <textarea
+                ref={tracePreviewRef}
+                className="trace-handoff-preview"
+                aria-label="Teacher handoff preview"
+                aria-describedby="trace-handoff-boundary"
+                readOnly
+                rows={8}
+                value={traceHandoffPreview}
+              />
+              <fieldset className="trace-handoff-controls" aria-describedby="trace-handoff-boundary">
+                <legend className="sr-only">Teacher handoff controls</legend>
+                <label className="trace-export-confirmation">
+                  <input
+                    type="checkbox"
+                    aria-describedby="trace-handoff-boundary"
+                    checked={traceExportConfirmed}
+                    onChange={(event) => {
+                      setTraceExportConfirmed(event.target.checked);
+                      setTraceHandoffStatus("");
+                    }}
+                  />
+                  <span>I reviewed the learner-written text and want to include it in a clipboard copy or local download.</span>
+                </label>
+                <div className="trace-handoff-actions">
+                  <button
+                    className="primary-button"
+                    type="button"
+                    data-testid="copy-trace"
+                    disabled={!traceExportConfirmed}
+                    aria-describedby="trace-handoff-boundary"
+                    onClick={handleCopyTrace}
+                  >
+                    Copy teacher summary
+                  </button>
+                  <button
+                    className="quiet-button"
+                    type="button"
+                    data-testid="download-trace"
+                    disabled={!traceExportConfirmed}
+                    aria-describedby="trace-handoff-boundary"
+                    onClick={handleDownloadTrace}
+                  >
+                    Download learner-controlled trace (.txt)
+                  </button>
+                </div>
+                <p className="trace-handoff-status" role="status" aria-live="polite">
+                  {traceHandoffStatus}
+                </p>
+              </fieldset>
+            </aside>
+
             <ol className="trace-list">
               <li>
                 <span className="trace-number">01</span>
@@ -1550,11 +1763,7 @@ export function ModelDuelExperience() {
               </li>
               <li>
                 <span className="trace-number">03</span>
-                    <div><p>{scenarioContent.traceObservationLabel}</p><h2>
-                      {session.trace.observation.scientific.scenario === "moon-phases"
-                        ? `${Math.round(session.trace.observation.scientific.physicalObservation.illuminationFraction * 100)}% illuminated; Earth-shadow intersection: ${session.trace.observation.scientific.physicalObservation.earthShadowIntersection}`
-                        : `Northern ${session.trace.observation.scientific.physicalObservation.northernSeason}; Southern ${session.trace.observation.scientific.physicalObservation.southernSeason}; relative incident energy ${session.trace.observation.scientific.physicalObservation.northernEnergy.toFixed(2)} vs ${session.trace.observation.scientific.physicalObservation.southernEnergy.toFixed(2)}`}
-                    </h2></div>
+                <div><p>{scenarioContent.traceObservationLabel}</p><h2>{traceObservationText(session.trace)}</h2></div>
               </li>
               <li>
                 <span className="trace-number">04</span>
@@ -1583,7 +1792,7 @@ export function ModelDuelExperience() {
 
             <div className="trace-footer">
               <div><p className="micro-label">Auditable conceptual-revision evidence</p><strong>A belief, prediction, observation, revision, and unseen transfer case are connected in one reviewable learning trail.</strong></div>
-              <button className="primary-button" type="button" onClick={handleReset}>Start a new attempt</button>
+              <button className="quiet-button" type="button" onClick={handleReset}>Start a new attempt</button>
             </div>
           </section>
         ) : null}

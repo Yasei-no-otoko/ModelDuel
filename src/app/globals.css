@@ -179,6 +179,11 @@ dd {
   border-color: rgba(87, 226, 242, 0.5);
 }
 
+.quiet-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
 .progress-current {
   display: none;
 }
@@ -1776,6 +1781,181 @@ textarea:disabled {
   font-size: var(--text-caption);
 }
 
+.trace-review-summary {
+  margin-bottom: 1.2rem;
+  padding: 1.35rem;
+  border: 1px solid rgba(87, 226, 242, 0.32);
+  border-radius: 1rem;
+  background: linear-gradient(145deg, rgba(10, 35, 61, 0.92), rgba(12, 24, 49, 0.9));
+}
+
+.trace-review-heading {
+  max-width: 800px;
+}
+
+.trace-review-heading h2,
+.trace-review-heading p {
+  margin: 0;
+}
+
+.trace-review-heading h2 {
+  margin-top: 0.35rem;
+  font-size: clamp(1.3rem, 2.6vw, 1.8rem);
+  line-height: 1.25;
+}
+
+.trace-review-heading > p:last-child {
+  margin-top: 0.55rem;
+  color: #c8d4e7;
+  line-height: 1.55;
+}
+
+.trace-review-grid {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.trace-review-grid article {
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.78rem;
+  background: rgba(8, 17, 38, 0.68);
+}
+
+.trace-review-grid span,
+.trace-review-grid strong,
+.trace-review-grid p {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.trace-review-grid span {
+  color: var(--cyan-soft);
+  font-size: var(--text-caption);
+  font-weight: 820;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.trace-review-grid strong {
+  margin-top: 0.5rem;
+  color: #f4f7ff;
+  line-height: 1.45;
+}
+
+.trace-review-grid p {
+  margin: 0.55rem 0 0;
+  color: #c8d4e7;
+  font-size: var(--text-caption);
+  line-height: 1.5;
+}
+
+.trace-review-limit {
+  margin: 0.9rem 0 0;
+  color: var(--faint);
+  font-size: var(--text-caption);
+  line-height: 1.5;
+}
+
+.trace-handoff {
+  margin-bottom: 1.2rem;
+  padding: 1.3rem 1.4rem;
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(280px, 1fr) minmax(250px, 0.72fr);
+  align-items: start;
+  gap: 1rem;
+  border: 1px solid rgba(114, 239, 195, 0.4);
+  border-radius: 0.9rem;
+  background:
+    linear-gradient(135deg, rgba(16, 57, 57, 0.78), rgba(7, 22, 42, 0.88));
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.18);
+}
+
+.trace-handoff h2,
+.trace-handoff p {
+  margin: 0;
+}
+
+.trace-handoff h2 {
+  margin-top: 0.35rem;
+  font-size: clamp(1.15rem, 2.4vw, 1.55rem);
+  line-height: 1.25;
+}
+
+.trace-handoff-heading > p:last-child {
+  max-width: 720px;
+  margin-top: 0.55rem;
+  color: #c8d4e7;
+  font-size: var(--text-caption);
+  line-height: 1.55;
+}
+
+.trace-handoff-preview {
+  width: 100%;
+  min-height: 11.5rem;
+  padding: 0.85rem;
+  resize: vertical;
+  border: 1px solid rgba(165, 243, 252, 0.28);
+  border-radius: 0.68rem;
+  color: #dce5f7;
+  background: rgba(4, 13, 28, 0.86);
+  font: 0.74rem/1.45 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.trace-handoff-preview:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.trace-handoff-controls {
+  min-width: 0;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.trace-export-confirmation {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 0.65rem;
+  color: #e2e9f7;
+  font-size: var(--text-caption);
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.trace-export-confirmation input {
+  width: 1.05rem;
+  height: 1.05rem;
+  margin-top: 0.15rem;
+  accent-color: var(--green);
+}
+
+.trace-handoff-actions {
+  margin-top: 0.85rem;
+  display: flex;
+  align-items: stretch;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.trace-handoff-actions button {
+  width: 100%;
+}
+
+.trace-handoff-status {
+  min-height: 2.4em;
+  margin-top: 0.65rem !important;
+  color: var(--cyan-soft);
+  font-size: var(--text-caption);
+  line-height: 1.4;
+}
+
 .trace-footer {
   margin-top: 1.2rem;
   padding: 1.2rem 1.4rem;
@@ -1975,6 +2155,14 @@ textarea:disabled {
     grid-template-columns: minmax(240px, 0.6fr) minmax(420px, 1fr);
     gap: 2rem;
   }
+
+  .trace-handoff {
+    grid-template-columns: minmax(0, 1fr) minmax(250px, 0.72fr);
+  }
+
+  .trace-handoff-heading {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 780px) {
@@ -2045,7 +2233,8 @@ textarea:disabled {
 
   .model-review-grid,
   .evidence-worlds,
-  .revision-layout {
+  .revision-layout,
+  .trace-review-grid {
     grid-template-columns: 1fr;
   }
 
@@ -2055,9 +2244,22 @@ textarea:disabled {
 
   .stage-action-row,
   .case-toolbar,
-  .trace-footer {
+  .trace-footer,
+  .trace-handoff {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .trace-handoff {
+    grid-template-columns: 1fr;
+  }
+
+  .trace-handoff-heading {
+    grid-column: auto;
+  }
+
+  .trace-handoff-actions {
+    min-width: 0;
   }
 
   .stage-action-row .primary-button,
@@ -2282,6 +2484,11 @@ textarea:disabled {
 
   .trace-hero h1 {
     font-size: clamp(2.05rem, 10vw, 2.6rem);
+  }
+
+  .trace-review-summary,
+  .trace-handoff {
+    padding: 1rem;
   }
 
   .trace-hero > p:last-child {

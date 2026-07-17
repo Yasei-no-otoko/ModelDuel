@@ -32,7 +32,7 @@ AI tutors can generate clear explanations, but a correct answer does not prove t
 
 ### What it does
 
-ModelDuel guides a learner through one protected sequence: capture → interpret → predict → observe → revise → transfer → trace. The learner explains an idea in text, optionally adds a sketch, and deliberately chooses either configured live analysis or an authored verified sample. The app compares a learner model with a scientific model, requires a prediction before revealing evidence, renders both worlds under the same case, asks for a revised explanation, and checks a transfer question. The final Model Revision Trace preserves the initial belief, prediction, observation, revision, and transfer result.
+ModelDuel guides a learner through one protected sequence: capture → interpret → predict → observe → revise → transfer → trace. The learner explains an idea in text, optionally adds a sketch, and deliberately chooses either configured live analysis or an authored verified sample. The app compares a learner model with a scientific model, requires a prediction before revealing evidence, renders both worlds under the same case, asks for a revised explanation, and checks a transfer question. The final Model Revision Trace preserves the initial belief, prediction, observation, revision, and transfer result. A compact same-session teacher review shows the before state, evidence and revision, and unseen transfer result. After reviewing a clear learner-text boundary, the learner may copy or download an allow-listed plain-text handoff; that action adds no API request, account, share link, or server-side record. The editable text is a conversation aid rather than a signed, tamper-proof, or teacher-authenticated record, and the active page, system clipboard, browser, or device may retain or sync a copy.
 
 Two complete challenges share this loop. The Moon challenge confronts the belief that Earth's shadow causes regular phases. The Seasons challenge tests the belief that Earth-Sun distance causes summer and winter. Verified samples are visibly labeled, require no account or API key, and never masquerade as live output. The production configuration routes analysis and PTC to GPT-5.6 Terra and live revision feedback to GPT-5.6 Luna. A dated 2026-07-17 production integration smoke completed one paid Terra analysis/PTC request and one paid Luna revision request with no HTTP retry; it is not proof of the final build.
 
@@ -58,6 +58,7 @@ The hardest challenge was making an AI-assisted experience feel generative witho
 - The verified-sample path is account- and key-independent while clearly disclosing its authored source.
 - The configured live path is schema-constrained, validated again by application code, and fails closed without silent fallback.
 - Predictions are locked before evidence, and transfer grading is authenticated at the server boundary.
+- The completed attempt becomes a compact teacher-review summary plus an explicit learner-controlled local handoff, without creating a teacher account, share link, or new API call.
 - The interface includes source labels, keyboard-visible controls, mobile-safe layouts, and an accessible, strictly validated sketch uploader.
 - The repository records build-week provenance, SDK decisions, product boundaries, and submission verification work.
 
@@ -67,7 +68,7 @@ The useful boundary is not “AI versus deterministic code.” It is deciding wh
 
 ### What's next
 
-Main merge `e04443f`, the post-merge gates, final deployment, public canary, exact one-analysis/one-revision live canary, and production screenshot set are complete. Before submission, we will confirm exact Workers CPU telemetry/account-plan limits, publish the repository, record the 2:45 demo, and replace the remaining repository, video, and feedback placeholders. The dated 2026-07-17 Terra/Luna production integration smoke remains useful historical integration evidence; the separate final canary is recorded below without guessing usage or cost. After the hackathon, the same constrained-world pattern could expand to additional science misconceptions and a teacher-facing view of Model Revision Traces. Any impact or learning-gain claim would require a separate classroom evaluation.
+Main merge `e04443f`, the post-merge gates, final deployment, public canary, exact one-analysis/one-revision live canary, and production screenshot set are complete. Before submission, we will confirm exact Workers CPU telemetry/account-plan limits, publish the repository, record the 2:45 demo, and replace the remaining repository, video, and feedback placeholders. The dated 2026-07-17 Terra/Luna production integration smoke remains useful historical integration evidence; the separate final canary is recorded below without guessing usage or cost. After the hackathon, the same constrained-world pattern could expand to additional science misconceptions, classroom administration, and separately evaluated longitudinal learning records. Any impact or learning-gain claim would require a separate classroom evaluation.
 
 ### Production verification
 
@@ -80,8 +81,8 @@ At the dated integration-smoke point, the runtime at [modelduel.yasei.workers.de
 | Criterion | ModelDuel evidence |
 | --- | --- |
 | Technological Implementation | GPT-5.6 Terra/Luna routing, image and text capture, schema-constrained Responses, validated tool orchestration, private deterministic registries, authenticated evaluation tokens, fail-closed routes, Cloudflare distributed rate bindings, deterministic simulations, and Three.js renderers. |
-| Design | One legible sequence protects prediction before evidence, separates live and verified sources, supports keyboard/touch/mobile use, and ends with a coherent revision trace. |
-| Potential Impact | The experience gives learners and teachers a structured record of conceptual revision rather than another generated answer; measured learning gains are not claimed. |
+| Design | One legible sequence protects prediction before evidence, separates live and verified sources, supports keyboard/touch/mobile use, and ends with a compact review plus an explicit learner-controlled local handoff. |
+| Potential Impact | By explicit learner choice, one conceptual-revision attempt becomes editable plain text for teacher discussion rather than another generated answer. ModelDuel does not send the handoff, create its server-side record, or authenticate it; grades, durable learning, and measured learning gains are not claimed. |
 | Quality of the Idea | The learner's own misconception becomes a runnable, falsifiable world that competes with a scientific model under the same evidence. |
 
 ## How to verify ModelDuel locally
@@ -115,7 +116,7 @@ Open the local URL printed by Next.js.
 
 5. Select **Capture revision and continue**.
 6. For the Moon transfer question, choose **The Moon is in the Sun's direction**, then select **Lock and check answer**.
-7. Inspect the Model Revision Trace.
+7. Inspect the Model Revision Trace, then review the teacher-handoff preview. Confirm the learner-text boundary to copy or download the allow-listed local text; this adds no network request.
 8. Select **New attempt**, choose **Seasons**, and repeat the verified path.
 
 ### Optional live setup
