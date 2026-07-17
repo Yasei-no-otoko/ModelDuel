@@ -23,6 +23,7 @@ export type LiveRevisionServiceInput = Readonly<{
   learnerWorldId: string;
   scientificWorldId: string;
   revisionText: string;
+  safetyIdentifier: string;
   misconceptionType: "earth-shadow-phases" | "distance-causes-seasons";
 }>;
 
@@ -71,6 +72,7 @@ export async function evaluateLiveRevision(
     observations: simulation.output,
     rubric: RUBRICS[input.scenarioId],
     revisionText: input.revisionText,
+    safetyIdentifier: input.safetyIdentifier,
     repair: false,
     idempotencyKey: `${input.idempotencyKey}-revision-1`,
     signal,
@@ -89,6 +91,7 @@ export async function evaluateLiveRevision(
     rubric: RUBRICS[input.scenarioId],
     revisionText: input.revisionText,
     previousOutputText: first.outputText.slice(0, 4_096),
+    safetyIdentifier: input.safetyIdentifier,
     repair: true,
     idempotencyKey: `${input.idempotencyKey}-revision-2`,
     signal,

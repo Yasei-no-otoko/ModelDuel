@@ -11,6 +11,7 @@ import { ModelDuelUpstreamError } from "./errors";
 import type { ModelDuelGateway } from "./gateway";
 
 const NOW = 1_800_000_000_000;
+const SAFETY_IDENTIFIER = `mds1_${"A".repeat(43)}`;
 const SECRET = "live-revision-token-test-secret-long-enough";
 
 function seasonsLiveRequest() {
@@ -42,6 +43,7 @@ function seasonsLiveRequest() {
     idempotencyKey: "seasons-live-revision-cost-idempotency",
     requestedAt: NOW,
     sessionId,
+    liveUseAttestation: true as const,
     revisionText:
       "Earth's axial tilt changes sunlight angle, creating opposite seasons in the two hemispheres rather than distance warming both together.",
     evaluationId,
@@ -87,6 +89,7 @@ function liveRequest(
     idempotencyKey: "live-revision-idempotency",
     requestedAt: NOW,
     sessionId,
+    liveUseAttestation: true as const,
     revisionText:
       "Sunlight lights half the Moon, and our viewing angle reveals the visible part.",
     evaluationId,
@@ -125,6 +128,7 @@ describe("live revision cost boundary", () => {
 
     await expect(
       evaluateRevisionRequest(liveRequest(), NOW, {
+        resolveSafetyIdentifier: () => SAFETY_IDENTIFIER,
         signal: AbortSignal.timeout(10_000),
         beforeLiveGateway,
       }),
@@ -138,6 +142,7 @@ describe("live revision cost boundary", () => {
 
     await expect(
       evaluateRevisionRequest(liveRequest(), NOW, {
+        resolveSafetyIdentifier: () => SAFETY_IDENTIFIER,
         gateway: countingGateway(counter),
         signal: AbortSignal.timeout(10_000),
         beforeLiveGateway,
@@ -153,6 +158,7 @@ describe("live revision cost boundary", () => {
 
     await expect(
       evaluateRevisionRequest(seasonsLiveRequest(), NOW, {
+        resolveSafetyIdentifier: () => SAFETY_IDENTIFIER,
         gateway: countingGateway(counter),
         signal: AbortSignal.timeout(10_000),
         beforeLiveGateway,
@@ -185,6 +191,7 @@ describe("live revision cost boundary", () => {
 
     await expect(
       evaluateRevisionRequest(liveRequest(), NOW, {
+        resolveSafetyIdentifier: () => SAFETY_IDENTIFIER,
         gateway,
         signal: AbortSignal.timeout(10_000),
         beforeLiveGateway,
@@ -219,13 +226,16 @@ describe("live revision cost boundary", () => {
     for (const request of cases) {
       const counter = { calls: 0 };
       const beforeLiveGateway = vi.fn();
+      const resolveSafetyIdentifier = vi.fn(() => SAFETY_IDENTIFIER);
       await expect(
         evaluateRevisionRequest(request, NOW, {
+          resolveSafetyIdentifier,
           gateway: countingGateway(counter),
           signal: AbortSignal.timeout(10_000),
           beforeLiveGateway,
         }),
       ).rejects.toBeTruthy();
+      expect(resolveSafetyIdentifier).not.toHaveBeenCalled();
       expect(beforeLiveGateway).not.toHaveBeenCalled();
       expect(counter.calls).toBe(0);
     }
@@ -239,6 +249,7 @@ describe("live revision cost boundary", () => {
 
     await expect(
       evaluateRevisionRequest(liveRequest(), NOW, {
+        resolveSafetyIdentifier: () => SAFETY_IDENTIFIER,
         gateway: countingGateway(counter),
         signal: AbortSignal.timeout(10_000),
         beforeLiveGateway,

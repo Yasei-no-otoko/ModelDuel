@@ -27,25 +27,54 @@ export function useHydrationReady() {
   );
 }
 
-const CLIENT_WEBGL_AVAILABLE =
-  typeof document === "undefined"
-    ? false
-    : (() => {
-        const canvas = document.createElement("canvas");
-        return Boolean(
-          canvas.getContext("webgl2") ?? canvas.getContext("webgl"),
-        );
-      })();
+let cachedWebGlAvailability: boolean | null = null;
 
-function getWebGlSnapshot() {
-  return CLIENT_WEBGL_AVAILABLE;
+function detectWebGlAvailability() {
+  if (cachedWebGlAvailability !== null) return cachedWebGlAvailability;
+  if (typeof document === "undefined") return false;
+
+  const canvas = document.createElement("canvas");
+  let context: WebGLRenderingContext | WebGL2RenderingContext | null = null;
+  try {
+    context =
+      (canvas.getContext("webgl2") as WebGL2RenderingContext | null) ??
+      (canvas.getContext("webgl") as WebGLRenderingContext | null);
+    cachedWebGlAvailability = context !== null;
+  } catch {
+    cachedWebGlAvailability = false;
+  } finally {
+    if (context) {
+      try {
+        context.getExtension("WEBGL_lose_context")?.loseContext();
+      } catch {
+        // Availability is already known; context cleanup is best-effort.
+      }
+    }
+  }
+  return cachedWebGlAvailability;
 }
 
-export function useWebGlAvailability() {
+function subscribeWebGl(onStoreChange: () => void) {
+  if (cachedWebGlAvailability === null) {
+    cachedWebGlAvailability = detectWebGlAvailability();
+    onStoreChange();
+  }
+  return () => undefined;
+}
+
+function getWebGlSnapshot() {
+  return cachedWebGlAvailability;
+}
+
+function getServerWebGlSnapshot() {
+  return null;
+}
+
+export function useWebGlAvailability(): boolean | null {
   return useSyncExternalStore(
-    subscribeNoop,
+    subscribeWebGl,
     getWebGlSnapshot,
-    getServerNotReadySnapshot,
+    getServerWebGlSnapshot,
   );
 }
 

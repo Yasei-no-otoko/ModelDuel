@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, "codex/**"]
+    branches: [main]
   pull_request:
 
 permissions:
@@ -77,3 +77,30 @@ jobs:
 
       - name: End-to-end tests
         run: pnpm test:e2e
+
+  cloudflare:
+    name: Cloudflare compatibility and dependency audit
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_TELEMETRY_DISABLED: "1"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.13.0
+          run_install: false
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Audit production dependencies
+        run: pnpm audit --prod
+      - name: Build and typecheck Cloudflare Worker
+        run: pnpm cf:typecheck
+      - name: Validate Wrangler deployment bundle
+        run: pnpm exec wrangler deploy --dry-run

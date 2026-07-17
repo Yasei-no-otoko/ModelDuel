@@ -4,9 +4,9 @@ type ConceptualChange = RevisionFeedback["conceptualChange"];
 
 const CORRECT_TRANSFER_COPY = {
   revised: "Your revised model transferred.",
-  partial: "The transfer answer was correct, but the revision is still partial.",
+  partial: "Your model transferred, with one revision still to make.",
   retained:
-    "The transfer answer was correct, but the original model is still retained.",
+    "Your answer transferred, but the original model is still retained.",
 } as const satisfies Record<ConceptualChange, string>;
 
 const INCORRECT_TRANSFER_COPY = {

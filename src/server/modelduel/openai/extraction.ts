@@ -8,6 +8,7 @@ export type ExtractLearnerModelInput = Readonly<{
   explanation: string;
   imageDataUrl?: string;
   requestId: string;
+  safetyIdentifier: string;
   signal: AbortSignal;
 }>;
 
@@ -35,6 +36,7 @@ export async function extractLearnerModel(
     scenarioId: input.scenarioId,
     explanation: input.explanation,
     imageDataUrl: input.imageDataUrl,
+    safetyIdentifier: input.safetyIdentifier,
     repair: false,
     idempotencyKey: `${input.requestId}-extract-1`,
     signal: input.signal,
@@ -53,6 +55,7 @@ export async function extractLearnerModel(
     scenarioId: input.scenarioId,
     explanation: input.explanation,
     previousOutputText: first.outputText.slice(0, 4_096),
+    safetyIdentifier: input.safetyIdentifier,
     repair: true,
     idempotencyKey: `${input.requestId}-extract-2`,
     signal: input.signal,

@@ -45,8 +45,11 @@ import {
 } from "./flow";
 import { getTraceHeroCopy } from "./trace-copy";
 import { formatCausalRelation } from "./learner-copy";
-import { WorldComparison } from "./WorldComparison";
 import { useHydrationReady } from "./browser";
+import {
+  loadWorldComparison,
+  ResilientWorldComparison,
+} from "./world-comparison-loader";
 
 type SessionContainer = Readonly<{
   value: ModelDuelSession;
@@ -65,6 +68,15 @@ type TransportGuard = Readonly<{
 
 const VERIFIED_EMPTY_INPUT_TRACE =
   "No learner explanation was submitted; the verified sample was selected explicitly.";
+
+const LIVE_USE_DISCLOSURE =
+  "Live GPT is only for people 18 or older, or learners using it with teacher or guardian authorization. Do not enter a student’s name or any personal or identifying information. The verified sample is open to everyone, sends no learner input to GPT, and requires no confirmation.";
+
+const LIVE_USE_CONFIRMATION =
+  "I am 18 or older, or I have teacher or guardian authorization, and I will not include personal or identifying student information anywhere in this live attempt, including my revised explanation.";
+
+const LIVE_REVISION_GUIDANCE =
+  "Your live-use confirmation covers this entire attempt, including this revised explanation. Do not include names or personal or identifying student information. GPT feedback may be wrong; verify it with a teacher.";
 
 function sessionReducer(
   state: SessionContainer,
@@ -211,6 +223,7 @@ export function ModelDuelExperience() {
   const [analysisAttempt, setAnalysisAttempt] = useState<
     "live" | "verified-sample" | null
   >(null);
+  const [liveUseConfirmed, setLiveUseConfirmed] = useState(false);
   const [liveAnalysisRequest, setLiveAnalysisRequest] =
     useState<LiveAnalysisRequest | null>(null);
   const [observationReviewed, setObservationReviewed] = useState(false);
@@ -432,6 +445,10 @@ export function ModelDuelExperience() {
     if (!hydrationReady || analysisPending || analysisPreparationActive.current) {
       return;
     }
+    if (mode === "live" && !liveUseConfirmed) {
+      setStatus("Confirm the live GPT use boundary before submitting learner input.");
+      return;
+    }
     const selectedSketchError = sketch
       ? validateSketchFile(sketch.file)
       : null;
@@ -518,8 +535,9 @@ export function ModelDuelExperience() {
         schemaVersion: "1.0",
         requestId,
       sessionId: session.sessionId,
-      requestedAt: analysisStartedAt,
-      scenarioId: preparationScenarioId,
+        requestedAt: analysisStartedAt,
+        scenarioId: preparationScenarioId,
+        liveUseAttestation: true,
         explanation: explanation.trim(),
         sketch: encodedSketch,
       };
@@ -540,7 +558,7 @@ export function ModelDuelExperience() {
 
   async function handleCapture(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    await beginAnalysis("live");
+    await beginAnalysis("verified-sample");
   }
 
   function handleConfirmModels() {
@@ -551,6 +569,7 @@ export function ModelDuelExperience() {
   function handleLockPrediction() {
     if (!session.prediction) return;
     dispatch({ type: "LOCK_PREDICTION", lockedAt: nextTimestamp(clock) });
+    void loadWorldComparison().catch(() => undefined);
     setStatus("Prediction locked. It can no longer be changed.");
   }
 
@@ -579,6 +598,12 @@ export function ModelDuelExperience() {
     const comparison = session.comparison;
     const revisionAnalysis = analysis;
     if (!comparison || !revisionAnalysis) return;
+    if (revisionAnalysis.metadata.mode === "live" && !liveUseConfirmed) {
+      setRevisionError(
+        "The live-use confirmation must remain active for live revision feedback.",
+      );
+      return;
+    }
 
     setRevisionError(null);
     setRevisionPending(true);
@@ -592,6 +617,7 @@ export function ModelDuelExperience() {
         return {
           ...common,
           mode: "live",
+          liveUseAttestation: true,
           evaluationId: revisionAnalysis.transferQuestion.evaluationId,
         };
       }
@@ -765,6 +791,7 @@ export function ModelDuelExperience() {
     setAnalysisError(null);
     setAnalysisErrorCode(null);
     setAnalysisAttempt(null);
+    setLiveUseConfirmed(false);
     setLiveAnalysisRequest(null);
     setObservationReviewed(false);
     setRevisionDraft("");
@@ -829,6 +856,18 @@ export function ModelDuelExperience() {
                 <span className="gradient-text">Evidence decides.</span>
               </h1>
             <p className="hero-summary">{scenarioContent.heroSummary}</p>
+              <button
+                className="primary-button full-button mobile-verified-cta"
+                type="button"
+                aria-label="Run verified sample"
+                data-testid="mobile-verified-cta"
+                data-hydrated={hydrationReady ? "true" : "false"}
+                disabled={!hydrationReady || analysisPending}
+                onClick={() => void beginAnalysis("verified-sample")}
+              >
+                <span>Run verified sample <span aria-hidden="true">→</span></span>
+                <small>Instant {scenarioContent.label} challenge · no API wait</small>
+              </button>
               <ul className="promise-list">
                 <li>Evidence stays hidden until you commit.</li>
                 <li>Physical observation stays separate from model claims.</li>
@@ -868,12 +907,31 @@ export function ModelDuelExperience() {
                 );
               })}
             </fieldset>
-            <div className="card-heading">
+              <div className="card-heading">
                 <div>
                   <p className="micro-label">Capture · step 1 of 7</p>
                 <h2>{scenarioContent.capturePrompt}</h2>
                 </div>
                 <span className="sample-pill">Editable sample</span>
+              </div>
+              <div className="capture-actions capture-actions-verified">
+                <button
+                  className="primary-button full-button capture-card-verified-action"
+                  type="submit"
+                  disabled={!hydrationReady || analysisPending}
+                  data-hydrated={hydrationReady ? "true" : "false"}
+                >
+                  {!hydrationReady
+                    ? "Preparing challenge…"
+                    : analysisPending && analysisAttempt === "verified-sample"
+                      ? "Loading verified sample…"
+                      : (
+                          <>
+                            <span>Run verified sample <span aria-hidden="true">→</span></span>
+                            <small>Instant {scenarioContent.label} challenge · no API wait</small>
+                          </>
+                        )}
+                </button>
               </div>
               <label htmlFor="learner-explanation">Your current explanation</label>
               <textarea
@@ -940,34 +998,41 @@ export function ModelDuelExperience() {
                 </div>
               ) : null}
 
-              <div className="capture-actions">
-                <button
-                  className="primary-button full-button"
-                  type="submit"
-                  disabled={!hydrationReady || analysisPending}
-                  data-hydrated={hydrationReady ? "true" : "false"}
-                >
-                  {!hydrationReady
-                    ? "Preparing challenge…"
-                    : analysisPending && analysisAttempt === "live"
-                      ? "Analyzing with GPT-5.6…"
-                      : "Analyze with GPT-5.6"}
-                  {hydrationReady && !analysisPending ? <span aria-hidden="true">→</span> : null}
-                </button>
+              <div className="live-use-boundary">
+                <p id="live-use-disclosure">{LIVE_USE_DISCLOSURE}</p>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={liveUseConfirmed}
+                    disabled={analysisPending}
+                    aria-describedby="live-use-disclosure"
+                    onChange={(event) => setLiveUseConfirmed(event.target.checked)}
+                  />
+                  <span>{LIVE_USE_CONFIRMATION}</span>
+                </label>
+              </div>
+
+              <div className="capture-actions capture-actions-live">
                 <button
                   className="secondary-button full-button"
                   type="button"
-                  disabled={!hydrationReady || analysisPending}
-                  onClick={() => void beginAnalysis("verified-sample")}
+                  disabled={!hydrationReady || analysisPending || !liveUseConfirmed}
+                  data-hydrated={hydrationReady ? "true" : "false"}
+                  onClick={() => void beginAnalysis("live")}
                 >
-                  {analysisPending && analysisAttempt === "verified-sample"
-                    ? "Loading verified sample…"
-                    : "Run verified sample"}
+                  {analysisPending && analysisAttempt === "live"
+                    ? "Analyzing with GPT-5.6…"
+                    : (
+                        <>
+                          <span>Analyze with GPT-5.6</span>
+                          <small>Live technical proof · about 20 seconds</small>
+                        </>
+                      )}
                 </button>
               </div>
               <p className="form-disclosure">
                 Live analysis uses your submitted text and optional sketch. The verified sample
-                is a free, authored path and never claims to analyze your input.
+                is an authored, API-free path and never claims to analyze your input.
               </p>
             </form>
           </section>
@@ -1214,7 +1279,7 @@ export function ModelDuelExperience() {
               <>
                 {analysis.caseSpec.scenario === "moon-phases" &&
                 scenarioComparison.scenario === "moon-phases" ? (
-                  <WorldComparison
+                  <ResilientWorldComparison
                     scenario="moon-phases"
                     caseSpec={analysis.caseSpec}
                     learner={scenarioComparison.learner}
@@ -1222,7 +1287,7 @@ export function ModelDuelExperience() {
                   />
                 ) : analysis.caseSpec.scenario === "seasons" &&
                   scenarioComparison.scenario === "seasons" ? (
-                  <WorldComparison
+                  <ResilientWorldComparison
                     scenario="seasons"
                     caseSpec={analysis.caseSpec}
                     learner={scenarioComparison.learner}
@@ -1344,6 +1409,11 @@ export function ModelDuelExperience() {
                   ? "Connect a cause to the observation. GPT-5.6 will return schema-validated conceptual feedback; no authored score is substituted if it fails."
                   : "Connect a cause to the observation. The check below uses a transparent, authored rubric—it is not GPT-5.6 grading."}
               </p>
+              {analysis.metadata.mode === "live" ? (
+                <p className="live-revision-guidance" id="live-revision-guidance">
+                  {LIVE_REVISION_GUIDANCE}
+                </p>
+              ) : null}
               <label htmlFor="revision-text">Revised causal explanation</label>
               <textarea
                 id="revision-text"
@@ -1352,7 +1422,7 @@ export function ModelDuelExperience() {
                 onChange={(event) => setRevisionDraft(event.target.value)}
                 maxLength={1_500}
                 disabled={Boolean(session.revision)}
-                aria-describedby={`revision-help${revisionError ? " revision-error" : ""}`}
+                aria-describedby={`${analysis.metadata.mode === "live" ? "live-revision-guidance " : ""}revision-help${revisionError ? " revision-error" : ""}`}
                 aria-invalid={Boolean(revisionError)}
                   placeholder={scenarioContent.revisionPlaceholder}
               />
@@ -1512,7 +1582,7 @@ export function ModelDuelExperience() {
             </ol>
 
             <div className="trace-footer">
-              <div><p className="micro-label">What this proves</p><strong>A belief, prediction, observation, revision, and unseen transfer case are connected in one auditable learning trail.</strong></div>
+              <div><p className="micro-label">Auditable conceptual-revision evidence</p><strong>A belief, prediction, observation, revision, and unseen transfer case are connected in one reviewable learning trail.</strong></div>
               <button className="primary-button" type="button" onClick={handleReset}>Start a new attempt</button>
             </div>
           </section>

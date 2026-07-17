@@ -56,7 +56,9 @@ export const openai = new OpenAI({
 
 `OPENAI_API_KEY` must exist only in the server environment. Never expose it in browser JavaScript, a `VITE_*` or `NEXT_PUBLIC_*` variable, client-side storage, logs, screenshots, or source control. The browser calls a validated ModelDuel server endpoint; that endpoint calls OpenAI.
 
-Every ModelDuel OpenAI request sets `store: false`, because learner explanations and sketches may contain personal or classroom data. `store: false` disables application-level response storage for these requests; it is not, by itself, a Zero Data Retention guarantee. Deployment retention requirements must also be handled through the applicable OpenAI organization, project, and contractual controls.
+Every ModelDuel OpenAI request sets `store: false`, because learner explanations and sketches may contain personal or classroom data. `store: false` disables application response storage for these requests, but default abuse-monitoring logs may still include prompts and responses and may be retained for up to 30 days. Zero Data Retention requires OpenAI approval and applicable organization/project controls; this prototype does not claim ZDR. See OpenAI's [data controls](https://developers.openai.com/api/docs/guides/your-data).
+
+The product boundary keeps the authored, API-free verified sample open to everyone. Live GPT input is limited to people 18 or older, or learners using it with teacher or guardian authorization. The live button remains disabled until the user prospectively confirms that they will not include personal or identifying student information anywhere in the live attempt, including the revised explanation. The exact-true attestation is enforced by the server before either live analysis or live revision can reach rate limiting or a model call; it is not stored as evidence. ModelDuel does not request a name, date of birth, age, or proof of authorization. This confirmation is a product safeguard; it is not age verification or a claim of legal compliance. See OpenAI's [Under 18 API Guidance](https://developers.openai.com/api/docs/guides/safety-checks/under-18-api-guidance) and [data controls](https://developers.openai.com/api/docs/guides/your-data).
 
 ## Responses API, including image input
 
@@ -282,6 +284,7 @@ No raw SDK response, reasoning item, sketch data URL, evaluation token, exceptio
 - [GPT-5.6 Terra model](https://developers.openai.com/api/docs/models/gpt-5.6-terra)
 - [GPT-5.6 Luna model](https://developers.openai.com/api/docs/models/gpt-5.6-luna)
 - [Your data and API retention controls](https://developers.openai.com/api/docs/guides/your-data)
+- [Under 18 API Guidance](https://developers.openai.com/api/docs/guides/safety-checks/under-18-api-guidance)
 - [API key safety guidance](https://help.openai.com/en/articles/5112595-best-practices-for-api-key-safety)
 - [Vercel request headers](https://vercel.com/docs/headers/request-headers)
 - [Vercel system environment variables](https://vercel.com/docs/environment-variables/system-environment-variables)

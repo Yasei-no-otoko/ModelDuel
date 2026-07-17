@@ -2,7 +2,7 @@
 
 **Two models predict. Evidence decides.**
 
-ModelDuel is an Education-category learning experience that turns a learner's explanation into two comparable worlds: the learner's current mental model and the scientific model. The learner commits to a prediction, observes both worlds under the same conditions, revises the explanation, and demonstrates transfer. The goal is evidence of conceptual change—not another generated answer.
+ModelDuel is an Education-category learning experience that turns a learner's explanation into two comparable worlds: the learner's current mental model and the scientific model. The learner commits to a prediction, observes both worlds under the same conditions, revises the explanation, and answers one transfer item. The result is a reviewable trace of a conceptual revision attempt and one transfer result—not proof of durable conceptual change.
 
 The two complete challenges focus on common astronomy misconceptions: that Earth's shadow causes the phases of the Moon, and that Earth-Sun distance causes the seasons. Both use the same protected learning sequence and deterministic solar-system foundation.
 
@@ -40,7 +40,7 @@ Live and verified paths are deliberately separate for both scenarios. Live analy
 
 ### Configured live path
 
-Live analysis requires a server-side `OPENAI_API_KEY`. Enter at least 20 characters of learner text, attach a PNG, JPEG, or WebP sketch up to 3 MiB decoded, or provide both, then deliberately choose the live path. A failed live request remains a disclosed error and never silently falls back to an authored sample. The final Cloudflare build completed one paid Terra analysis/PTC smoke and, only after its usage gate passed, one paid Luna revision smoke with no HTTP retry.
+Live analysis requires a server-side `OPENAI_API_KEY`. Enter at least 20 characters of learner text, attach a PNG, JPEG, or WebP sketch up to 3 MiB decoded, or provide both, then deliberately choose the live path. A failed live request remains a disclosed error and never silently falls back to an authored sample. A dated 2026-07-17 production integration smoke completed one paid Terra analysis/PTC request and, only after its usage gate passed, one paid Luna revision request with no HTTP retry. That evidence predates the current quality branch and is not proof of the final build.
 
 ## Requirements
 
@@ -101,7 +101,7 @@ All learner-data Responses requests use `store: false`. Live analysis and revisi
 | `pnpm cf:upload` | Build and upload a preview Worker version without deploying it. |
 | `pnpm cf:deploy` | Build and deploy the production Worker. |
 
-Cloudflare deployment requires both server secrets already configured for the Worker. Never place them in `vars` or command-line history. Before deployment, run the normal checks, `pnpm cf:typegen`, `pnpm cf:typecheck`, and `wrangler deploy --dry-run`; both type commands rebuild the OpenNext entrypoint before asking Wrangler to generate or compare types. Verify the compressed Worker is below the conservative 3 MiB Free-plan limit. The verified production Worker is [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev); deployment and live-call evidence are recorded below without secret or request identifiers.
+Cloudflare deployment requires both server secrets already configured for the Worker. Never place them in `vars` or command-line history. Before deployment, run the normal checks, `pnpm cf:typegen`, `pnpm cf:typecheck`, and `wrangler deploy --dry-run`; both type commands rebuild the OpenNext entrypoint before asking Wrangler to generate or compare types. Verify the compressed Worker is below the account-plan-specific limit. The production endpoint is [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev); dated integration evidence is recorded below without secret or request identifiers, and the final quality commit still requires a post-merge deployment gate.
 
 ## Architecture
 
@@ -152,7 +152,7 @@ Codex performed these implementation roles under human direction:
 
 Human-owned decisions include the Education category, target learners and misconceptions, pedagogical sequence, Moon and Seasons scope, privacy stance, trust boundary, experience priorities, and final release acceptance. GPT-5.6 Terra is configured for strict learner-model analysis and PTC, and GPT-5.6 Luna is configured for bounded revision feedback. The deterministic application owns cases, WorldSpecs, simulation, evidence, transfer keys, and grading. Learner-data Responses calls use `store: false`.
 
-The final Cloudflare build proved the live integration with one successful Terra analysis/PTC request and one successful Luna revision request. Codex Feedback Session ID: `{{CODEX_FEEDBACK_SESSION_ID}}` — replace it with the value returned by `/feedback` in the primary build task.
+The dated 2026-07-17 production integration smoke proved the live Terra analysis/PTC and Luna revision routes for that deployed integration baseline; it is not final-build proof. Codex Feedback Session ID: `{{CODEX_FEEDBACK_SESSION_ID}}` — replace it with the value returned by `/feedback` in the primary build task.
 
 ## Build Week provenance
 
@@ -176,27 +176,24 @@ This repository was initialized from an empty root during the build week. The en
 
 The runtime ships no third-party image, audio, video, or 3D media. Astronomy visuals are rendered from application code, package dependencies are declared in the repository, and the source is MIT-licensed. Final screenshots, demo video, music, or other submission media are separate deliverables and are not claimed as inspected here; audit any such additions before publishing.
 
-## Submission verification
+## Historical integration verification and final gates
 
-The Cloudflare production build was verified locally and live on 2026-07-17 JST. The runtime commit is deployed at [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev), merged to `main`, and verified again on `main`.
+The results below are a dated 2026-07-17 integration baseline. They are not current quality-branch counts and do not prove that the final build is merged or deployed. Replace the final-gate placeholders after the approved branch is merged, rebuilt, deployed, and verified.
 
 | Verification | Result |
 | --- | --- |
-| ESLint | **Pass** — zero warnings. |
-| Strict TypeScript | **Pass**. |
-| Vitest unit/API | **311/311** across **27 files**. |
-| Next.js 16.2.10 production build | **Pass**. |
-| Chromium E2E | **23/23 Pass**. |
-| OpenNext/Workers build | **Pass** with `@opennextjs/cloudflare@1.20.1`. |
-| Wrangler dry run | **Pass** — 1,614.05 KiB gzip and all bindings resolved. |
-| Local workerd smoke | **Pass** — `/` and `/api/demo` returned HTTP 200. |
-| Production public smoke | **Pass** — root HEAD and Moon verified demo returned HTTP 200; the deployment is 100% current. |
-| Production Terra smoke | **Pass** — HTTP 200, exact four-tool ledger in five PTC rounds, 7,581 total tokens, estimated **$0.013358**. |
-| Production Luna smoke | **Pass** — HTTP 200, 493 total tokens, estimated **$0.001083**. |
-| Production dependency audit | **No known vulnerabilities**. |
-| Tracked live-token/private-key scan | **0 matches**. |
+| 2026-07-17 integration baseline | Lint, typecheck, tests, builds, dry run, local workerd, dependency audit, and secret scan passed for that dated commit. Historical counts are intentionally not presented as current. |
+| 2026-07-17 production public smoke | Root HEAD and Moon verified demo returned HTTP 200 for the dated integration deployment. |
+| 2026-07-17 production integration smoke — Terra | HTTP 200, exact four-tool ledger in five PTC rounds, 7,581 total tokens, estimated **$0.013358**. |
+| 2026-07-17 production integration smoke — Luna | HTTP 200, 493 total tokens, estimated **$0.001083**. |
+| 2026-07-17 pre-merge quality-branch gate — HEAD `682c206` | Vitest **332/332** across **31 files**; Chromium E2E **34/34**; Next.js, OpenNext, Wrangler, and dependency audit **Pass**; **no known vulnerabilities**. |
+| Worker and asset evidence — HEAD `682c206` | Worker **8,277.49 KiB raw / 1,619.89 KiB gzip**; Wrangler **18 deployable asset entries**; **14 physical assets**; largest dynamic 3D chunk **896,059 bytes**. |
+| Rendered design evidence — HEAD `682c206` | **B+ / 3.37**, AI Slop **B-**, goodwill **93**, Critical/High/Medium findings **0/0/0**. |
+| Entry-path performance evidence | Pre-recovery encoded initial JS **229,931 bytes**; final recovery build at HEAD `682c206` **231,708 bytes**; under 4× CPU throttling, the primary CTA became ready in **363 ms** during the performance audit. |
+| Final post-merge `main` gate | **Pending** — rerun the complete gate after merge; do not reuse the pre-merge result as post-merge proof. |
+| Final deployment and public canary | `{{FINAL_DEPLOYMENT_CANARY_RESULTS}}` |
 
-The successful live sequence made one Terra HTTP request and one Luna HTTP request with zero HTTP retries. Combined telemetry was 8,074 total tokens and an estimated **$0.014441**; the configured dollar ceilings remain output-only bounds, not an all-in preflight guarantee. External gates still pending are exact Workers CPU telemetry/account-plan confirmation, public repository access, the `/feedback` Session ID, final media/video/screenshots, and placeholder replacement. Track the canonical handoff in [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md); the external submission is not yet complete.
+The dated production integration sequence made one Terra HTTP request and one Luna HTTP request with zero HTTP retries. Combined telemetry was 8,074 total tokens and an estimated **$0.014441**; the configured dollar ceilings remain output-only bounds, not an all-in preflight guarantee. This is integration evidence, not proof of the final build. Pending gates include final merge, post-merge test/build/audit results, final deployment and canary verification, exact Workers CPU telemetry/account-plan confirmation, public repository access, the `/feedback` Session ID, final media/video/screenshots, and placeholder replacement. Track the canonical handoff in [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md); the external submission is not yet complete.
 
 ## License
 

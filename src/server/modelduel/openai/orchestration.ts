@@ -118,6 +118,7 @@ export async function runDeterministicOrchestration(
     learnerSummary: string;
     misconceptionType: string;
     plan: RegistryPlan;
+    safetyIdentifier: string;
     signal: AbortSignal;
   }>,
 ): Promise<OrchestrationResult> {
@@ -187,6 +188,7 @@ export async function runDeterministicOrchestration(
     const body = {
       model: gateway.analysisModel,
       store: false,
+      safety_identifier: input.safetyIdentifier,
       include: ["reasoning.encrypted_content"],
       input: [...transcript],
       tools: PROGRAMMATIC_TOOLS,

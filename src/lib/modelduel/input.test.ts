@@ -8,6 +8,7 @@ const BASE = {
   sessionId: "analyze-session-1",
   requestedAt: 1_800_000_000_000,
   scenarioId: "moon-phases" as const,
+  liveUseAttestation: true as const,
   explanation: "Earth's shadow causes the phases.",
   sketch: null,
 };
@@ -34,6 +35,19 @@ describe("AnalyzeRequestSchema", () => {
     expect(
       AnalyzeRequestSchema.safeParse({ ...BASE, unexpected: true }).success,
     ).toBe(false);
+  });
+
+  it("requires an exact-true live-use attestation", () => {
+    const missing: Record<string, unknown> = { ...BASE };
+    delete missing.liveUseAttestation;
+    expect(AnalyzeRequestSchema.safeParse(missing).success).toBe(false);
+    expect(
+      AnalyzeRequestSchema.safeParse({
+        ...BASE,
+        liveUseAttestation: false,
+      }).success,
+    ).toBe(false);
+    expect(AnalyzeRequestSchema.safeParse(BASE).success).toBe(true);
   });
 
   it("enforces the explanation boundary", () => {

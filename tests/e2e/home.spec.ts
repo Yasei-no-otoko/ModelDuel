@@ -6,6 +6,13 @@ const revisedExplanation =
 const seasonsRevisedExplanation =
   "Earth's axial tilt changes the sunlight angle, so the Northern and Southern Hemispheres receive different energy and experience opposite seasons.";
 
+const liveUseConfirmation =
+  "I am 18 or older, or I have teacher or guardian authorization, and I will not include personal or identifying student information anywhere in this live attempt, including my revised explanation.";
+
+async function confirmLiveUse(page: Page) {
+  await page.getByRole("checkbox", { name: liveUseConfirmation }).check();
+}
+
 async function selectScenario(page: Page, scenario: "moon-phases" | "seasons") {
   const name = scenario === "seasons" ? /Seasons/ : /Moon phases/;
   const radio = page.getByRole("radio", { name });
@@ -381,7 +388,7 @@ test("holds the session at interpretation when the validated demo fails, then re
   await page.goto("/");
   const analyze = page.getByRole("button", { name: "Analyze with GPT-5.6" });
   await expect(analyze).toHaveAttribute("data-hydrated", "true");
-  await expect(analyze).toBeEnabled();
+  await expect(analyze).toBeDisabled();
   await page.getByRole("button", { name: "Run verified sample" }).click();
 
   await expect(
@@ -418,6 +425,7 @@ test("offers an explicit verified path when the GPT-5.6 API key is not configure
   });
 
   await page.goto("/");
+  await confirmLiveUse(page);
   await page.getByRole("button", { name: "Analyze with GPT-5.6" }).click();
   await expect(
     page.getByRole("heading", { name: "API key is not configured" }),
@@ -469,6 +477,7 @@ test("cancels and ignores a stale analysis response after New attempt", async ({
   });
 
   await page.goto("/");
+  await confirmLiveUse(page);
   await page.getByRole("button", { name: "Analyze with GPT-5.6" }).click();
   await oldRequestStarted;
   await expect(
@@ -522,6 +531,7 @@ test("blocks live analysis when both explanation and sketch are empty", async ({
 
   await page.goto("/");
   await page.getByLabel("Your current explanation").fill("");
+  await confirmLiveUse(page);
   await page.getByRole("button", { name: "Analyze with GPT-5.6" }).click();
 
   await expect(
@@ -538,6 +548,7 @@ test("submits a sketch-only live analysis with an empty explanation", async ({
 }) => {
   type PostedAnalyzeRequest = {
     explanation: string;
+    liveUseAttestation: true;
     sketch: { mimeType: string; dataUrl: string } | null;
   };
   const captured: { posted: PostedAnalyzeRequest | null } = { posted: null };
@@ -568,6 +579,7 @@ test("submits a sketch-only live analysis with an empty explanation", async ({
       exact: false,
     }),
   ).toBeVisible();
+  await confirmLiveUse(page);
   await page.getByRole("button", { name: "Analyze with GPT-5.6" }).click();
 
   await expect(
@@ -575,6 +587,7 @@ test("submits a sketch-only live analysis with an empty explanation", async ({
   ).toBeVisible();
   expect(captured.posted).toMatchObject({
     explanation: "",
+    liveUseAttestation: true,
     sketch: { mimeType: "image/png" },
   });
   await expect
@@ -582,12 +595,15 @@ test("submits a sketch-only live analysis with an empty explanation", async ({
     .toMatch(/^data:image\/png;base64,/);
 });
 
-test("labels a correlated live analysis with the exact GPT-5.6 model", async ({ page }) => {
+test("carries the live-use attestation through analysis and revision", async ({ page }) => {
+  let capturedAnalyze: Record<string, unknown> | null = null;
+  let capturedRevision: Record<string, unknown> | null = null;
   await page.route("**/api/analyze", async (route) => {
     const request = route.request().postDataJSON() as {
       requestId: string;
       sessionId: string;
     };
+    capturedAnalyze = route.request().postDataJSON() as Record<string, unknown>;
     const demoResponse = await page.request.get(
       `/api/demo?sessionId=${request.sessionId}&scenarioId=moon-phases`,
     );
@@ -620,6 +636,7 @@ test("labels a correlated live analysis with the exact GPT-5.6 model", async ({ 
   });
 
   await page.goto("/");
+  await confirmLiveUse(page);
   await page.getByRole("button", { name: "Analyze with GPT-5.6" }).click();
   await expect(
     page.getByRole("heading", { name: "Turn one disagreement into a fair test." }),
@@ -628,6 +645,53 @@ test("labels a correlated live analysis with the exact GPT-5.6 model", async ({ 
     page.getByText("Live analysis · gpt-5.6-terra", { exact: true }),
   ).toBeVisible();
   await expect(page.getByText("GPT-5.6 analyzed your typed explanation", { exact: false })).toBeVisible();
+  expect(capturedAnalyze).toMatchObject({ liveUseAttestation: true });
+
+  await page.route("**/api/revision", async (route) => {
+    const request = route.request().postDataJSON() as Record<string, unknown>;
+    capturedRevision = request;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        source: "gpt-5.6",
+        notice: "Revision feedback generated live with GPT-5.6.",
+        requestId: request.requestId,
+        modelId: "gpt-5.6-luna",
+        evaluatedAt: Date.now(),
+        feedback: {
+          conceptualChange: "revised",
+          score: 1,
+          summary: "The revision now connects illumination and viewing angle.",
+          strengths: ["Uses the observation as causal evidence."],
+          nextStep: "Apply the model to the transfer case.",
+        },
+      }),
+    });
+  });
+
+  await page.getByRole("button", { name: "Make a prediction" }).click();
+  await page.getByLabel("Earth's shadow masks half of the Moon").check();
+  await page.getByRole("button", { name: "Lock prediction" }).click();
+  await page
+    .getByRole("button", { name: "Run both worlds and reveal evidence" })
+    .click();
+  await page.getByRole("button", { name: "Revise my explanation" }).click();
+  await expect(
+    page.getByText(
+      "Your live-use confirmation covers this entire attempt, including this revised explanation. Do not include names or personal or identifying student information. GPT feedback may be wrong; verify it with a teacher.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await page.getByLabel("Revised causal explanation").fill(revisedExplanation);
+  await page.locator(".revision-card button[type='submit']").click();
+  await expect(
+    page.getByRole("heading", { name: "Can your revised model travel?" }),
+  ).toBeVisible();
+  expect(capturedRevision).toMatchObject({
+    mode: "live",
+    liveUseAttestation: true,
+  });
 });
 
 test("completes the Moon path with server-authenticated transfer evidence", async ({

@@ -101,6 +101,7 @@ function fakeGateway(
       throw new Error("Unexpected revision");
     },
     async runProgramTurn(request) {
+      expect(request.body.safety_identifier).toBe(SAFETY_IDENTIFIER);
       requests.push(request);
       const response = turns.shift();
       if (!response) {
@@ -147,6 +148,8 @@ function sequentialToolTurns(): ProgramTurnResponse[] {
   ];
 }
 
+const SAFETY_IDENTIFIER = `mds1_${"A".repeat(43)}`;
+
 function orchestrationInput(
   overrides: Partial<
     Parameters<typeof runDeterministicOrchestration>[1]
@@ -157,6 +160,7 @@ function orchestrationInput(
     learnerSummary: MOON_HERO_SAMPLE.learnerModel.summary,
     misconceptionType: MOON_HERO_SAMPLE.learnerModel.misconceptionType,
     plan: PLAN,
+    safetyIdentifier: SAFETY_IDENTIFIER,
     signal: AbortSignal.timeout(10_000),
     ...overrides,
   };

@@ -8,12 +8,12 @@ describe("trace hero copy", () => {
     [
       "partial",
       true,
-      "The transfer answer was correct, but the revision is still partial.",
+      "Your model transferred, with one revision still to make.",
     ],
     [
       "retained",
       true,
-      "The transfer answer was correct, but the original model is still retained.",
+      "Your answer transferred, but the original model is still retained.",
     ],
     [
       "revised",

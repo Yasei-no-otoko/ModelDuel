@@ -60,6 +60,7 @@ function liveRequest(input: {
     idempotencyKey: "live-revision-idempotency",
     requestedAt: NOW,
     sessionId,
+    liveUseAttestation: true as const,
     revisionText:
       "Sunlight lights half the Moon, and our viewing angle reveals the visible part.",
     evaluationId,
@@ -95,11 +96,14 @@ function seasonsLiveRequest() {
     idempotencyKey: "seasons-live-revision-idempotency",
     requestedAt: NOW,
     sessionId,
+    liveUseAttestation: true as const,
     revisionText:
       "Earth's axial tilt changes the sunlight angle, so the Northern and Southern Hemispheres have opposite seasons rather than distance causing them.",
     evaluationId,
   };
 }
+
+const SAFETY_IDENTIFIER = `mds1_${"A".repeat(43)}`;
 
 function gatewayWithRevisionAttempts(
   attempts: Array<{
@@ -144,6 +148,7 @@ describe("live revision service", () => {
     const requests: RevisionParseRequest[] = [];
     const request = seasonsLiveRequest();
     const response = await evaluateRevisionRequest(request, NOW, {
+      resolveSafetyIdentifier: () => SAFETY_IDENTIFIER,
       gateway: gatewayWithRevisionAttempts(
         [
           {
@@ -180,6 +185,7 @@ describe("live revision service", () => {
     const requests: RevisionParseRequest[] = [];
     const request = liveRequest();
     const response = await evaluateRevisionRequest(request, NOW, {
+      resolveSafetyIdentifier: () => SAFETY_IDENTIFIER,
       gateway: gatewayWithRevisionAttempts(
         [
           {
@@ -215,6 +221,7 @@ describe("live revision service", () => {
   it("repairs schema-invalid feedback once", async () => {
     const requests: RevisionParseRequest[] = [];
     const response = await evaluateRevisionRequest(liveRequest(), NOW, {
+      resolveSafetyIdentifier: () => SAFETY_IDENTIFIER,
       gateway: gatewayWithRevisionAttempts(
         [
           {
@@ -239,11 +246,16 @@ describe("live revision service", () => {
     expect(response.feedback).toEqual(FEEDBACK.feedback);
     expect(requests).toHaveLength(2);
     expect(requests[1]?.repair).toBe(true);
+    expect(requests.map((request) => request.safetyIdentifier)).toEqual([
+      SAFETY_IDENTIFIER,
+      SAFETY_IDENTIFIER,
+    ]);
   });
 
   it("does not downgrade refusal to deterministic feedback", async () => {
     await expect(
       evaluateRevisionRequest(liveRequest(), NOW, {
+        resolveSafetyIdentifier: () => SAFETY_IDENTIFIER,
         gateway: gatewayWithRevisionAttempts(
           [
             {

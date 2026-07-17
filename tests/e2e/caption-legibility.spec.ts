@@ -134,6 +134,33 @@ test("keeps learner-facing captions legible through the Moon evidence flow", asy
   await expect(page.locator(".stage-action-row p")).toBeVisible();
   await expectCaptionFloorForPresentElements(page);
 
+  const newAttempt = page.getByRole("button", {
+    name: "New attempt",
+    exact: true,
+  });
+  await expect(newAttempt).toHaveCSS("color", "rgb(122, 138, 182)");
+  await expect(newAttempt).toHaveCSS(
+    "background-color",
+    "rgba(15, 26, 57, 0.7)",
+  );
+  const quietButtonForeground = relativeLuminance(122, 138, 182);
+  const quietButtonSurface = relativeLuminance(15, 26, 57);
+  const quietButtonContrast =
+    (quietButtonForeground + 0.05) / (quietButtonSurface + 0.05);
+  expect(quietButtonContrast).toBeGreaterThanOrEqual(4.5);
+
+  await newAttempt.hover();
+  await expect(newAttempt).toHaveCSS("color", "rgb(122, 138, 182)");
+  await newAttempt.focus();
+  await expect(newAttempt).toHaveCSS("color", "rgb(122, 138, 182)");
+  await newAttempt.evaluate((button) => {
+    (button as HTMLButtonElement).disabled = true;
+  });
+  await expect(newAttempt).toHaveCSS("color", "rgb(122, 138, 182)");
+  await newAttempt.evaluate((button) => {
+    (button as HTMLButtonElement).disabled = false;
+  });
+
   await page.getByRole("button", { name: "Make a prediction" }).click();
   await expect(page.locator(".option-list legend")).toBeVisible();
   await expectCaptionFloorForPresentElements(page);
@@ -146,7 +173,20 @@ test("keeps learner-facing captions legible through the Moon evidence flow", asy
   await expect(page.locator(".case-control button")).toBeVisible();
   await expect(page.locator(".view-controls button").first()).toBeVisible();
   await expect(page.locator(".evidence-world > header p").first()).toBeVisible();
-  await expect(page.locator(".world-html-fallback").first()).toBeVisible();
+  const evidenceDiagrams = page.locator(".world-html-fallback");
+  await expect(evidenceDiagrams).toHaveCount(2);
+  for (const diagram of await evidenceDiagrams.all()) {
+    await expect(diagram).toBeVisible();
+    await expect(diagram).toHaveAttribute("role", "img");
+    await expect(diagram).toHaveAttribute(
+      "aria-label",
+      /The Moon is \d+% illuminated at \d+ degrees elongation\./,
+    );
+    await expect(diagram.locator("p")).toHaveText(
+      "2D evidence diagram. The text observation below contains the same evidence.",
+    );
+  }
+  await expect(page.getByText(/accessible diagram fallback/i)).toHaveCount(0);
   await expect(page.locator(".prediction-block").first()).toBeVisible();
   await expect(page.getByTestId("verified-observation")).toBeVisible();
   await expect(page.locator(".scale-note")).toBeVisible();

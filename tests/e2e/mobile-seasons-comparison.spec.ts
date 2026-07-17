@@ -36,6 +36,21 @@ test("keeps both Seasons worlds compact and operable at 375px", async ({
   await expect(page.locator(".evidence-world.scientific")).toBeVisible();
   await expect(page.getByTestId("verified-observation")).toBeVisible();
 
+  const evidencePreview = page.getByTestId("mobile-evidence-preview");
+  await expect(evidencePreview).toBeVisible();
+  await expect(evidencePreview).toContainText(
+    "Northern Hemisphere summer; Southern Hemisphere winter",
+  );
+  const evidenceOrder = await page.evaluate(() => ({
+    previewTop: document
+      .querySelector("[data-testid='mobile-evidence-preview']")!
+      .getBoundingClientRect().top,
+    firstWorldTop: document
+      .querySelector(".evidence-world")!
+      .getBoundingClientRect().top,
+  }));
+  expect(evidenceOrder.previewTop).toBeLessThan(evidenceOrder.firstWorldTop);
+
   const comparisonHeight = await page
     .locator(".world-comparison")
     .evaluate((element) => element.getBoundingClientRect().height);

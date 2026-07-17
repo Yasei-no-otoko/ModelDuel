@@ -43,6 +43,8 @@ function finalAssistantMessage() {
   } satisfies Responses.ResponseOutputItem;
 }
 
+const SAFETY_IDENTIFIER = `mds1_${"A".repeat(43)}`;
+
 function successfulGateway(
   sample: typeof MOON_HERO_SAMPLE | typeof SEASONS_SAMPLE = MOON_HERO_SAMPLE,
 ): ModelDuelGateway {
@@ -139,10 +141,12 @@ describe("live analysis service", () => {
           sessionId: "analysis-preflight-session",
           requestedAt: 1_800_000_000_000,
           scenarioId: "moon-phases",
+          liveUseAttestation: true,
           explanation: "Earth's shadow causes phases.",
           sketch: null,
         },
         {
+          safetyIdentifier: SAFETY_IDENTIFIER,
           gateway,
           signal: AbortSignal.timeout(10_000),
           now: 1_800_000_000_000,
@@ -169,6 +173,7 @@ describe("live analysis service", () => {
           sessionId: "analysis-invalid-image-session",
           requestedAt: 1_800_000_000_000,
           scenarioId: "moon-phases",
+          liveUseAttestation: true,
           explanation: "Earth's shadow causes phases.",
           sketch: {
             mimeType: "image/png",
@@ -176,6 +181,7 @@ describe("live analysis service", () => {
           },
         },
         {
+          safetyIdentifier: SAFETY_IDENTIFIER,
           gateway: successfulGateway(),
           signal: AbortSignal.timeout(10_000),
           now: 1_800_000_000_000,
@@ -202,10 +208,12 @@ describe("live analysis service", () => {
           sessionId: "analysis-missing-config-session",
           requestedAt: 1_800_000_000_000,
           scenarioId: "moon-phases",
+          liveUseAttestation: true,
           explanation: "Earth's shadow causes phases.",
           sketch: null,
         },
         {
+          safetyIdentifier: SAFETY_IDENTIFIER,
           signal: AbortSignal.timeout(10_000),
           now: 1_800_000_000_000,
           beforeModelCall,
@@ -241,10 +249,12 @@ describe("live analysis service", () => {
           sessionId: "analysis-rate-denied-session",
           requestedAt: 1_800_000_000_000,
           scenarioId: "moon-phases",
+          liveUseAttestation: true,
           explanation: "Earth's shadow causes phases.",
           sketch: null,
         },
         {
+          safetyIdentifier: SAFETY_IDENTIFIER,
           gateway,
           signal: AbortSignal.timeout(10_000),
           now: 1_800_000_000_000,
@@ -269,11 +279,13 @@ describe("live analysis service", () => {
         sessionId: "analysis-seasons-live-session",
         requestedAt: 1_800_000_000_000,
         scenarioId: "seasons",
+        liveUseAttestation: true,
         explanation:
           "Summer happens because Earth moves closer to the Sun, so both hemispheres should warm together.",
         sketch: null,
       },
       {
+        safetyIdentifier: SAFETY_IDENTIFIER,
         gateway: successfulGateway(SEASONS_SAMPLE),
         signal: AbortSignal.timeout(10_000),
         now: 1_800_000_000_000,
@@ -350,11 +362,13 @@ describe("live analysis service", () => {
         sessionId: "analysis-live-session",
         requestedAt: 1_800_000_000_000,
         scenarioId: "moon-phases",
+        liveUseAttestation: true,
         explanation: "Earth's shadow causes the phases.",
         sketch: null,
       },
-      {
-        gateway: successfulGateway(),
+        {
+          safetyIdentifier: SAFETY_IDENTIFIER,
+          gateway: successfulGateway(),
         signal: AbortSignal.timeout(10_000),
         now: 1_800_000_000_000,
         beforeModelCall,
