@@ -829,6 +829,18 @@ export function ModelDuelExperience() {
                 <span className="gradient-text">Evidence decides.</span>
               </h1>
             <p className="hero-summary">{scenarioContent.heroSummary}</p>
+              <button
+                className="primary-button full-button mobile-verified-cta"
+                type="button"
+                aria-label="Run verified sample"
+                data-testid="mobile-verified-cta"
+                data-hydrated={hydrationReady ? "true" : "false"}
+                disabled={!hydrationReady || analysisPending}
+                onClick={() => void beginAnalysis("verified-sample")}
+              >
+                <span>Run verified sample <span aria-hidden="true">→</span></span>
+                <small>Instant {scenarioContent.label} challenge · no API wait</small>
+              </button>
               <ul className="promise-list">
                 <li>Evidence stays hidden until you commit.</li>
                 <li>Physical observation stays separate from model claims.</li>
@@ -942,7 +954,7 @@ export function ModelDuelExperience() {
 
               <div className="capture-actions">
                 <button
-                  className="primary-button full-button"
+                  className="primary-button full-button capture-card-verified-action"
                   type="submit"
                   disabled={!hydrationReady || analysisPending}
                   data-hydrated={hydrationReady ? "true" : "false"}

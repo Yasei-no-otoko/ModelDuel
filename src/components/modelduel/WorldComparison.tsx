@@ -316,6 +316,16 @@ function MoonComparison({
         </div>
       </div>
 
+      <p
+        className="mobile-evidence-preview"
+        data-testid="mobile-evidence-preview"
+        aria-hidden="true"
+      >
+        <strong>Verified observation:</strong>{" "}
+        {Math.round(physical.illuminationFraction * 100)}% illuminated; Earth-shadow
+        intersection: {physical.earthShadowIntersection}.
+      </p>
+
       <div className="evidence-worlds">
         <WorldCard kind="learner" observation={learner} caseSpec={caseSpec} />
         <WorldCard kind="scientific" observation={scientific} caseSpec={caseSpec} />
@@ -591,6 +601,15 @@ function SeasonsComparison({
           </button>
         </div>
       </div>
+
+      <p
+        className="mobile-evidence-preview"
+        data-testid="mobile-evidence-preview"
+        aria-hidden="true"
+      >
+        <strong>Verified observation:</strong> Northern Hemisphere {physical.northernSeason};
+        Southern Hemisphere {physical.southernSeason}.
+      </p>
 
       <div className="evidence-worlds">
         <SeasonsWorldCard kind="learner" observation={learner} caseSpec={caseSpec} />
