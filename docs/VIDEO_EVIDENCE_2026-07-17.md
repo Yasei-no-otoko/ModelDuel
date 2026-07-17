@@ -4,11 +4,11 @@ This record covers the locally validated public-video candidate. It is not a pub
 
 ## Artifact identity
 
-- Run ID: `20260717T055235573Z-cdf0526d-d779-42c8-8c53-18eb67f9cda8`
-- External run directory: `~/.gstack/projects/DevPostOpenAI/submission/runs/20260717T055235573Z-cdf0526d-d779-42c8-8c53-18eb67f9cda8/`
-- Generator commit: `f13a2e5e3e56c633c1f5d49acd52dd1202a3ca0c`
+- Run ID: `20260717T063651969Z-89b9c70a-c828-4443-b2be-3a81dc13f7fb`
+- External run directory: `~/.gstack/projects/DevPostOpenAI/submission/runs/20260717T063651969Z-89b9c70a-c828-4443-b2be-3a81dc13f7fb/`
+- Generator commit: `61863582a56a7a3d9e0bf5c6fad4a9130a7c81be`
 - Recorded production origin: `https://modelduel.yasei.workers.dev/`
-- Recorded deployment build marker: `La258MjHHcPyAMa5k13Uz`
+- Manifest build marker: `null`; an immediate post-record production fetch returned build ID `nkFYXp8co99asrn8bVd1U`, which corresponds to generator commit `6186358`
 - Journey: verified-only; no live Terra analysis or live Luna revision executed
 
 ## Media validation
@@ -20,14 +20,16 @@ This record covers the locally validated public-video candidate. It is not a pub
 - Fast start: `moov` precedes `mdat`
 - Full FFmpeg decode: pass with no reported errors
 - Contact sheet: 10/10 timeline checkpoints reviewed; AI-voice disclosure remained visible
+- Teacher-handoff frame: the 123-second frame was separately extracted and reviewed because the fixed 10-frame contact sheet jumps from transfer to architecture. It clearly shows the three-part teacher summary, learner-controlled handoff, plain-text preview, and confirmation-disabled controls.
 
 Artifact SHA-256:
 
-- `modelduel-submission.mp4`: `75f7245501949b58685ebd72d0d8684a1a7fae46bfafbe1c71e0ad688bd025e8`
+- `modelduel-submission.mp4`: `ac5d3866ceb08fcb283c96362b84733114e634c46de750019abff5e0c7e5d974`
 - `modelduel-submission.srt`: `f1aa3967c0e88db4aaeaead7d8c0adbececba953535473e0b67946f9bf2bcad4`
-- `modelduel-contact-sheet.png`: `8b75682cf86ff85e8017ddb7e5f190f1db27c66464c2e36b388c6f8f4b87b769`
+- `modelduel-contact-sheet.png`: `ab4a1eb14cfcf4cbcfee7ee170e11a48f15fbb6d0c71123e95ea740eddfac379`
+- `modelduel-submission-manifest.json`: `ff4d2a73658bd4a654d930376d3b80f20dbb00b8353f4121d6bed9a7a76fd46b`
 
-The manifest hashes matched the files. Its generator and full submission-document hashes also matched commit `f13a2e5` at validation time.
+The manifest hashes matched the files. Its generator and full submission-document hashes also matched merge `6186358` at validation time.
 
 ## Request and privacy audit
 
@@ -46,14 +48,14 @@ Recorded counters were zero for analyze attempts, live-revision attempts, extern
 - Approved input: 2,715 characters across 10 public narration rows
 - Initial cache population: 10 Speech API requests, SDK retries disabled
 - Maximum TTS cost at the verified price: **$0.040725**
-- Final successful recording: 10/10 cache hits, `speechApiCallsThisRun: 0`, and no API key or paid opt-in present
+- Latest successful recording: 10/10 cache hits, `speechApiCallsThisRun: 0`, and an explicitly blank API key with no paid opt-in
 - Reverse-transcription QA: one `whisper-1` request, 165 seconds, maximum **$0.0165**, SDK retries disabled
-- Transcription result: 411 expected words, 412 transcribed words, word edit distance 13, word error rate **3.163%**
+- Transcription result for the unchanged narration/SRT: 411 expected words, 412 transcribed words, word edit distance 13, word error rate **3.163%**
 - Maximum combined narration and transcription QA cost: **$0.057225**
 
 Pricing and endpoint references: [OpenAI TTS-1](https://developers.openai.com/api/docs/models/tts-1) and [OpenAI Whisper](https://developers.openai.com/api/docs/models/whisper-1).
 
-The failed first recording published no run; it stopped only after the narration disclosure intercepted the final reset click. Commit `f13a2e5` made the disclosure non-interactive, and the successful cache-only rerun recorded that commit. The two earlier macOS System Voice runs were manifest-checked as Samantha drafts and removed after this OpenAI TTS candidate passed all media checks.
+No new transcription or Speech API request was made for the handoff recording. Its narration table, SRT hash, and all 10 cached source-audio hashes are unchanged, so the prior reverse-transcription QA remains applicable. The earlier failed recording published no run; commit `f13a2e5` made the disclosure non-interactive. The two macOS System Voice drafts were removed after the OpenAI TTS candidate passed media checks.
 
 ## Browser gate context
 
@@ -69,16 +71,16 @@ The local candidate passed Chromium and WebKit with 69 tests and one intentional
 
 ## Post-merge production deployment
 
-After the video candidate was recorded and validated, the submission-quality branch was merged to `main` as `ed433b460e46d02eff272a7e1364bd2f107f1173` and deployed with the documented OpenNext Cloudflare command.
+The teacher-handoff implementation was merged to `main` as `61863582a56a7a3d9e0bf5c6fad4a9130a7c81be` and deployed with the documented OpenNext Cloudflare command before this video was recorded.
 
-- Cloudflare Worker Version ID: `858c32e8-121f-42bd-b1f4-f422402671a3`
+- Cloudflare Worker Version ID: `e400d0d7-3fb1-47be-8872-ef9caeefb5d9`
 - Production URL: `https://modelduel.yasei.workers.dev`
 - Post-deploy HTTP status: 200
-- Production BUILD_ID: `La258MjHHcPyAMa5k13Uz`
-- Upload: 8,277.51 KiB raw / 1,619.90 KiB gzip; 18 asset entries, 3 changed assets uploaded
-- Worker startup time reported by Wrangler: 27 ms
+- Production BUILD_ID: `nkFYXp8co99asrn8bVd1U`
+- Upload: 8,286.05 KiB raw / 1,621.89 KiB gzip; 18 asset entries, 3 changed assets uploaded
+- Worker startup time reported by Wrangler: 35 ms
 - Remote secret-name inventory retained `OPENAI_API_KEY` and `MODELDUEL_EVALUATION_SECRET`; values were never read or recorded
 - Security response included CSP, HSTS, `X-Content-Type-Options: nosniff`, strict-origin referrer policy, and the restricted permissions policy
-- Free verified-production probe: exact three-request API ledger, 16 transitions, zero analyze/live-revision attempts, zero external HTTP attempts, zero request failures, zero bad responses, zero page errors, and zero paid API calls
+- Free verified-production probe: exact `GET /api/demo` → verified `POST /api/revision` → `POST /api/transfer` ledger, all HTTP 200; teacher summary and handoff visible; copy and download disabled before confirmation; boundary text present; internal metadata absent; zero failed requests, console errors, or paid API calls
 
-This deployment occurred after the recording. It adds the accessible 3D-canvas role and the hardened submission tooling/CI; it does not change the recorded visual story or execute a second paid Terra/Luna canary.
+Remote secret-name inventory retained `OPENAI_API_KEY` and `MODELDUEL_EVALUATION_SECRET` after deployment. The adapter emitted a local-secret warning because values were intentionally not read into the shell; Wrangler retained the already configured remote secrets. This deployment did not execute a second paid Terra/Luna canary.

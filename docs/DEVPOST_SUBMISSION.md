@@ -68,7 +68,7 @@ The useful boundary is not “AI versus deterministic code.” It is deciding wh
 
 ### What's next
 
-Main merge `e04443f`, the post-merge gates, final deployment, public canary, exact one-analysis/one-revision live canary, and production screenshot set are complete. Before submission, we will confirm exact Workers CPU telemetry/account-plan limits, publish the repository, record the 2:45 demo, and replace the remaining repository, video, and feedback placeholders. The dated 2026-07-17 Terra/Luna production integration smoke remains useful historical integration evidence; the separate final canary is recorded below without guessing usage or cost. After the hackathon, the same constrained-world pattern could expand to additional science misconceptions, classroom administration, and separately evaluated longitudinal learning records. Any impact or learning-gain claim would require a separate classroom evaluation.
+Main merge `6186358`, the teacher-handoff post-merge gates, deployment, free verified public canary, and exact 2:45 local video candidate are complete. Before submission, we will confirm exact Workers CPU telemetry/account-plan limits, publish the repository, upload the video, and replace the remaining repository, video, and feedback placeholders. The dated 2026-07-17 Terra/Luna paid canary from earlier merge `e04443f` remains useful inherited integration evidence; the handoff release deliberately made no additional paid model call. After the hackathon, the same constrained-world pattern could expand to additional science misconceptions, classroom administration, and separately evaluated longitudinal learning records. Any impact or learning-gain claim would require a separate classroom evaluation.
 
 ### Production verification
 
@@ -236,13 +236,15 @@ Production visual QA completed Moon at 1280px and 375px through the trace, and S
 - [x] Merge the approved work to `main` with merge commit `e04443f`.
 - [x] Run and record the post-merge `main` gate: Vitest **332/332** across **31 files**, Next.js/OpenNext **Pass**, `cf:typecheck` **Pass**, Wrangler dry run **8,277.49 KiB raw / 1,619.88 KiB gzip**, dependency audit **clean**.
 - [x] Run and record Chromium E2E **34/34** after the merge.
+- [x] Merge the learner-controlled teacher handoff to `main` with merge commit `6186358`.
+- [x] Run and record the current post-merge gate: Vitest **335/335** across **32 files**; Chromium plus WebKit **69 passed / 1 intentional non-Chromium axe skip**; Chromium axe **Pass**; Next.js/OpenNext/Workers types/Wrangler **Pass**; dry run **8,286.05 KiB raw / 1,621.89 KiB gzip**; dependency audit **clean**.
 - [x] Verify production visual journeys: Moon desktop and mobile through trace; Seasons desktop through evidence; zero overflow, page errors, failed requests, or unexpected console messages; no live submit.
 
 Pre-merge local gate at HEAD `682c206`: Vitest **332/332** across **31 files**; Chromium E2E **34/34**; Next.js, OpenNext, and Wrangler **Pass**; Worker **8,277.49 KiB raw / 1,619.89 KiB gzip**; dependency audit **no known vulnerabilities**. Wrangler reported **18 deployable asset entries** backed by **14 physical assets**; the largest dynamic 3D chunk was **896,059 bytes**. The rendered design audit scored **B+ / 3.37**, AI Slop **B-**, goodwill **93**, with Critical/High/Medium findings **0/0/0**. The performance audit recorded **229,931 encoded bytes** of initial JS before the outer recovery addition and **231,708 encoded bytes** for the final recovery build at HEAD `682c206`; under 4× CPU throttling, the primary CTA became ready in **363 ms**.
 
-Final post-merge `main` gate: **Complete for merge `e04443f`**. The currently documented deployment corresponds to that merge. The later submission-quality branch adds recording/CI evidence and an accessible role for the 3D canvases; it requires its own test, merge, and deployment evidence before being described as the production runtime.
+Current post-merge `main` gate: **Complete for merge `6186358`**. The deployed runtime and latest video candidate both correspond to that merge. The release adds the compact teacher review, learner-controlled text handoff, copy/download boundary, safe text projection, and a video shot that shows the handoff before architecture.
 
-Submission-quality candidate gate on 2026-07-17 JST: `pnpm check` passed with Vitest **332/332** across **31 files** and a successful Next.js production build; Chromium plus WebKit E2E completed with **69 passed / 1 intentional Chromium-only axe skip**; the Chromium axe scan passed capture, evidence, and trace for WCAG 2.0/2.1/2.2 A/AA tags. OpenNext/Workers typecheck, Wrangler dry run (**8,277.51 KiB raw / 1,619.89 KiB gzip**), and production dependency audit all passed. The local Playwright Firefox build could not launch even for an empty page because of a host graphics failure (`RenderCompositorSWGL failed mapping default framebuffer, no dt`), so the Ubuntu CI three-engine job remains a required external gate rather than being misreported as passed.
+Submission-quality candidate gate on 2026-07-17 JST: `pnpm check` passed with Vitest **335/335** across **32 files** and a successful Next.js production build; Chromium plus WebKit E2E completed with **69 passed / 1 intentional non-Chromium axe skip**; the Chromium axe scan passed capture, evidence, and trace for WCAG 2.0/2.1/2.2 A/AA tags. OpenNext/Workers typecheck, Wrangler dry run (**8,286.05 KiB raw / 1,621.89 KiB gzip**), and production dependency audit all passed. The local Playwright Firefox build could not launch even for an empty page because of a host graphics failure (`RenderCompositorSWGL failed mapping default framebuffer, no dt`), so the Ubuntu CI three-engine job remains a required external gate rather than being misreported as passed.
 
 ### GPT-5.6 proof
 
@@ -254,7 +256,7 @@ Submission-quality candidate gate on 2026-07-17 JST: `pnpm check` passed with Vi
 - [x] Capture safe final-build proof of configured Terra/Luna model usage without exposing prompts, learner data, cookie values, or secrets.
 - [x] Confirm final-build learner-data Responses requests still use `store: false`.
 
-Final paid live canary for main merge `e04443f`: one analysis returned HTTP 200 in **17.642 seconds**, source `live`, model `gpt-5.6-terra`, with the exact tool order `validate_world_spec` → `simulate_world` → `compare_predictions` → `select_discriminating_case`. One revision returned HTTP 200 in **1.404 seconds**, source `gpt-5.6`, model `gpt-5.6-luna`; the same session and signed evaluation were accepted, conceptual change was `revised` with score `1`, and `liveUseAttestation: true` was present on both requests. The server-minted cookie was reused with `Path=/`, `HttpOnly`, `Secure`, and `SameSite=Strict`; its value was not recorded. The strict responses did not expose token usage or cost. No final-build usage or cost is guessed, and this canary is not described as costing under any amount.
+Paid live canary inherited from earlier main merge `e04443f`: one analysis returned HTTP 200 in **17.642 seconds**, source `live`, model `gpt-5.6-terra`, with the exact tool order `validate_world_spec` → `simulate_world` → `compare_predictions` → `select_discriminating_case`. One revision returned HTTP 200 in **1.404 seconds**, source `gpt-5.6`, model `gpt-5.6-luna`; the same session and signed evaluation were accepted, conceptual change was `revised` with score `1`, and `liveUseAttestation: true` was present on both requests. The server-minted cookie was reused with `Path=/`, `HttpOnly`, `Secure`, and `SameSite=Strict`; its value was not recorded. The strict responses did not expose token usage or cost. This is not presented as a paid canary of merge `6186358`; the handoff release used only the free verified production path.
 
 ### Deployment and repository
 
@@ -262,8 +264,8 @@ Final paid live canary for main merge `e04443f`: one analysis returned HTTP 200 
 - [x] Configure and locally verify four fail-closed Cloudflare Rate Limiting bindings for live endpoints.
 - [x] Verify all four production Rate Limiting bindings through deployed Cloudflare version 3 metadata.
 - [ ] Record exact production CPU p95 and confirm account Workers Paid telemetry. The connector subscription list showed no Workers Paid entry, and exact CPU metrics remain unavailable.
-- [x] Deploy main merge `e04443f` to [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev): Cloudflare version `b4665d5a-b1a2-4af1-9918-af475059d170` (**version 3**), created `2026-07-17T03:04:01.364891Z`, **100% active**, build ID `La258MjHHcPyAMa5k13Uz`.
-- [x] Verify the production root, security headers, Moon and Seasons verified journeys, 404 handling, invalid-request HTTP 400 handling, and the exact one-analysis/one-revision live canary.
+- [x] Deploy current main merge `6186358` to [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev): Cloudflare version `e400d0d7-3fb1-47be-8872-ef9caeefb5d9`, build ID `nkFYXp8co99asrn8bVd1U`.
+- [x] Verify HTTP 200, CSP/HSTS/nosniff, the exact free three-request verified ledger, teacher summary/handoff visibility, confirmation-disabled controls, boundary text, internal-metadata exclusion, and zero failed requests or console errors.
 - [ ] Publish the intended repository and verify judge access.
 - [ ] Replace the repository, video, and Codex Feedback placeholders.
 
@@ -280,9 +282,9 @@ Final paid live canary for main merge `e04443f`: one analysis returned HTTP 200 
 - [x] Select `docs/media/modelduel-cover.png` as the Devpost cover/thumbnail and README hero.
 - [x] Confirm the deterministic authored-source label is visible and no live submit occurs in the production screenshot journeys.
 - [x] Complete the rights audit for the five first-party production screenshots and cover.
-- [ ] Record the exact 2:45 shot list with audible English narration.
-- [ ] Remove secrets, environment files, private tokens, and unrelated personal data from every frame.
-- [ ] Audit the final video, music, fonts, or any additional media for rights and attribution.
+- [x] Record the exact 2:45 shot list with audible English narration; latest run `20260717T063651969Z-89b9c70a-c828-4443-b2be-3a81dc13f7fb` records merge `6186358` and the production teacher handoff.
+- [x] Verify the exact three-request authored ledger, zero live model calls, zero external HTTP, and no cookies or request/response payloads in the recording manifest.
+- [x] Audit the final video media: first-party browser capture, OpenAI TTS `nova` with persistent disclosure, no music, H.264/AAC/mov_text, full decode pass, and checked contact-sheet plus 123-second handoff frame.
 - [ ] Upload the final video to YouTube as public, verify playback and embedding while logged out, then replace `{{VIDEO_URL}}`.
 
 ### Devpost form
