@@ -540,7 +540,7 @@ export function ModelDuelExperience() {
 
   async function handleCapture(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    await beginAnalysis("live");
+    await beginAnalysis("verified-sample");
   }
 
   function handleConfirmModels() {
@@ -949,20 +949,30 @@ export function ModelDuelExperience() {
                 >
                   {!hydrationReady
                     ? "Preparing challenge…"
-                    : analysisPending && analysisAttempt === "live"
-                      ? "Analyzing with GPT-5.6…"
-                      : "Analyze with GPT-5.6"}
-                  {hydrationReady && !analysisPending ? <span aria-hidden="true">→</span> : null}
+                    : analysisPending && analysisAttempt === "verified-sample"
+                      ? "Loading verified sample…"
+                      : (
+                          <>
+                            <span>Run verified sample <span aria-hidden="true">→</span></span>
+                            <small>Instant {scenarioContent.label} challenge · no API wait</small>
+                          </>
+                        )}
                 </button>
                 <button
                   className="secondary-button full-button"
                   type="button"
                   disabled={!hydrationReady || analysisPending}
-                  onClick={() => void beginAnalysis("verified-sample")}
+                  data-hydrated={hydrationReady ? "true" : "false"}
+                  onClick={() => void beginAnalysis("live")}
                 >
-                  {analysisPending && analysisAttempt === "verified-sample"
-                    ? "Loading verified sample…"
-                    : "Run verified sample"}
+                  {analysisPending && analysisAttempt === "live"
+                    ? "Analyzing with GPT-5.6…"
+                    : (
+                        <>
+                          <span>Analyze with GPT-5.6</span>
+                          <small>Live technical proof · about 20 seconds</small>
+                        </>
+                      )}
                 </button>
               </div>
               <p className="form-disclosure">
@@ -1512,7 +1522,7 @@ export function ModelDuelExperience() {
             </ol>
 
             <div className="trace-footer">
-              <div><p className="micro-label">What this proves</p><strong>A belief, prediction, observation, revision, and unseen transfer case are connected in one auditable learning trail.</strong></div>
+              <div><p className="micro-label">Auditable conceptual-revision evidence</p><strong>A belief, prediction, observation, revision, and unseen transfer case are connected in one reviewable learning trail.</strong></div>
               <button className="primary-button" type="button" onClick={handleReset}>Start a new attempt</button>
             </div>
           </section>

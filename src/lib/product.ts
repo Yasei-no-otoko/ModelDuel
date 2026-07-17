@@ -61,7 +61,7 @@ export const SCENARIO_CONTENT = {
     sampleMisconception:
       "The Moon changes shape because Earth's shadow moves across it.",
     heroSummary:
-      "Explain what causes the Moon's phases, then compare two runnable worlds before the evidence is revealed.",
+      "Pit the common claim that Earth's shadow causes Moon phases against the sunlight-and-viewing-angle model, then run both worlds under one sealed test.",
     capturePrompt: "What causes the Moon's phases?",
     interpretSummary:
       "We turned the explanation into a learner world and paired it with the scientific model under the same test.",
@@ -87,7 +87,7 @@ export const SCENARIO_CONTENT = {
     sampleMisconception:
       "Summer happens because Earth moves closer to the Sun, so both hemispheres should warm together.",
     heroSummary:
-      "Explain what causes seasons, then compare a distance-only world with Earth's tilted-axis world before the evidence is revealed.",
+      "Pit the distance-only explanation for summer against Earth's tilted-axis model, then test both hemispheres under one sealed June case.",
     capturePrompt: "What causes Earth's seasons?",
     interpretSummary:
       "We turned the distance explanation into a learner world and paired it with the axial-tilt model under the same June test.",
