@@ -20,6 +20,7 @@ import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
 
 import { chromium } from "@playwright/test";
+import OpenAI from "openai";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPOSITORY_ROOT = path.resolve(SCRIPT_DIR, "..");
@@ -72,6 +73,9 @@ const EXPECTED_API_LEDGER = Object.freeze([
   }),
   Object.freeze({ method: "POST", pathname: "/api/transfer", revisionMode: null }),
 ]);
+const TTS_MODEL = "tts-1";
+const TTS_VOICE = "nova";
+const TTS_DISCLOSURE = "AI-generated narration · OpenAI TTS";
 const FULL_SCORE_REVISION =
   "The Moon's phases change because sunlight illuminates half of the Moon while its orbit changes our viewing angle, so we see different fractions of the sunlit half. Earth's shadow does not cause the regular phases; it causes a lunar eclipse.";
 const ALLOWED_CONSOLE_MESSAGES = Object.freeze([
@@ -180,21 +184,26 @@ const SELECTORS = Object.freeze({
 
 function parseArguments(argv) {
   const normalized = argv[0] === "--" ? argv.slice(1) : argv;
-  const allowed = new Set(["--validate-only", "--probe-only"]);
+  const allowed = new Set([
+    "--validate-contracts-only",
+    "--validate-only",
+    "--probe-only",
+  ]);
   for (const argument of normalized) {
     if (!allowed.has(argument)) {
       throw new Error(`Unknown argument: ${argument}`);
     }
   }
+  const validateContractsOnly = normalized.includes("--validate-contracts-only");
   const validateOnly = normalized.includes("--validate-only");
   const probeOnly = normalized.includes("--probe-only");
-  if (validateOnly && probeOnly) {
-    throw new Error("Choose either --validate-only or --probe-only, not both.");
+  if ([validateContractsOnly, validateOnly, probeOnly].filter(Boolean).length > 1) {
+    throw new Error("Choose exactly one validation or probe mode.");
   }
   if (new Set(normalized).size !== normalized.length) {
     throw new Error("Duplicate command-line flags are not allowed.");
   }
-  return { validateOnly, probeOnly };
+  return { validateContractsOnly, validateOnly, probeOnly };
 }
 
 function expandHome(input) {
@@ -414,11 +423,23 @@ function validateSelectorContracts() {
   }
 }
 
+function sanitizedChildEnvironment() {
+  const sensitiveName = /(?:^|_)(?:API_KEY|TOKEN|SECRET|PASSWORD|COOKIE|CREDENTIALS?)(?:$|_)/i;
+  return Object.fromEntries(
+    Object.entries(process.env).filter(
+      ([name, value]) =>
+        value !== undefined &&
+        name !== "MODELDUEL_ALLOW_PAID_TTS" &&
+        !sensitiveName.test(name),
+    ),
+  );
+}
+
 async function runProcess(command, args, options = {}) {
   return await new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       cwd: options.cwd ?? REPOSITORY_ROOT,
-      env: options.env ?? process.env,
+      env: options.env ?? sanitizedChildEnvironment(),
       shell: false,
       stdio: ["ignore", "pipe", "pipe"],
     });
@@ -449,12 +470,9 @@ async function runProcess(command, args, options = {}) {
 }
 
 async function validateTools() {
-  const sayPath = "/usr/bin/say";
-  await access(sayPath, fsConstants.X_OK);
   const ffmpeg = process.env.FFMPEG_BIN || "ffmpeg";
   const ffprobe = process.env.FFPROBE_BIN || "ffprobe";
   const [
-    { stdout: voices },
     { stdout: ffmpegVersion },
     { stdout: ffprobeVersion },
     { stdout: encoders },
@@ -463,7 +481,6 @@ async function validateTools() {
     { stdout: devices },
     { stdout: mp4Help },
   ] = await Promise.all([
-    runProcess(sayPath, ["-v", "?"]),
     runProcess(ffmpeg, ["-version"]),
     runProcess(ffprobe, ["-version"]),
     runProcess(ffmpeg, ["-hide_banner", "-encoders"]),
@@ -480,9 +497,6 @@ async function validateTools() {
     if (!match || Number(match[1]) < 8) {
       throw new Error(`${name} 8 or newer is required.`);
     }
-  }
-  if (!voices.split(/\r?\n/).some((line) => /^Samantha\s/.test(line))) {
-    throw new Error('macOS voice "Samantha" is unavailable.');
   }
   for (const encoder of ["libx264", "aac", "mov_text", "pcm_s16le", "png"]) {
     if (!new RegExp(`\\b${encoder}\\b`).test(encoders)) {
@@ -540,7 +554,6 @@ async function validateTools() {
   const executablePath = chromium.executablePath();
   await access(executablePath, fsConstants.X_OK);
   return Object.freeze({
-    sayPath,
     ffmpeg,
     ffprobe,
     chromium: executablePath,
@@ -599,27 +612,104 @@ function concatPath(inputPath) {
   return inputPath.replaceAll("'", "'\\''");
 }
 
-async function synthesizeNarration(timeline, tools, workDir) {
-  const sourceDir = path.join(workDir, "tts-source");
+async function cachedNarrationSource(row, outputRoot, clientState) {
+  if (row.spokenNarration.length > 4096) {
+    throw new Error(`Narration row ${row.index} exceeds the Speech API character limit.`);
+  }
+  const cacheDescriptor = JSON.stringify({
+    model: TTS_MODEL,
+    voice: TTS_VOICE,
+    input: row.spokenNarration,
+  });
+  const cacheKey = createHash("sha256").update(cacheDescriptor).digest("hex");
+  const cacheDir = path.join(outputRoot, "narration-cache");
+  const cachePath = path.join(cacheDir, `${cacheKey}.wav`);
+  const lockPath = path.join(cacheDir, `.${cacheKey}.lock`);
+  assertInsideOutputRoot(outputRoot, cacheDir, "Narration cache directory");
+  assertInsideOutputRoot(outputRoot, cachePath, "Narration cache file");
+  assertInsideOutputRoot(outputRoot, lockPath, "Narration cache lock");
+  await mkdir(cacheDir, { recursive: true });
+  await assertNotSymlink(cacheDir, "Narration cache directory");
+  await assertNotSymlink(cachePath, "Narration cache file");
+
+  try {
+    await access(cachePath, fsConstants.R_OK);
+    return Object.freeze({ cachePath, cacheHit: true, sha256: await hashFile(cachePath) });
+  } catch (error) {
+    if (!error || typeof error !== "object" || error.code !== "ENOENT") throw error;
+  }
+
+  let lockHandle;
+  try {
+    lockHandle = await open(lockPath, "wx", 0o600);
+  } catch (error) {
+    if (error && typeof error === "object" && error.code === "EEXIST") {
+      throw new Error(
+        `Narration row ${row.index} is already being generated. Wait for that recording to finish, then retry from cache.`,
+      );
+    }
+    throw error;
+  }
+
+  try {
+    try {
+      await access(cachePath, fsConstants.R_OK);
+      return Object.freeze({ cachePath, cacheHit: true, sha256: await hashFile(cachePath) });
+    } catch (error) {
+      if (!error || typeof error !== "object" || error.code !== "ENOENT") throw error;
+    }
+
+    if (process.env.MODELDUEL_ALLOW_PAID_TTS !== "1") {
+      throw new Error(
+        "Narration cache is incomplete. Set MODELDUEL_ALLOW_PAID_TTS=1 for one explicitly approved Speech API generation run.",
+      );
+    }
+    const apiKey = process.env.OPENAI_API_KEY?.trim();
+    if (!apiKey) {
+      throw new Error("OPENAI_API_KEY is required to populate the approved narration cache.");
+    }
+    clientState.client ??= new OpenAI({ apiKey, maxRetries: 0, timeout: 60_000 });
+    const response = await clientState.client.audio.speech.create({
+      model: TTS_MODEL,
+      voice: TTS_VOICE,
+      input: row.spokenNarration,
+      response_format: "wav",
+    });
+    const audio = Buffer.from(await response.arrayBuffer());
+    if (audio.length < 44) {
+      throw new Error(`Speech API row ${row.index} returned invalid WAV data.`);
+    }
+    const temporaryPath = path.join(cacheDir, `.pending-${cacheKey}-${randomUUID()}.wav`);
+    assertInsideOutputRoot(outputRoot, temporaryPath, "Pending narration cache file");
+    clientState.apiCalls += 1;
+    try {
+      await writeFile(temporaryPath, audio, { flag: "wx" });
+      await rename(temporaryPath, cachePath);
+    } finally {
+      await rm(temporaryPath, { force: true });
+    }
+    return Object.freeze({ cachePath, cacheHit: false, sha256: await hashFile(cachePath) });
+  } finally {
+    try {
+      await lockHandle.close();
+    } finally {
+      await rm(lockPath, { force: true });
+    }
+  }
+}
+
+async function synthesizeNarration(timeline, tools, workDir, outputRoot) {
   const segmentDir = path.join(workDir, "tts-segments");
-  await mkdir(sourceDir, { recursive: true });
   await mkdir(segmentDir, { recursive: true });
   const segmentPaths = [];
   const segmentEvidence = [];
+  const clientState = { client: null, apiCalls: 0 };
 
   for (const row of timeline.rows) {
     const stem = String(row.index).padStart(2, "0");
-    const sourcePath = path.join(sourceDir, `${stem}.aiff`);
     const segmentPath = path.join(segmentDir, `${stem}.wav`);
-    await runProcess(tools.sayPath, [
-      "-v",
-      "Samantha",
-      "-r",
-      "160",
-      "-o",
-      sourcePath,
-      row.spokenNarration,
-    ]);
+    const source = await cachedNarrationSource(row, outputRoot, clientState);
+    const sourcePath = source.cachePath;
     const sourceProbe = await fullProbe(tools.ffprobe, sourcePath);
     const sourceDuration = mediaDuration(sourceProbe);
     const speechWindow = row.durationSeconds - 0.15;
@@ -667,6 +757,8 @@ async function synthesizeNarration(timeline, tools, workDir) {
     segmentEvidence.push({
       row: row.index,
       sourceDurationSeconds: Number(sourceDuration.toFixed(6)),
+      sourceSha256: source.sha256,
+      cacheHit: source.cacheHit,
       slotDurationSeconds: row.durationSeconds,
       tempo: Number(tempo.toFixed(8)),
       leadMilliseconds: 150,
@@ -705,7 +797,15 @@ async function synthesizeNarration(timeline, tools, workDir) {
   if (Math.abs(mediaDuration(narrationProbe) - TOTAL_DURATION_SECONDS) > 0.03) {
     throw new Error("Concatenated narration is not exactly 165 seconds.");
   }
-  return Object.freeze({ narrationPath, segmentEvidence });
+  return Object.freeze({
+    narrationPath,
+    segmentEvidence,
+    ttsApiCalls: clientState.apiCalls,
+    inputCharacters: timeline.rows.reduce(
+      (total, row) => total + row.spokenNarration.length,
+      0,
+    ),
+  });
 }
 
 function createAuditCounters() {
@@ -987,6 +1087,32 @@ async function removeOverlay(page) {
   });
 }
 
+async function showNarrationDisclosure(page) {
+  await page.evaluate((disclosure) => {
+    document.getElementById("modelduel-narration-disclosure")?.remove();
+    const badge = document.createElement("p");
+    badge.id = "modelduel-narration-disclosure";
+    badge.textContent = disclosure;
+    badge.setAttribute("aria-label", disclosure);
+    Object.assign(badge.style, {
+      position: "fixed",
+      zIndex: "2147483646",
+      top: "16px",
+      right: "18px",
+      margin: "0",
+      padding: "8px 12px",
+      border: "1px solid rgba(117,233,244,.55)",
+      borderRadius: "999px",
+      color: "#dffbff",
+      background: "rgba(3,7,18,.92)",
+      boxShadow: "0 10px 28px rgba(0,0,0,.38)",
+      font: "700 13px/1.2 Inter, ui-sans-serif, system-ui, sans-serif",
+      letterSpacing: ".025em",
+    });
+    document.body.append(badge);
+  }, TTS_DISCLOSURE);
+}
+
 const CONFIGURED_LIVE_OVERLAY = Object.freeze({
   badge: "Configured live path — not executed in this recording",
   title: "Bounded AI input; deterministic scientific truth",
@@ -1040,7 +1166,10 @@ async function recordVerifiedJourney(
   let preRollSeconds;
 
   try {
-    browser = await chromium.launch({ headless: true });
+    browser = await chromium.launch({
+      headless: true,
+      env: sanitizedChildEnvironment(),
+    });
     const contextOptions = {
       viewport: { width: RECORDING_WIDTH, height: RECORDING_HEIGHT },
       deviceScaleFactor: 1,
@@ -1063,6 +1192,7 @@ async function recordVerifiedJourney(
     await page.goto(baseUrl.href, { waitUntil: "networkidle", timeout: 30_000 });
     await locatorFor(page, SELECTORS.heroHeading).waitFor({ state: "visible" });
     await locatorFor(page, SELECTORS.verifiedButton).waitFor({ state: "visible" });
+    await showNarrationDisclosure(page);
     const recordingStart = process.hrtime.bigint();
     preRollSeconds = Number(recordingStart - pageCreatedAt) / 1e9;
 
@@ -1439,6 +1569,42 @@ async function gitCommit() {
   return commit;
 }
 
+async function snapshotRepositoryProvenance(timeline) {
+  const { stdout: status } = await runProcess("git", [
+    "status",
+    "--porcelain=v1",
+    "--untracked-files=all",
+  ]);
+  if (status.trim()) {
+    throw new Error(
+      "Full recording requires a clean committed worktree so the manifest identifies the code that actually ran.",
+    );
+  }
+  return Object.freeze({
+    repositoryCommit: await gitCommit(),
+    generatorSourceSha256: await hashFile(fileURLToPath(import.meta.url)),
+    sourceDocumentSha256: createHash("sha256").update(timeline.markdown).digest("hex"),
+    narrationTableSha256: createHash("sha256")
+      .update(
+        JSON.stringify(
+          timeline.rows.map((row) => ({
+            timecode: row.timecode,
+            shot: row.shot,
+            narration: row.markdownNarration,
+          })),
+        ),
+      )
+      .digest("hex"),
+  });
+}
+
+async function assertRepositoryProvenanceUnchanged(expected, timeline) {
+  const current = await snapshotRepositoryProvenance(timeline);
+  if (JSON.stringify(current) !== JSON.stringify(expected)) {
+    throw new Error("Repository provenance changed while the submission video was recording.");
+  }
+}
+
 async function prepareOutputRoot() {
   const requested = path.resolve(expandHome(DEFAULT_OUTPUT_ROOT));
   if (isInside(REPOSITORY_ROOT, requested)) {
@@ -1561,7 +1727,6 @@ async function publishBundle(output) {
   const destination = path.join(output.runsDir, output.runId);
   assertInsideOutputRoot(output.outputRoot, destination, "Published run directory");
   await assertNotSymlink(destination, "Published run directory");
-  await rename(output.bundleDir, destination);
   const pointer = {
     schemaVersion: "1.0",
     runId: output.runId,
@@ -1569,22 +1734,67 @@ async function publishBundle(output) {
   };
   const pointerTemp = path.join(output.outputRoot, `.latest-${output.runId}.json`);
   const pointerPath = path.join(output.outputRoot, "latest.json");
-  await writeFile(pointerTemp, `${JSON.stringify(pointer, null, 2)}\n`, {
-    encoding: "utf8",
-    flag: "wx",
-  });
-  await rename(pointerTemp, pointerPath);
-  return Object.freeze({ destination, pointerPath });
+  let destinationPublished = false;
+  try {
+    await writeFile(pointerTemp, `${JSON.stringify(pointer, null, 2)}\n`, {
+      encoding: "utf8",
+      flag: "wx",
+    });
+    await rename(output.bundleDir, destination);
+    destinationPublished = true;
+    await rename(pointerTemp, pointerPath);
+    return Object.freeze({ destination, pointerPath });
+  } catch (error) {
+    if (destinationPublished) {
+      await rm(destination, { recursive: true, force: false });
+    }
+    throw error;
+  } finally {
+    await rm(pointerTemp, { force: true });
+  }
 }
 
 async function main() {
   const argumentsResult = parseArguments(process.argv.slice(2));
   validateSelectorContracts();
   const timeline = await parseApprovedTimeline();
-  const tools = await validateTools();
   const baseUrl = productionBaseUrl();
   const buildUrl = baseUrl.href;
   const buildMarker = validatedBuildMarker(process.env.MODELDUEL_BUILD_ID);
+
+  if (argumentsResult.validateContractsOnly) {
+    process.stdout.write(
+      `${JSON.stringify(
+        {
+          valid: true,
+          mode: "portable-contract-validation",
+          timeline: {
+            heading: TIMELINE_HEADING,
+            rows: timeline.rows.length,
+            start: timeline.rows[0].timecode.split("–")[0],
+            end: timeline.rows.at(-1).timecode.split("–")[1],
+            durationSeconds: TOTAL_DURATION_SECONDS,
+          },
+          selectors: Object.keys(SELECTORS),
+          expectedApiLedger: EXPECTED_API_LEDGER,
+          narration: {
+            model: TTS_MODEL,
+            voice: TTS_VOICE,
+            disclosure: TTS_DISCLOSURE,
+            paidGenerationRequiresExplicitOptIn: true,
+          },
+          productionOrigin: baseUrl.origin,
+          externalToolsRequired: false,
+          networkRequests: 0,
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    return;
+  }
+
+  const tools = await validateTools();
 
   if (argumentsResult.validateOnly) {
     process.stdout.write(
@@ -1599,7 +1809,8 @@ async function main() {
             durationSeconds: TOTAL_DURATION_SECONDS,
           },
           tools: {
-            say: "Samantha",
+            speechModel: TTS_MODEL,
+            speechVoice: TTS_VOICE,
             ffmpeg: tools.versions.ffmpeg,
             ffprobe: tools.versions.ffprobe,
             chromium: true,
@@ -1638,6 +1849,7 @@ async function main() {
     return;
   }
 
+  const provenance = await snapshotRepositoryProvenance(timeline);
   const output = await prepareOutputRoot();
   try {
     const workVideo = path.join(output.bundleDir, FINAL_FILENAMES.video);
@@ -1650,7 +1862,12 @@ async function main() {
 
     const srt = buildSrt(timeline.rows);
     await writeFile(workSrt, srt, "utf8");
-    const narration = await synthesizeNarration(timeline, tools, output.workDir);
+    const narration = await synthesizeNarration(
+      timeline,
+      tools,
+      output.workDir,
+      output.outputRoot,
+    );
     const recording = await recordVerifiedJourney(baseUrl, {
       workDir: output.workDir,
       recordVideo: true,
@@ -1672,15 +1889,7 @@ async function main() {
       output.workDir,
     );
 
-    const commit = await gitCommit();
-    const sourceHash = createHash("sha256").update(timeline.markdown).digest("hex");
-    const timelineHash = createHash("sha256")
-      .update(JSON.stringify(timeline.rows.map((row) => ({
-        timecode: row.timecode,
-        shot: row.shot,
-        narration: row.markdownNarration,
-      }))))
-      .digest("hex");
+    await assertRepositoryProvenanceUnchanged(provenance, timeline);
     const hashes = {
       [FINAL_FILENAMES.video]: await hashFile(workVideo),
       [FINAL_FILENAMES.subtitles]: await hashFile(workSrt),
@@ -1690,11 +1899,11 @@ async function main() {
       schemaVersion: "1.0",
       generatedAt: new Date().toISOString(),
       provenance: {
-        repositoryCommit: commit,
-        generatorSourceSha256: await hashFile(fileURLToPath(import.meta.url)),
+        repositoryCommit: provenance.repositoryCommit,
+        generatorSourceSha256: provenance.generatorSourceSha256,
         narrationSource: "docs/DEVPOST_SUBMISSION.md#245-demo-narration-and-shot-list",
-        sourceDocumentSha256: sourceHash,
-        narrationTableSha256: timelineHash,
+        sourceDocumentSha256: provenance.sourceDocumentSha256,
+        narrationTableSha256: provenance.narrationTableSha256,
         recordingUrl: baseUrl.href,
         buildUrl,
         buildMarker,
@@ -1706,8 +1915,12 @@ async function main() {
         timecodes: timeline.rows.map((row) => row.timecode),
       },
       narration: {
-        voice: "Samantha",
-        wordsPerMinute: 160,
+        model: TTS_MODEL,
+        voice: TTS_VOICE,
+        disclosure: TTS_DISCLOSURE,
+        disclosureVisibleThroughoutVideo: true,
+        inputCharacters: narration.inputCharacters,
+        speechApiCallsThisRun: narration.ttsApiCalls,
         leadMillisecondsPerRow: 150,
         segments: narration.segmentEvidence,
       },
