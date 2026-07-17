@@ -47,7 +47,11 @@ test("renders Moon relations and hidden evidence without internal DSL copy", asy
       /This is simulation evidence calculated from the validated test case\./,
     ),
   ).toBeVisible();
-  await expect(page.getByRole("status")).toHaveText(
+  await expect(
+    page.getByRole("status").filter({
+      hasText: "Both models ran the same validated case. Verified evidence is now visible.",
+    }),
+  ).toHaveText(
     "Both models ran the same validated case. Verified evidence is now visible.",
   );
   await expect(page.getByText(/CaseSpec/)).toHaveCount(0);

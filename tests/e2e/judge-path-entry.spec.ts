@@ -291,9 +291,59 @@ test("defers WebGL probing until the evidence comparison mounts", async ({
     .click();
   await expect.poll(probeCount).toBeGreaterThan(0);
   await expect(page.locator(".world-html-fallback")).toHaveCount(2);
+  await expect(page.locator(".view-controls")).toHaveCount(0);
+  await expect(
+    page.getByText("Static evidence view · camera controls are not needed.", {
+      exact: true,
+    }),
+  ).toHaveCount(2);
   await expect(page.getByTestId("verified-observation")).toBeVisible();
   await page.getByRole("button", { name: "Revise my explanation" }).click();
   await expect(
     page.getByRole("heading", { name: "What changed in your explanation?" }),
   ).toBeVisible();
+});
+
+test("removes camera controls when the interactive Canvas cannot start", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    let availabilityProbePending = true;
+    const getContext = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (
+      this: HTMLCanvasElement,
+      contextId: string,
+      ...argumentsList: unknown[]
+    ) {
+      if (
+        availabilityProbePending &&
+        (contextId === "webgl" || contextId === "webgl2")
+      ) {
+        availabilityProbePending = false;
+        return {
+          getExtension: () => ({ loseContext: () => undefined }),
+        } as unknown as WebGLRenderingContext;
+      }
+      if (contextId === "webgl" || contextId === "webgl2") return null;
+      return Reflect.apply(getContext, this, [contextId, ...argumentsList]);
+    } as typeof HTMLCanvasElement.prototype.getContext;
+  });
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "Run verified sample" }).click();
+  await page.getByRole("button", { name: "Make a prediction" }).click();
+  await page.getByLabel("Earth's shadow masks half of the Moon").check();
+  await page.getByRole("button", { name: "Lock prediction" }).click();
+  await page
+    .getByRole("button", { name: "Run both worlds and reveal evidence" })
+    .click();
+
+  await expect(page.locator(".world-html-fallback")).toHaveCount(2);
+  await expect(page.locator(".view-controls")).toHaveCount(0);
+  await expect(
+    page.getByText("Static evidence view · camera controls are not needed.", {
+      exact: true,
+    }),
+  ).toHaveCount(2);
+  await expect(page.getByTestId("verified-observation")).toBeVisible();
 });

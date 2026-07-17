@@ -1,13 +1,17 @@
 "use client";
 
 import { Canvas, useThree } from "@react-three/fiber";
+import { WebGLRenderer } from "three";
 import {
   Component,
   useEffect,
+  useId,
   useRef,
   useState,
+  type Dispatch,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
+  type SetStateAction,
 } from "react";
 
 import type {
@@ -32,6 +36,7 @@ type WorldKind = "learner" | "scientific";
 type CanvasBoundaryProps = Readonly<{
   children: ReactNode;
   fallback: ReactNode;
+  onFailure: () => void;
 }>;
 
 class CanvasBoundary extends Component<
@@ -46,6 +51,7 @@ class CanvasBoundary extends Component<
 
   componentDidCatch() {
     // The surrounding semantic fallback carries the same observation.
+    this.props.onFailure();
   }
 
   render() {
@@ -69,6 +75,116 @@ function CameraRig({ angle }: Readonly<{ angle: number }>) {
   }, [angle, camera, invalidate]);
 
   return null;
+}
+
+const CAMERA_ORBIT_STEP = Math.PI / 8;
+let cachedThreeRendererAvailability: boolean | null = null;
+
+function canCreateThreeRenderer() {
+  if (cachedThreeRendererAvailability !== null) {
+    return cachedThreeRendererAvailability;
+  }
+  if (typeof document === "undefined") return false;
+
+  let renderer: WebGLRenderer | null = null;
+  try {
+    renderer = new WebGLRenderer({
+      canvas: document.createElement("canvas"),
+      antialias: false,
+      alpha: false,
+    });
+    cachedThreeRendererAvailability = true;
+  } catch {
+    cachedThreeRendererAvailability = false;
+  } finally {
+    renderer?.dispose();
+    renderer?.forceContextLoss();
+  }
+  return cachedThreeRendererAvailability;
+}
+
+function useThreeRendererAvailability(webglAvailable: boolean | null) {
+  const [available, setAvailable] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) {
+        setAvailable(webglAvailable === true && canCreateThreeRenderer());
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [webglAvailable]);
+
+  return available;
+}
+
+function formatCameraOrientation(angle: number) {
+  const degrees = (angle * 180) / Math.PI;
+  const normalized = ((degrees + 180) % 360 + 360) % 360 - 180;
+  const rounded = Math.round(normalized * 10) / 10;
+  return `${Object.is(rounded, -0) ? 0 : rounded} degrees`;
+}
+
+function CameraViewControls({
+  cameraAngle,
+  controlLabel,
+  setCameraAngle,
+  viewportId,
+}: Readonly<{
+  cameraAngle: number;
+  controlLabel: string;
+  setCameraAngle: Dispatch<SetStateAction<number>>;
+  viewportId: string;
+}>) {
+  const [announcement, setAnnouncement] = useState("");
+  const displayLabel = `${controlLabel.charAt(0).toUpperCase()}${controlLabel.slice(1)}`;
+
+  function setAnnouncedAngle(nextAngle: number, action: string) {
+    setCameraAngle(nextAngle);
+    setAnnouncement(
+      `${displayLabel} ${action}. Camera orientation ${formatCameraOrientation(nextAngle)}.`,
+    );
+  }
+
+  const leftAngle = cameraAngle - CAMERA_ORBIT_STEP;
+  const rightAngle = cameraAngle + CAMERA_ORBIT_STEP;
+
+  return (
+    <>
+      <div className="view-controls" role="group" aria-label={`${controlLabel} camera controls`}>
+        <button
+          type="button"
+          onClick={() => setAnnouncedAngle(leftAngle, "rotated left")}
+          aria-controls={viewportId}
+          aria-label={`Rotate ${controlLabel} left to ${formatCameraOrientation(leftAngle)}`}
+        >
+          ←
+        </button>
+        <button
+          type="button"
+          onClick={() => setAnnouncedAngle(0, "reset")}
+          aria-controls={viewportId}
+          aria-label={`Reset ${controlLabel} to 0 degrees`}
+        >
+          Reset view
+        </button>
+        <button
+          type="button"
+          onClick={() => setAnnouncedAngle(rightAngle, "rotated right")}
+          aria-controls={viewportId}
+          aria-label={`Rotate ${controlLabel} right to ${formatCameraOrientation(rightAngle)}`}
+        >
+          →
+        </button>
+      </div>
+      <p className="sr-only camera-view-status" role="status" aria-live="polite" aria-atomic="true">
+        {announcement}
+      </p>
+    </>
+  );
 }
 
 function LightRay({ y }: Readonly<{ y: number }>) {
@@ -157,9 +273,12 @@ function WorldViewport({
   kind: WorldKind;
 }>) {
   const [cameraAngle, setCameraAngle] = useState(0);
+  const [canvasFailed, setCanvasFailed] = useState(false);
+  const viewportId = useId();
   const dragStart = useRef<number | null>(null);
   const reducedMotion = usePrefersReducedMotion();
   const webglAvailable = useWebGlAvailability();
+  const rendererAvailable = useThreeRendererAvailability(webglAvailable);
   const fallback = <MoonEvidenceDiagram observation={observation} kind={kind} />;
 
   function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
@@ -186,17 +305,18 @@ function WorldViewport({
   return (
     <div className="world-viewport-shell">
       <div
+        id={viewportId}
         className="world-viewport"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerEnd}
         onPointerCancel={handlePointerEnd}
       >
-        {webglAvailable ? (
-          <CanvasBoundary fallback={fallback}>
+        {webglAvailable && rendererAvailable ? (
+          <CanvasBoundary fallback={fallback} onFailure={() => setCanvasFailed(true)}>
             <Canvas
               role="img"
-              aria-label={`${kind === "learner" ? "Learner" : "Scientific"} model 3D view. Drag horizontally or use the view buttons to orbit.`}
+              aria-label={`${kind === "learner" ? "Learner" : "Scientific"} model 3D view. Camera orientation ${formatCameraOrientation(cameraAngle)}. Drag horizontally or use the view buttons to orbit.`}
               camera={{ fov: 43, near: 0.1, far: 100, position: [0, 4.8, 8.8] }}
               dpr={reducedMotion ? 1 : [1, 1.5]}
               frameloop="demand"
@@ -210,25 +330,16 @@ function WorldViewport({
           fallback
         )}
       </div>
-      <div className="view-controls" role="group" aria-label={`${kind} model camera view`}>
-        <button
-          type="button"
-          onClick={() => setCameraAngle((angle) => angle - Math.PI / 8)}
-          aria-label={`Rotate ${kind} model view left`}
-        >
-          ←
-        </button>
-        <button type="button" onClick={() => setCameraAngle(0)}>
-          Reset view
-        </button>
-        <button
-          type="button"
-          onClick={() => setCameraAngle((angle) => angle + Math.PI / 8)}
-          aria-label={`Rotate ${kind} model view right`}
-        >
-          →
-        </button>
-      </div>
+      {webglAvailable && rendererAvailable && !canvasFailed ? (
+        <CameraViewControls
+          cameraAngle={cameraAngle}
+          controlLabel={`${kind} model view`}
+          setCameraAngle={setCameraAngle}
+          viewportId={viewportId}
+        />
+      ) : (
+        <p className="static-view-note">Static evidence view · camera controls are not needed.</p>
+      )}
     </div>
   );
 }
@@ -389,9 +500,12 @@ function SeasonsWorldViewport({
   kind: SeasonsWorldKind;
 }>) {
   const [cameraAngle, setCameraAngle] = useState(0);
+  const [canvasFailed, setCanvasFailed] = useState(false);
+  const viewportId = useId();
   const dragStart = useRef<number | null>(null);
   const reducedMotion = usePrefersReducedMotion();
   const webglAvailable = useWebGlAvailability();
+  const rendererAvailable = useThreeRendererAvailability(webglAvailable);
   const fallback = (
     <SeasonsEvidenceDiagram caseSpec={caseSpec} observation={observation} />
   );
@@ -420,17 +534,18 @@ function SeasonsWorldViewport({
   return (
     <div className="world-viewport-shell">
       <div
+        id={viewportId}
         className="world-viewport seasons-world-viewport"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerEnd}
         onPointerCancel={handlePointerEnd}
       >
-        {webglAvailable ? (
-          <CanvasBoundary fallback={fallback}>
+        {webglAvailable && rendererAvailable ? (
+          <CanvasBoundary fallback={fallback} onFailure={() => setCanvasFailed(true)}>
             <Canvas
               role="img"
-              aria-label={`${kind === "learner" ? "Learner" : "Scientific"} seasons model 3D view. Drag horizontally or use the view buttons to orbit.`}
+              aria-label={`${kind === "learner" ? "Learner" : "Scientific"} seasons model 3D view. Camera orientation ${formatCameraOrientation(cameraAngle)}. Drag horizontally or use the view buttons to orbit.`}
               camera={{ fov: 43, near: 0.1, far: 100, position: [0, 4.8, 8.8] }}
               dpr={reducedMotion ? 1 : [1, 1.5]}
               frameloop="demand"
@@ -444,29 +559,16 @@ function SeasonsWorldViewport({
           fallback
         )}
       </div>
-      <div
-        className="view-controls"
-        role="group"
-        aria-label={`${kind} seasons model camera view`}
-      >
-        <button
-          type="button"
-          onClick={() => setCameraAngle((angle) => angle - Math.PI / 8)}
-          aria-label={`Rotate ${kind} seasons model view left`}
-        >
-          ←
-        </button>
-        <button type="button" onClick={() => setCameraAngle(0)}>
-          Reset view
-        </button>
-        <button
-          type="button"
-          onClick={() => setCameraAngle((angle) => angle + Math.PI / 8)}
-          aria-label={`Rotate ${kind} seasons model view right`}
-        >
-          →
-        </button>
-      </div>
+      {webglAvailable && rendererAvailable && !canvasFailed ? (
+        <CameraViewControls
+          cameraAngle={cameraAngle}
+          controlLabel={`${kind} seasons model view`}
+          setCameraAngle={setCameraAngle}
+          viewportId={viewportId}
+        />
+      ) : (
+        <p className="static-view-note">Static evidence view · camera controls are not needed.</p>
+      )}
     </div>
   );
 }

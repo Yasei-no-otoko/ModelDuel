@@ -65,6 +65,42 @@ test("keeps both Seasons worlds compact and operable at 375px", async ({
     expect(height).toBeGreaterThanOrEqual(44);
   }
 
+  const learnerWorld = page.locator(".evidence-world.learner");
+  const learnerViewport = learnerWorld.getByRole("img").first();
+  const learnerViewportShell = learnerWorld.locator(".world-viewport[id]");
+  const rotateLearnerRight = learnerWorld.getByRole("button", {
+    name: "Rotate learner seasons model view right to 22.5 degrees",
+  });
+  await expect(learnerViewport).toBeVisible();
+  await expect(learnerViewport).toHaveAttribute(
+    "aria-label",
+    /Learner seasons model 3D view\. Camera orientation 0 degrees/,
+  );
+  const learnerViewportId = await learnerViewportShell.getAttribute("id");
+  expect(learnerViewportId).toBeTruthy();
+  await expect(rotateLearnerRight).toHaveAttribute(
+    "aria-controls",
+    learnerViewportId!,
+  );
+  await rotateLearnerRight.focus();
+  await page.keyboard.press("Enter");
+  await expect(learnerViewport).toHaveAttribute(
+    "aria-label",
+    /Camera orientation 22\.5 degrees/,
+  );
+  await expect(learnerWorld.locator(".camera-view-status")).toHaveText(
+    "Learner seasons model view rotated right. Camera orientation 22.5 degrees.",
+  );
+  const resetLearnerView = learnerWorld.getByRole("button", {
+    name: "Reset learner seasons model view to 0 degrees",
+  });
+  await resetLearnerView.focus();
+  await page.keyboard.press("Enter");
+  await expect(learnerViewport).toHaveAttribute(
+    "aria-label",
+    /Camera orientation 0 degrees/,
+  );
+
   const hasHorizontalOverflow = await page.evaluate(
     () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
   );

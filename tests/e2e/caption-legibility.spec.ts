@@ -17,6 +17,7 @@ const CAPTION_SELECTORS = [
   ".sealed-banner",
   ".option-list legend",
   ".case-control button, .view-controls button",
+  ".static-view-note",
   ".evidence-world > header p",
   ".world-html-fallback p",
   ".prediction-block span",
@@ -171,7 +172,9 @@ test("keeps learner-facing captions legible through the Moon evidence flow", asy
     .click();
 
   await expect(page.locator(".case-control button")).toBeVisible();
-  await expect(page.locator(".view-controls button").first()).toBeVisible();
+  await expect(page.locator(".view-controls")).toHaveCount(0);
+  const staticViewNotes = page.locator(".static-view-note");
+  await expect(staticViewNotes).toHaveCount(2);
   await expect(page.locator(".evidence-world > header p").first()).toBeVisible();
   const evidenceDiagrams = page.locator(".world-html-fallback");
   await expect(evidenceDiagrams).toHaveCount(2);
@@ -192,10 +195,11 @@ test("keeps learner-facing captions legible through the Moon evidence flow", asy
   await expect(page.locator(".scale-note")).toBeVisible();
   await expectCaptionFloorForPresentElements(page);
 
-  const viewControls = page.locator(".view-controls button");
-  await expect(viewControls).toHaveCount(6);
-  for (const button of await viewControls.all()) {
-    const height = await button.evaluate(
+  for (const note of await staticViewNotes.all()) {
+    await expect(note).toHaveText(
+      "Static evidence view · camera controls are not needed.",
+    );
+    const height = await note.evaluate(
       (element) => element.getBoundingClientRect().height,
     );
     expect(height).toBeGreaterThanOrEqual(44);
