@@ -61,6 +61,120 @@ test("makes the instant verified Moon duel the primary default path", async ({
   expect(analyzeRequests).toBe(0);
 });
 
+for (const viewport of [
+  { width: 768, height: 1024, maximumVerifiedTop: 900 },
+  { width: 1280, height: 900, maximumVerifiedTop: 720 },
+] as const) {
+  test(`puts the verified path before live consent at ${viewport.width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await page.goto("/");
+
+    const verifiedActions = page.getByRole("button", {
+      name: /Run verified sample/,
+    });
+    await expect(verifiedActions).toHaveCount(1);
+    const verified = page.locator(".capture-card-verified-action");
+    const confirmation = page.getByRole("checkbox", {
+      name: /I am 18 or older, or I have teacher or guardian authorization/,
+    });
+    const live = page.getByRole("button", { name: /Analyze with GPT-5\.6/ });
+    await expect(verified).toBeVisible();
+    await expect(verified).toBeEnabled();
+    await expect(confirmation).not.toBeChecked();
+    await expect(live).toBeDisabled();
+
+    const verifiedBox = await verified.boundingBox();
+    expect(verifiedBox).not.toBeNull();
+    expect(verifiedBox?.y ?? Number.POSITIVE_INFINITY).toBeLessThan(
+      viewport.maximumVerifiedTop,
+    );
+    const nativeOrder = await page.evaluate(() => {
+      const verifiedControl = document.querySelector(
+        ".capture-card-verified-action",
+      );
+      const confirmationControl = document.querySelector(
+        ".live-use-boundary input",
+      );
+      const explanationControl = document.querySelector(
+        "#learner-explanation",
+      );
+      const sketchControl = document.querySelector("#learner-sketch");
+      const liveControl = document.querySelector(
+        ".capture-actions-live .secondary-button",
+      );
+      if (
+        !verifiedControl ||
+        !explanationControl ||
+        !sketchControl ||
+        !confirmationControl ||
+        !liveControl
+      ) return null;
+      return {
+        explanationFollowsVerified: Boolean(
+          verifiedControl.compareDocumentPosition(explanationControl) &
+            Node.DOCUMENT_POSITION_FOLLOWING,
+        ),
+        sketchFollowsExplanation: Boolean(
+          explanationControl.compareDocumentPosition(sketchControl) &
+            Node.DOCUMENT_POSITION_FOLLOWING,
+        ),
+        confirmationFollowsSketch: Boolean(
+          sketchControl.compareDocumentPosition(confirmationControl) &
+            Node.DOCUMENT_POSITION_FOLLOWING,
+        ),
+        liveFollowsConfirmation: Boolean(
+          confirmationControl.compareDocumentPosition(liveControl) &
+            Node.DOCUMENT_POSITION_FOLLOWING,
+        ),
+      };
+    });
+    expect(nativeOrder).toEqual({
+      explanationFollowsVerified: true,
+      sketchFollowsExplanation: true,
+      confirmationFollowsSketch: true,
+      liveFollowsConfirmation: true,
+    });
+
+    const typography = await page.evaluate(() => {
+      const body = getComputedStyle(document.body);
+      const heading = getComputedStyle(
+        document.querySelector("#capture-title") as HTMLElement,
+      );
+      return {
+        bodyFamily: body.fontFamily,
+        headingFamily: heading.fontFamily,
+        headingLineHeight: Number.parseFloat(heading.lineHeight),
+        headingFontSize: Number.parseFloat(heading.fontSize),
+      };
+    });
+    expect(typography.headingFamily).not.toBe(typography.bodyFamily);
+    expect(typography.headingFamily.split(",")[0]).not.toBe(
+      typography.bodyFamily.split(",")[0],
+    );
+    expect(
+      typography.headingLineHeight / typography.headingFontSize,
+    ).toBeGreaterThanOrEqual(0.98);
+    expect(
+      typography.headingLineHeight / typography.headingFontSize,
+    ).toBeLessThanOrEqual(1.02);
+
+    await confirmation.check();
+    await expect(live).toBeEnabled();
+    await confirmation.uncheck();
+    await expect(live).toBeDisabled();
+    await verified.click();
+    const stepHeading = page.locator(".stage-heading-block h1");
+    await expect(stepHeading).toBeVisible();
+    const stepHeadingFamily = await stepHeading.evaluate(
+      (element) => getComputedStyle(element).fontFamily,
+    );
+    expect(stepHeadingFamily).toBe(typography.headingFamily);
+    expect(stepHeadingFamily).not.toBe(typography.bodyFamily);
+  });
+}
+
 test("keeps live GPT-5.6 analysis explicit and secondary", async ({ page }) => {
   let demoRequests = 0;
   page.on("request", (request) => {

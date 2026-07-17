@@ -907,12 +907,31 @@ export function ModelDuelExperience() {
                 );
               })}
             </fieldset>
-            <div className="card-heading">
+              <div className="card-heading">
                 <div>
                   <p className="micro-label">Capture · step 1 of 7</p>
                 <h2>{scenarioContent.capturePrompt}</h2>
                 </div>
                 <span className="sample-pill">Editable sample</span>
+              </div>
+              <div className="capture-actions capture-actions-verified">
+                <button
+                  className="primary-button full-button capture-card-verified-action"
+                  type="submit"
+                  disabled={!hydrationReady || analysisPending}
+                  data-hydrated={hydrationReady ? "true" : "false"}
+                >
+                  {!hydrationReady
+                    ? "Preparing challenge…"
+                    : analysisPending && analysisAttempt === "verified-sample"
+                      ? "Loading verified sample…"
+                      : (
+                          <>
+                            <span>Run verified sample <span aria-hidden="true">→</span></span>
+                            <small>Instant {scenarioContent.label} challenge · no API wait</small>
+                          </>
+                        )}
+                </button>
               </div>
               <label htmlFor="learner-explanation">Your current explanation</label>
               <textarea
@@ -993,24 +1012,7 @@ export function ModelDuelExperience() {
                 </label>
               </div>
 
-              <div className="capture-actions">
-                <button
-                  className="primary-button full-button capture-card-verified-action"
-                  type="submit"
-                  disabled={!hydrationReady || analysisPending}
-                  data-hydrated={hydrationReady ? "true" : "false"}
-                >
-                  {!hydrationReady
-                    ? "Preparing challenge…"
-                    : analysisPending && analysisAttempt === "verified-sample"
-                      ? "Loading verified sample…"
-                      : (
-                          <>
-                            <span>Run verified sample <span aria-hidden="true">→</span></span>
-                            <small>Instant {scenarioContent.label} challenge · no API wait</small>
-                          </>
-                        )}
-                </button>
+              <div className="capture-actions capture-actions-live">
                 <button
                   className="secondary-button full-button"
                   type="button"
