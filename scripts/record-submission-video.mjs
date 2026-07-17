@@ -175,6 +175,7 @@ const SELECTORS = Object.freeze({
     name: "Lock and check answer",
   }),
   trace: Object.freeze({ kind: "testId", value: "revision-trace" }),
+  handoff: Object.freeze({ kind: "testId", value: "trace-handoff" }),
   newAttempt: Object.freeze({
     kind: "role",
     role: "button",
@@ -402,6 +403,7 @@ function validateSelectorContracts() {
     "correctTransfer",
     "submitTransfer",
     "trace",
+    "handoff",
     "newAttempt",
   ];
   if (JSON.stringify(Object.keys(SELECTORS)) !== JSON.stringify(requiredKeys)) {
@@ -1277,6 +1279,11 @@ async function recordVerifiedJourney(
     await schedule(113, "submit-transfer-answer", async () => {
       await locatorFor(page, SELECTORS.submitTransfer).click();
       await locatorFor(page, SELECTORS.trace).waitFor({ state: "visible" });
+    });
+    await schedule(120, "show-learner-controlled-handoff", async () => {
+      const handoff = locatorFor(page, SELECTORS.handoff);
+      await handoff.waitFor({ state: "visible" });
+      await handoff.evaluate((element) => element.scrollIntoView({ block: "center" }));
     });
     await schedule(128, "show-architecture", async () => {
       await showOverlay(page, "full", ARCHITECTURE_OVERLAY);

@@ -6,7 +6,7 @@ ModelDuel makes a learner's causal model visible, asks for a prediction before r
 
 ## Primary user
 
-A middle-school learner using a desktop browser without an account or headset. A teacher may review the final revision trace, but classroom administration is outside P0.
+A middle-school learner using a desktop browser without an account or headset. A teacher may review the final revision trace on the learner's screen or receive a learner-confirmed local text copy. Teacher accounts, classroom administration, automatic sharing, and longitudinal records are outside P0.
 
 ## State machine
 
@@ -46,6 +46,10 @@ Recoverable validation and network errors remain in the current state with the l
 - The learner submits a revised causal explanation after observation.
 - A new transfer condition is not a verbatim repeat of the observed case.
 - The final trace contains initial belief, locked prediction, observation, revision, and transfer result.
+- The trace presents a compact same-session review of the learner's before state, evidence and revision, and unseen transfer result before the detailed audit trail.
+- A learner-controlled teacher handoff exposes only allow-listed trace text. Copy and fixed-name plain-text download remain disabled until the learner-text boundary is explicitly confirmed.
+- Creating the handoff performs no API request and ModelDuel does not create a server-side record, email, or share link for it. The trace remains in the active page until reset, reload, or page close; a system clipboard, browser, or device may retain or sync a copy.
+- The editable handoff is not signed, tamper-proof, or teacher-authenticated. It documents one attempt as a conversation aid; it is not a grade, a longitudinal record, or proof of durable learning.
 - Failure states do not erase completed steps, fabricate a score, or expose raw model reasoning.
 
 ### Scenario isolation
@@ -69,4 +73,4 @@ Recoverable validation and network errors remain in the current state with the l
 
 ## Explicitly outside P0
 
-WebXR, teacher class management, free-form arbitrary simulations, voice conversation, additional science domains, and generated executable rendering code.
+WebXR, teacher accounts or class management, automatic trace persistence or sharing, longitudinal learning records, free-form arbitrary simulations, voice conversation, additional science domains, and generated executable rendering code.

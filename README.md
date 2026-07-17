@@ -19,7 +19,7 @@ Replace the remaining three placeholders before submission. The Codex Feedback S
 
 ## Current scope
 
-The repository implements complete Moon-phases and seasons browser journeys: text or sketch capture, explicit live or verified analysis, two protected models, prediction locking, deterministic simulation with Three.js rendering, revision feedback, server-authenticated transfer grading, and a Model Revision Trace. The production configuration routes analysis and PTC to GPT-5.6 Terra and live revision feedback to GPT-5.6 Luna. Each scenario has strict server-owned cases, world specifications, transfer questions, and authored verified samples.
+The repository implements complete Moon-phases and seasons browser journeys: text or sketch capture, explicit live or verified analysis, two protected models, prediction locking, deterministic simulation with Three.js rendering, revision feedback, server-authenticated transfer grading, and a Model Revision Trace. The trace ends with a compact same-session teacher review and a learner-controlled clipboard copy or local text download. The handoff makes no API call and creates no account, share link, or server-side record; the active page, system clipboard, browser, or device may still retain a copy. The editable text is a conversation aid, not a signed or teacher-authenticated record. The production configuration routes analysis and PTC to GPT-5.6 Terra and live revision feedback to GPT-5.6 Luna. Each scenario has strict server-owned cases, world specifications, transfer questions, and authored verified samples.
 
 Live and verified paths are deliberately separate for both scenarios. Live analysis accepts learner text, a sketch, or both. The verified path is explicitly selected and may start from an empty capture; a failed live request never becomes an authored result automatically. The UI labels the source of analysis and revision feedback. The public transfer token keeps the answer key and live revision context encrypted on the server boundary.
 
@@ -37,7 +37,7 @@ Live and verified paths are deliberately separate for both scenarios. Live analy
 
 6. Select **Capture revision and continue**.
 7. For the Moon transfer question, choose **The Moon is in the Sun's direction**, then select **Lock and check answer**.
-8. Inspect the Model Revision Trace from initial belief through transfer result.
+8. Inspect the Model Revision Trace from initial belief through transfer result. Review the local teacher-handoff preview; copying or downloading it requires the learner-text confirmation and sends no additional request.
 9. Select **New attempt**, choose **Seasons**, and repeat the verified journey. For the Seasons transfer question, choose **The higher-energy hemisphere reverses** before selecting **Lock and check answer**.
 
 ### Configured live path

@@ -173,10 +173,22 @@ test("completes the verified Seasons journey with sealed evidence and a transfer
   await expect(
     page.getByText("Verified observation · seasonal evidence", { exact: true }),
   ).toBeVisible();
+  const detailedTrace = page.locator(".trace-list");
   await expect(
-    page.getByText(/Northern summer; Southern winter; relative incident energy/),
+    detailedTrace.getByRole("heading", {
+      name: /Northern summer; Southern winter; relative incident energy/,
+    }),
   ).toBeVisible();
-  await expect(page.getByText("Correct · 1/1", { exact: true })).toBeVisible();
+  await expect(
+    detailedTrace.getByRole("heading", { name: "Correct · 1/1", exact: true }),
+  ).toBeVisible();
+  const seasonsHandoff = page.getByLabel("Teacher handoff preview");
+  await expect(seasonsHandoff).toContainText("Scenario\n  Seasons");
+  await expect(seasonsHandoff).toContainText("Verified authored sample");
+  await expect(seasonsHandoff).toContainText(
+    "Northern summer; Southern winter; relative incident energy",
+  );
+  await expect(seasonsHandoff).not.toContainText("deterministic-question-bank");
 
   await page
     .getByRole("button", { name: "New attempt", exact: true })
@@ -696,14 +708,65 @@ test("carries the live-use attestation through analysis and revision", async ({ 
     mode: "live",
     liveUseAttestation: true,
   });
+  await page.getByLabel("The Moon is in the Sun's direction").check();
+  await page.getByRole("button", { name: "Lock and check answer" }).click();
+  const liveHandoff = page.getByLabel("Teacher handoff preview");
+  await expect(liveHandoff).toContainText("Evidence source\n  Live GPT-5.6 analysis");
+  await expect(liveHandoff).toContainText("Revision feedback\n  GPT-5.6 structured feedback");
+  await expect(liveHandoff).not.toContainText("gpt-5.6-terra");
+  await expect(liveHandoff).not.toContainText("gpt-5.6-luna");
 });
 
 test("completes the Moon path with server-authenticated transfer evidence", async ({
   page,
 }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: async (text: string) => {
+          document.documentElement.dataset.copiedTrace = text;
+        },
+      },
+    });
+  });
+  const requests: string[] = [];
+  const internalIdentifiers = {
+    sessionId: new Set<string>(),
+    requestId: new Set<string>(),
+    idempotencyKey: new Set<string>(),
+    evaluationId: new Set<string>(),
+    receiptId: new Set<string>(),
+  };
+  page.on("request", (request) => {
+    const url = new URL(request.url());
+    if (!url.pathname.startsWith("/api/")) return;
+    requests.push(request.url());
+    const sessionId = url.searchParams.get("sessionId");
+    if (sessionId) internalIdentifiers.sessionId.add(sessionId);
+    if (request.method() !== "GET") {
+      const body = request.postDataJSON() as Record<string, unknown> | null;
+      for (const key of ["sessionId", "requestId", "idempotencyKey", "evaluationId"] as const) {
+        const value = body?.[key];
+        if (typeof value === "string" && value) internalIdentifiers[key].add(value);
+      }
+    }
+  });
   await advanceToTransfer(page);
   await page.getByLabel("The Moon is in the Sun's direction").check();
+  const transferResponsePromise = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return url.pathname === "/api/transfer" && response.request().method() === "POST";
+  });
   await page.getByRole("button", { name: "Lock and check answer" }).click();
+  const transferPayload = (await (await transferResponsePromise).json()) as Record<
+    string,
+    unknown
+  >;
+  for (const key of ["evaluationId", "receiptId"] as const) {
+    const value = transferPayload[key];
+    if (typeof value === "string" && value) internalIdentifiers[key].add(value);
+  }
 
   const trace = page.getByTestId("revision-trace");
   await expect(trace).toBeVisible();
@@ -715,6 +778,111 @@ test("completes the Moon path with server-authenticated transfer evidence", asyn
   await expect(trace).toContainText("Verified observation");
   await expect(trace).toContainText(revisedExplanation);
   await expect(trace).toContainText("deterministic-question-bank");
+  await expect(
+    page.getByRole("heading", {
+      name: "Review what changed—not just whether the answer was right.",
+    }),
+  ).toBeVisible();
+  await expect(trace).toContainText("Before");
+  await expect(trace).toContainText("Evidence → revision");
+  await expect(trace).toContainText("Unseen transfer");
+  await expect(trace).toContainText(
+    "This documents one completed attempt—not a grade, a longitudinal record, or proof of durable learning.",
+  );
+
+  const preview = page.getByLabel("Teacher handoff preview");
+  const copyButton = page.getByTestId("copy-trace");
+  const downloadButton = page.getByTestId("download-trace");
+  const handoffStatus = trace.locator(".trace-handoff-status");
+  const exportConfirmation = page.getByRole("checkbox", {
+    name: /I reviewed the learner-written text/,
+  });
+  await expect(preview).toContainText(revisedExplanation);
+  await expect(copyButton).toBeDisabled();
+  await expect(downloadButton).toBeDisabled();
+
+  const requestCountBeforeHandoff = requests.length;
+  const storageBeforeHandoff = await page.evaluate(() => ({
+    local: { ...localStorage },
+    session: { ...sessionStorage },
+    cookies: document.cookie,
+  }));
+  await exportConfirmation.check();
+  await copyButton.click();
+  await expect(handoffStatus).toContainText("Teacher summary copied to the system clipboard.");
+  const copiedTrace = await page.evaluate(
+    () => document.documentElement.dataset.copiedTrace ?? "",
+  );
+  expect(copiedTrace).toContain("ModelDuel — Learner-controlled Revision Trace");
+  expect(copiedTrace).toContain(revisedExplanation);
+  expect(copiedTrace).not.toMatch(
+    /receipt|session id|request id|cookie|deterministic-question-bank|gpt-5\.6-(?:terra|luna)/i,
+  );
+  for (const [kind, identifiers] of Object.entries(internalIdentifiers)) {
+    expect(identifiers.size, `expected at least one captured ${kind}`).toBeGreaterThan(0);
+    for (const identifier of identifiers) expect(copiedTrace).not.toContain(identifier);
+  }
+  const receiptNote = await trace
+    .locator(".trace-note")
+    .filter({ hasText: "receipt" })
+    .textContent();
+  const displayedReceipt = receiptNote?.split("receipt ").at(-1)?.trim();
+  expect(displayedReceipt).toBeTruthy();
+  expect(copiedTrace).not.toContain(displayedReceipt);
+
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: async () => Promise.reject(new Error("blocked")) },
+    });
+  });
+  await copyButton.click();
+  await expect(handoffStatus).toContainText(
+    "Automatic copy is unavailable. The preview is selected;",
+  );
+  await expect(preview).toBeFocused();
+  const selectedPreview = await preview.evaluate((element) => {
+    const textarea = element as HTMLTextAreaElement;
+    return textarea.value.slice(textarea.selectionStart, textarea.selectionEnd);
+  });
+  expect(selectedPreview).toBe(copiedTrace);
+
+  const downloadPromise = page.waitForEvent("download");
+  await downloadButton.click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe("modelduel-revision-trace.txt");
+  const stream = await download.createReadStream();
+  if (!stream) throw new Error("Expected a readable local trace download");
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) chunks.push(Buffer.from(chunk));
+  const downloadedTrace = Buffer.concat(chunks).toString("utf8");
+  expect(downloadedTrace).toBe(copiedTrace);
+  expect(downloadedTrace).not.toMatch(
+    /receipt|session id|request id|cookie|deterministic-question-bank|gpt-5\.6-(?:terra|luna)/i,
+  );
+  for (const identifiers of Object.values(internalIdentifiers)) {
+    for (const identifier of identifiers) expect(downloadedTrace).not.toContain(identifier);
+  }
+  expect(requests).toHaveLength(requestCountBeforeHandoff);
+  expect(
+    await page.evaluate(() => ({
+      local: { ...localStorage },
+      session: { ...sessionStorage },
+      cookies: document.cookie,
+    })),
+  ).toEqual(storageBeforeHandoff);
+
+  await page.setViewportSize({ width: 375, height: 812 });
+  await expect(page.getByRole("heading", { name: /Let the learner choose/ })).toBeVisible();
+  const mobileDimensions = await page.evaluate(() => ({
+    viewport: document.documentElement.clientWidth,
+    page: document.documentElement.scrollWidth,
+  }));
+  expect(mobileDimensions.page).toBeLessThanOrEqual(mobileDimensions.viewport);
+
+  await page.getByRole("button", { name: "Start a new attempt" }).click();
+  await expect(trace).toHaveCount(0);
+  await expect(exportConfirmation).toHaveCount(0);
 });
 
 test("never fabricates a local score when the transfer API fails", async ({ page }) => {
