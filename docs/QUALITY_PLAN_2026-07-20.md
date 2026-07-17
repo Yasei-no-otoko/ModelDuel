@@ -109,6 +109,12 @@ The bullets below are retained as the conditions that motivated this plan, not a
 
 ## Release Gates
 
+### Public-release blocker — open as of 2026-07-17
+
+The pre-publication security scan `d9e79820-7d63-4836-84f1-6125601f1825` reviewed 38/38 selected surfaces on immutable commit `34f45b2` and reported one Medium/P2 finding (CWE-294). A live-revision token mints a `jti` but does not atomically consume it, so the same valid token can reach repeated gateway attempts when presented with fresh caller keys while its TTL and rate-limit capacity remain. TTL, output caps, zero SDK retries, and per-POP rate limits constrain this behavior but do not close it.
+
+No hardening option is selected or implemented. This blocks the final public repository/Devpost release and any claim that the live production path is release-ready; it does not establish that the issue is fixed, that a repository or video is published, or that production has been redeployed. The next gate is to select a replay-control design, implement it on a dedicated branch, prove that the same valid token plus fresh caller keys produces no second upstream request, rerun the full quality suite and a security delta scan, then deploy and verify the changed live boundary before release.
+
 All gates must pass on the quality branch before merge:
 
 - Clean worktree and intentional diff only.

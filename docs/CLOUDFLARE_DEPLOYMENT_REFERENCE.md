@@ -31,6 +31,10 @@ Each binding receives an independent integer-string namespace ID. The hashed-cli
 
 Workers Rate Limiting counters are per-POP and intentionally eventually consistent. They are a soft production abuse and spend guard, not an exact global OpenAI budget or billing ledger. ModelDuel therefore also keeps OpenAI request caps, zero SDK retries, and low output ceilings. Binding absence, API failure, or malformed binding results fail closed in production.
 
+## Durable Object planning delta
+
+If the live-token replay hardening is selected, the current [Durable Objects guidance](https://developers.cloudflare.com/durable-objects/) supports a globally unique, single-threaded per-token coordinator. Create a new namespace with SQLite storage, use normal request storage transactions and input/output-gate semantics for the local claim, and never hold `blockConcurrencyWhile()` across an OpenAI fetch or other external I/O. For a new Worker configuration, prefer declarative [top-level `exports`](https://developers.cloudflare.com/workers/wrangler/configuration/#exports) over legacy Durable Object migrations; the two forms are mutually exclusive. ModelDuel does not currently define a Durable Object, so this is a design constraint only and changes neither the deployed Worker nor its configuration.
+
 ## Secrets and environment
 
 Production secrets:

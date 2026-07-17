@@ -266,6 +266,7 @@ Paid live canary inherited from earlier main merge `e04443f`: one analysis retur
 - [ ] Record exact production CPU p95 and confirm account Workers Paid telemetry. The connector subscription list showed no Workers Paid entry, and exact CPU metrics remain unavailable.
 - [x] Deploy current main merge `6186358` to [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev): Cloudflare version `e400d0d7-3fb1-47be-8872-ef9caeefb5d9`, build ID `nkFYXp8co99asrn8bVd1U`.
 - [x] Verify HTTP 200, CSP/HSTS/nosniff, the exact free three-request verified ledger, teacher summary/handoff visibility, confirmation-disabled controls, boundary text, internal-metadata exclusion, and zero failed requests or console errors.
+- [ ] Clear the Medium/P2 live-revision token replay blocker before the final public repository/Devpost release: choose and implement atomic replay control, prove a reused valid token with fresh caller keys cannot make a second upstream request, then rerun the full gates and security delta scan.
 - [ ] Publish the intended repository and verify judge access.
 - [ ] Replace the repository, video, and Codex Feedback placeholders.
 
