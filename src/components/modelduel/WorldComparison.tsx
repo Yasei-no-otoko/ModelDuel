@@ -159,7 +159,7 @@ function HtmlWorldFallback({
       {kind === "learner" ? (
         <span className="fallback-shadow" aria-hidden="true" />
       ) : null}
-      <p>Accessible diagram fallback. The text observation below contains the same evidence.</p>
+      <p>2D evidence diagram. The text observation below contains the same evidence.</p>
     </div>
   );
 }

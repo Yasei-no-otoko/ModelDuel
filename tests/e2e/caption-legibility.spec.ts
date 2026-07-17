@@ -146,7 +146,20 @@ test("keeps learner-facing captions legible through the Moon evidence flow", asy
   await expect(page.locator(".case-control button")).toBeVisible();
   await expect(page.locator(".view-controls button").first()).toBeVisible();
   await expect(page.locator(".evidence-world > header p").first()).toBeVisible();
-  await expect(page.locator(".world-html-fallback").first()).toBeVisible();
+  const evidenceDiagrams = page.locator(".world-html-fallback");
+  await expect(evidenceDiagrams).toHaveCount(2);
+  for (const diagram of await evidenceDiagrams.all()) {
+    await expect(diagram).toBeVisible();
+    await expect(diagram).toHaveAttribute("role", "img");
+    await expect(diagram).toHaveAttribute(
+      "aria-label",
+      /The Moon is \d+% illuminated at \d+ degrees elongation\./,
+    );
+    await expect(diagram.locator("p")).toHaveText(
+      "2D evidence diagram. The text observation below contains the same evidence.",
+    );
+  }
+  await expect(page.getByText(/accessible diagram fallback/i)).toHaveCount(0);
   await expect(page.locator(".prediction-block").first()).toBeVisible();
   await expect(page.getByTestId("verified-observation")).toBeVisible();
   await expect(page.locator(".scale-note")).toBeVisible();
