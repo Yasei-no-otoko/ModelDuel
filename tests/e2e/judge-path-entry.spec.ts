@@ -177,4 +177,9 @@ test("defers WebGL probing until the evidence comparison mounts", async ({
     .click();
   await expect.poll(probeCount).toBeGreaterThan(0);
   await expect(page.locator(".world-html-fallback")).toHaveCount(2);
+  await expect(page.getByTestId("verified-observation")).toBeVisible();
+  await page.getByRole("button", { name: "Revise my explanation" }).click();
+  await expect(
+    page.getByRole("heading", { name: "What changed in your explanation?" }),
+  ).toBeVisible();
 });

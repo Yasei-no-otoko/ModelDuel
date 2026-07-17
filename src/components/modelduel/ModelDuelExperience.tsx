@@ -47,8 +47,8 @@ import { getTraceHeroCopy } from "./trace-copy";
 import { formatCausalRelation } from "./learner-copy";
 import { useHydrationReady } from "./browser";
 import {
-  DynamicWorldComparison,
   loadWorldComparison,
+  ResilientWorldComparison,
 } from "./world-comparison-loader";
 
 type SessionContainer = Readonly<{
@@ -1277,7 +1277,7 @@ export function ModelDuelExperience() {
               <>
                 {analysis.caseSpec.scenario === "moon-phases" &&
                 scenarioComparison.scenario === "moon-phases" ? (
-                  <DynamicWorldComparison
+                  <ResilientWorldComparison
                     scenario="moon-phases"
                     caseSpec={analysis.caseSpec}
                     learner={scenarioComparison.learner}
@@ -1285,7 +1285,7 @@ export function ModelDuelExperience() {
                   />
                 ) : analysis.caseSpec.scenario === "seasons" &&
                   scenarioComparison.scenario === "seasons" ? (
-                  <DynamicWorldComparison
+                  <ResilientWorldComparison
                     scenario="seasons"
                     caseSpec={analysis.caseSpec}
                     learner={scenarioComparison.learner}

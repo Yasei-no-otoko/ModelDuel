@@ -1116,6 +1116,27 @@ textarea:disabled {
   margin: 0;
 }
 
+.comparison-recovery-notice {
+  margin: 0.2rem 0.2rem 1rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid rgba(255, 211, 106, 0.34);
+  border-radius: 0.75rem;
+  color: #f7e8b7;
+  background: rgba(77, 55, 18, 0.38);
+}
+
+.comparison-recovery-notice strong,
+.comparison-recovery-notice p {
+  margin: 0;
+}
+
+.comparison-recovery-notice p {
+  margin-top: 0.25rem;
+  color: #e3d8ba;
+  font-size: var(--text-caption);
+  line-height: 1.5;
+}
+
 .world-comparison-loading p {
   color: var(--muted);
   font-size: var(--text-caption);

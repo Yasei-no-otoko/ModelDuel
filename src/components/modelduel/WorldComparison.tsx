@@ -21,6 +21,11 @@ import {
   usePrefersReducedMotion,
   useWebGlAvailability,
 } from "./browser";
+import {
+  MoonEvidenceDiagram,
+  SeasonsEvidenceDiagram,
+  type WorldComparisonProps,
+} from "./semantic-evidence";
 
 type WorldKind = "learner" | "scientific";
 
@@ -142,28 +147,6 @@ function WorldScene({
   );
 }
 
-function HtmlWorldFallback({
-  observation,
-  kind,
-}: Readonly<{
-  observation: MoonSimulationObservation;
-  kind: WorldKind;
-}>) {
-  return (
-    <div className="world-html-fallback" role="img" aria-label={observation.accessibleText}>
-      <span className="fallback-sun" aria-hidden="true" />
-      <span className="fallback-ray" aria-hidden="true" />
-      <span className="fallback-earth" aria-hidden="true" />
-      <span className="fallback-orbit" aria-hidden="true" />
-      <span className="fallback-moon" aria-hidden="true" />
-      {kind === "learner" ? (
-        <span className="fallback-shadow" aria-hidden="true" />
-      ) : null}
-      <p>2D evidence diagram. The text observation below contains the same evidence.</p>
-    </div>
-  );
-}
-
 function WorldViewport({
   observation,
   caseSpec,
@@ -177,7 +160,7 @@ function WorldViewport({
   const dragStart = useRef<number | null>(null);
   const reducedMotion = usePrefersReducedMotion();
   const webglAvailable = useWebGlAvailability();
-  const fallback = <HtmlWorldFallback observation={observation} kind={kind} />;
+  const fallback = <MoonEvidenceDiagram observation={observation} kind={kind} />;
 
   function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
     dragStart.current = event.clientX;
@@ -395,44 +378,6 @@ function SeasonsWorldScene({
   );
 }
 
-function SeasonsHtmlFallback({
-  caseSpec,
-  observation,
-}: Readonly<{
-  caseSpec: SeasonsCaseSpec;
-  observation: SeasonsSimulationObservation;
-}>) {
-  const prediction = observation.modelPrediction;
-  const visualTiltDeg =
-    prediction.basis === "distance-only" ? 0 : caseSpec.observedAxialTiltDeg;
-
-  return (
-    <div
-      className="world-html-fallback seasons-html-fallback"
-      role="img"
-      aria-label={observation.accessibleText}
-    >
-      <div className="seasons-fallback-orbit" aria-hidden="true">
-        <span className="seasons-fallback-sun" />
-        <span
-          className="seasons-fallback-earth"
-          style={{ transform: `translateY(-50%) rotate(${visualTiltDeg}deg)` }}
-        >
-          <span className="seasons-fallback-axis" />
-        </span>
-      </div>
-      <p>
-        June case · displayed model axis {visualTiltDeg.toFixed(2)}° · model basis:{" "}
-        {prediction.basis}
-      </p>
-      <p>
-        Predicted North: {prediction.predictedNorthernSeason}; South:{" "}
-        {prediction.predictedSouthernSeason}.
-      </p>
-    </div>
-  );
-}
-
 function SeasonsWorldViewport({
   observation,
   caseSpec,
@@ -447,7 +392,7 @@ function SeasonsWorldViewport({
   const reducedMotion = usePrefersReducedMotion();
   const webglAvailable = useWebGlAvailability();
   const fallback = (
-    <SeasonsHtmlFallback caseSpec={caseSpec} observation={observation} />
+    <SeasonsEvidenceDiagram caseSpec={caseSpec} observation={observation} />
   );
 
   function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
@@ -640,20 +585,6 @@ function SeasonsComparison({
     </section>
   );
 }
-
-type WorldComparisonProps =
-  | Readonly<{
-      scenario: "moon-phases";
-      caseSpec: MoonCaseSpec;
-      learner: MoonSimulationObservation;
-      scientific: MoonSimulationObservation;
-    }>
-  | Readonly<{
-      scenario: "seasons";
-      caseSpec: SeasonsCaseSpec;
-      learner: SeasonsSimulationObservation;
-      scientific: SeasonsSimulationObservation;
-    }>;
 
 export function WorldComparison(props: WorldComparisonProps) {
   return props.scenario === "moon-phases" ? (
