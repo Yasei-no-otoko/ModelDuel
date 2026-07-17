@@ -60,6 +60,7 @@ function liveRequest(input: {
     idempotencyKey: "live-revision-idempotency",
     requestedAt: NOW,
     sessionId,
+    liveUseAttestation: true as const,
     revisionText:
       "Sunlight lights half the Moon, and our viewing angle reveals the visible part.",
     evaluationId,
@@ -95,6 +96,7 @@ function seasonsLiveRequest() {
     idempotencyKey: "seasons-live-revision-idempotency",
     requestedAt: NOW,
     sessionId,
+    liveUseAttestation: true as const,
     revisionText:
       "Earth's axial tilt changes the sunlight angle, so the Northern and Southern Hemispheres have opposite seasons rather than distance causing them.",
     evaluationId,

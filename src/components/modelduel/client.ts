@@ -115,6 +115,7 @@ export type LiveAnalysisRequest = Readonly<{
   sessionId: string;
   requestedAt: number;
   scenarioId: ScenarioId;
+  liveUseAttestation: true;
   explanation: string;
   sketch: AnalyzeSketch | null;
 }>;
@@ -146,6 +147,7 @@ export type RevisionSubmissionRequest =
   | (RevisionSubmissionCommon &
       Readonly<{
         mode: "live";
+        liveUseAttestation: true;
         evaluationId: string;
       }>);
 

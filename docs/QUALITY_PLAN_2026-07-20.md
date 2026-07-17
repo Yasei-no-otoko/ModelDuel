@@ -13,8 +13,8 @@ Maximize ModelDuel's probability of placing in the DevPost OpenAI Education cate
 
 The product remains an Education entry and keeps middle-school science as its learning context. Before product-code implementation, confirm the public live-input boundary:
 
-- Recommended: keep deterministic verified samples open to every judge, but present live Terra/Luna analysis as an adult, teacher, guardian-authorized, or research-prototype feature. Require a concise disclosure, prohibit names and personal information, explain AI limitations in age-appropriate language, and provide a reporting contact. Do not claim that the prototype is ready for unsupervised minor use or that `store:false` is Zero Data Retention.
-- Alternative: keep self-directed minor live input, which requires a materially larger child-safety, privacy, age-assurance, moderation, monitoring, escalation, and retention-compliance program that is not credible to complete before the deadline.
+- Approved boundary (2026-07-17): keep deterministic verified samples open to every judge, but limit live Terra/Luna analysis to people 18 or older, or learners using it with teacher or guardian authorization. Require a prospective, attempt-wide confirmation and prohibit names and personal or identifying student information, including in the revised explanation. Do not claim age verification, legal compliance, readiness for unsupervised minor use, or that `store:false` is Zero Data Retention.
+- Not adopted: self-directed minor live input, which requires a materially larger child-safety, privacy, age-assurance, moderation, monitoring, escalation, and retention-compliance program that is not credible to complete before the deadline.
 
 The work must improve all four equally weighted judging dimensions:
 

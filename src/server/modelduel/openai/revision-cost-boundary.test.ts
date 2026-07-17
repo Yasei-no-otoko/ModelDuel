@@ -43,6 +43,7 @@ function seasonsLiveRequest() {
     idempotencyKey: "seasons-live-revision-cost-idempotency",
     requestedAt: NOW,
     sessionId,
+    liveUseAttestation: true as const,
     revisionText:
       "Earth's axial tilt changes sunlight angle, creating opposite seasons in the two hemispheres rather than distance warming both together.",
     evaluationId,
@@ -88,6 +89,7 @@ function liveRequest(
     idempotencyKey: "live-revision-idempotency",
     requestedAt: NOW,
     sessionId,
+    liveUseAttestation: true as const,
     revisionText:
       "Sunlight lights half the Moon, and our viewing angle reveals the visible part.",
     evaluationId,

@@ -66,6 +66,15 @@ type TransportGuard = Readonly<{
 const VERIFIED_EMPTY_INPUT_TRACE =
   "No learner explanation was submitted; the verified sample was selected explicitly.";
 
+const LIVE_USE_DISCLOSURE =
+  "Live GPT is only for people 18 or older, or learners using it with teacher or guardian authorization. Do not enter a student’s name or any personal or identifying information. The verified sample is open to everyone, sends no learner input to GPT, and requires no confirmation.";
+
+const LIVE_USE_CONFIRMATION =
+  "I am 18 or older, or I have teacher or guardian authorization, and I will not include personal or identifying student information anywhere in this live attempt, including my revised explanation.";
+
+const LIVE_REVISION_GUIDANCE =
+  "Your live-use confirmation covers this entire attempt, including this revised explanation. Do not include names or personal or identifying student information. GPT feedback may be wrong; verify it with a teacher.";
+
 function sessionReducer(
   state: SessionContainer,
   action: SessionAction,
@@ -211,6 +220,7 @@ export function ModelDuelExperience() {
   const [analysisAttempt, setAnalysisAttempt] = useState<
     "live" | "verified-sample" | null
   >(null);
+  const [liveUseConfirmed, setLiveUseConfirmed] = useState(false);
   const [liveAnalysisRequest, setLiveAnalysisRequest] =
     useState<LiveAnalysisRequest | null>(null);
   const [observationReviewed, setObservationReviewed] = useState(false);
@@ -432,6 +442,10 @@ export function ModelDuelExperience() {
     if (!hydrationReady || analysisPending || analysisPreparationActive.current) {
       return;
     }
+    if (mode === "live" && !liveUseConfirmed) {
+      setStatus("Confirm the live GPT use boundary before submitting learner input.");
+      return;
+    }
     const selectedSketchError = sketch
       ? validateSketchFile(sketch.file)
       : null;
@@ -518,8 +532,9 @@ export function ModelDuelExperience() {
         schemaVersion: "1.0",
         requestId,
       sessionId: session.sessionId,
-      requestedAt: analysisStartedAt,
-      scenarioId: preparationScenarioId,
+        requestedAt: analysisStartedAt,
+        scenarioId: preparationScenarioId,
+        liveUseAttestation: true,
         explanation: explanation.trim(),
         sketch: encodedSketch,
       };
@@ -579,6 +594,12 @@ export function ModelDuelExperience() {
     const comparison = session.comparison;
     const revisionAnalysis = analysis;
     if (!comparison || !revisionAnalysis) return;
+    if (revisionAnalysis.metadata.mode === "live" && !liveUseConfirmed) {
+      setRevisionError(
+        "The live-use confirmation must remain active for live revision feedback.",
+      );
+      return;
+    }
 
     setRevisionError(null);
     setRevisionPending(true);
@@ -592,6 +613,7 @@ export function ModelDuelExperience() {
         return {
           ...common,
           mode: "live",
+          liveUseAttestation: true,
           evaluationId: revisionAnalysis.transferQuestion.evaluationId,
         };
       }
@@ -765,6 +787,7 @@ export function ModelDuelExperience() {
     setAnalysisError(null);
     setAnalysisErrorCode(null);
     setAnalysisAttempt(null);
+    setLiveUseConfirmed(false);
     setLiveAnalysisRequest(null);
     setObservationReviewed(false);
     setRevisionDraft("");
@@ -952,6 +975,20 @@ export function ModelDuelExperience() {
                 </div>
               ) : null}
 
+              <div className="live-use-boundary">
+                <p id="live-use-disclosure">{LIVE_USE_DISCLOSURE}</p>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={liveUseConfirmed}
+                    disabled={analysisPending}
+                    aria-describedby="live-use-disclosure"
+                    onChange={(event) => setLiveUseConfirmed(event.target.checked)}
+                  />
+                  <span>{LIVE_USE_CONFIRMATION}</span>
+                </label>
+              </div>
+
               <div className="capture-actions">
                 <button
                   className="primary-button full-button capture-card-verified-action"
@@ -973,7 +1010,7 @@ export function ModelDuelExperience() {
                 <button
                   className="secondary-button full-button"
                   type="button"
-                  disabled={!hydrationReady || analysisPending}
+                  disabled={!hydrationReady || analysisPending || !liveUseConfirmed}
                   data-hydrated={hydrationReady ? "true" : "false"}
                   onClick={() => void beginAnalysis("live")}
                 >
@@ -989,7 +1026,7 @@ export function ModelDuelExperience() {
               </div>
               <p className="form-disclosure">
                 Live analysis uses your submitted text and optional sketch. The verified sample
-                is a free, authored path and never claims to analyze your input.
+                is an authored, API-free path and never claims to analyze your input.
               </p>
             </form>
           </section>
@@ -1366,6 +1403,11 @@ export function ModelDuelExperience() {
                   ? "Connect a cause to the observation. GPT-5.6 will return schema-validated conceptual feedback; no authored score is substituted if it fails."
                   : "Connect a cause to the observation. The check below uses a transparent, authored rubric—it is not GPT-5.6 grading."}
               </p>
+              {analysis.metadata.mode === "live" ? (
+                <p className="live-revision-guidance" id="live-revision-guidance">
+                  {LIVE_REVISION_GUIDANCE}
+                </p>
+              ) : null}
               <label htmlFor="revision-text">Revised causal explanation</label>
               <textarea
                 id="revision-text"
@@ -1374,7 +1416,7 @@ export function ModelDuelExperience() {
                 onChange={(event) => setRevisionDraft(event.target.value)}
                 maxLength={1_500}
                 disabled={Boolean(session.revision)}
-                aria-describedby={`revision-help${revisionError ? " revision-error" : ""}`}
+                aria-describedby={`${analysis.metadata.mode === "live" ? "live-revision-guidance " : ""}revision-help${revisionError ? " revision-error" : ""}`}
                 aria-invalid={Boolean(revisionError)}
                   placeholder={scenarioContent.revisionPlaceholder}
               />

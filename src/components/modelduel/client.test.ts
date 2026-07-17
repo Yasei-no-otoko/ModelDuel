@@ -144,6 +144,7 @@ describe("live analysis adapter", () => {
     sessionId: "session-abc",
     requestedAt: 50,
     scenarioId: "moon-phases" as const,
+    liveUseAttestation: true as const,
     explanation: "Earth's shadow moves across the Moon and causes each phase.",
     sketch: null,
   };
@@ -446,6 +447,7 @@ describe("revision adapter", () => {
       idempotencyKey: "revision-live-key",
       requestedAt: 110,
       sessionId: "session-live",
+      liveUseAttestation: true as const,
       revisionText:
         "The Moon appears half lit because sunlight and our viewing angle determine the phase.",
       evaluationId: LIVE_MOON_ANALYSIS.transferQuestion.evaluationId,
@@ -537,6 +539,7 @@ describe("revision adapter", () => {
           idempotencyKey: "revision-live-key",
           requestedAt: 130,
           sessionId: "session-live",
+          liveUseAttestation: true,
           revisionText:
             "The Moon appears half lit because sunlight and viewpoint determine the phase.",
           evaluationId: LIVE_MOON_ANALYSIS.transferQuestion.evaluationId,
@@ -568,6 +571,7 @@ describe("revision adapter", () => {
           idempotencyKey: "revision-live-key",
           requestedAt: 110,
           sessionId: "session-live",
+          liveUseAttestation: true,
           revisionText:
             "The Moon appears half lit because sunlight and viewpoint determine the phase.",
           evaluationId: LIVE_MOON_ANALYSIS.transferQuestion.evaluationId,

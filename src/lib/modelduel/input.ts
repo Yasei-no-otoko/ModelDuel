@@ -19,6 +19,7 @@ export const AnalyzeRequestSchema = z
     sessionId: SessionIdSchema,
     requestedAt: z.number().finite().nonnegative(),
     scenarioId: ScenarioIdSchema,
+    liveUseAttestation: z.literal(true),
     explanation: z.string().trim().max(1_500),
     sketch: AnalyzeSketchSchema.nullable(),
   })

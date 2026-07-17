@@ -684,6 +684,53 @@ textarea:disabled {
   opacity: 0.76;
 }
 
+.live-use-boundary {
+  margin-top: 0.9rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid rgba(140, 157, 199, 0.28);
+  border-radius: 0.82rem;
+  background: rgba(10, 19, 43, 0.58);
+  color: var(--muted);
+  font-size: var(--text-caption);
+  line-height: 1.5;
+}
+
+.live-use-boundary p {
+  margin: 0 0 0.65rem;
+}
+
+.live-use-boundary label {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.65rem;
+  align-items: start;
+  color: #e1e7f8;
+  font-weight: 680;
+  cursor: pointer;
+}
+
+.live-use-boundary input {
+  width: 1.1rem;
+  height: 1.1rem;
+  margin: 0.16rem 0 0;
+  accent-color: var(--cyan);
+}
+
+.live-use-boundary label:has(input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.live-revision-guidance {
+  padding: 0.8rem 0.9rem;
+  border-left: 3px solid var(--cyan);
+  border-radius: 0.35rem;
+  background: rgba(10, 19, 43, 0.58);
+  color: #d7deef;
+  font-size: var(--text-caption);
+  line-height: 1.55;
+}
+
 .form-disclosure {
   margin: 0.75rem 0 0;
   color: var(--faint);

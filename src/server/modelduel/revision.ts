@@ -43,6 +43,7 @@ export const VerifiedRevisionEvaluationRequestSchema = z.strictObject({
 export const LiveRevisionEvaluationRequestSchema = z.strictObject({
   ...RevisionCommonFields,
   mode: z.literal("live"),
+  liveUseAttestation: z.literal(true),
   evaluationId: EvaluationIdSchema,
 });
 

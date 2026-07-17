@@ -33,6 +33,19 @@ test("makes the instant verified Moon duel the primary default path", async ({
   await expect(liveProof).toContainText(
     "Live technical proof · about 20 seconds",
   );
+  await expect(liveProof).toBeDisabled();
+
+  await expect(
+    page.getByText(
+      "Live GPT is only for people 18 or older, or learners using it with teacher or guardian authorization. Do not enter a student’s name or any personal or identifying information. The verified sample is open to everyone, sends no learner input to GPT, and requires no confirmation.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("checkbox", {
+      name: "I am 18 or older, or I have teacher or guardian authorization, and I will not include personal or identifying student information anywhere in this live attempt, including my revised explanation.",
+    }),
+  ).not.toBeChecked();
 
   const verifiedRequest = page.waitForRequest((request) =>
     request.url().includes("/api/demo?sessionId="),
@@ -68,6 +81,15 @@ test("keeps live GPT-5.6 analysis explicit and secondary", async ({ page }) => {
   });
 
   await page.goto("/");
+  const confirmation = page.getByRole("checkbox", {
+    name: "I am 18 or older, or I have teacher or guardian authorization, and I will not include personal or identifying student information anywhere in this live attempt, including my revised explanation.",
+  });
+  const liveAnalysis = page.getByRole("button", {
+    name: /Analyze with GPT-5\.6/,
+  });
+  await expect(liveAnalysis).toBeDisabled();
+  await confirmation.check();
+  await expect(liveAnalysis).toBeEnabled();
   await page
     .getByRole("button", { name: /Analyze with GPT-5\.6/ })
     .click();
@@ -77,4 +99,31 @@ test("keeps live GPT-5.6 analysis explicit and secondary", async ({ page }) => {
   ).toBeVisible();
   await expect(page.getByText("Mocked live analysis outage.")).toBeVisible();
   expect(demoRequests).toBe(0);
+});
+
+test("requires a fresh live-use confirmation after changing challenge", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const confirmation = page.getByRole("checkbox", {
+    name: "I am 18 or older, or I have teacher or guardian authorization, and I will not include personal or identifying student information anywhere in this live attempt, including my revised explanation.",
+  });
+  const liveAnalysis = page.getByRole("button", {
+    name: /Analyze with GPT-5\.6/,
+  });
+
+  await confirmation.check();
+  await expect(liveAnalysis).toBeEnabled();
+  await page
+    .getByRole("radio", { name: /Seasons/ })
+    .locator("xpath=ancestor::label")
+    .click();
+
+  await expect(confirmation).not.toBeChecked();
+  await expect(liveAnalysis).toBeDisabled();
+  await expect(
+    page.locator(".capture-actions").getByRole("button", {
+      name: /Run verified sample/,
+    }),
+  ).toBeEnabled();
 });

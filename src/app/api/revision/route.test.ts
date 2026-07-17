@@ -50,6 +50,7 @@ function liveBody(
     idempotencyKey: "revision-route-live-idempotency-1",
     requestedAt: NOW,
     sessionId,
+    liveUseAttestation: true,
     revisionText:
       "Sunlight lights half the Moon, and our viewing angle reveals the visible part.",
     evaluationId: issueEvaluationToken(SECRET, {
@@ -253,4 +254,30 @@ describe("POST /api/revision", () => {
     }
     expect(requests).toHaveLength(0);
   });
+
+  it.each(["missing", "false"])(
+    "rejects a %s live attestation before rate limiting or the Luna gateway",
+    async (variant) => {
+      const requests: RevisionParseRequest[] = [];
+      const body = liveBody();
+      if (variant === "missing") {
+        delete body.liveUseAttestation;
+      } else {
+        body.liveUseAttestation = false;
+      }
+      const rateLimitStore = createRateLimitStore();
+
+      const response = await handleRevisionRequest(request(body), {
+        gateway: liveGateway(requests),
+        now: NOW,
+        rateLimitStore,
+      });
+      const json = (await response.json()) as { error: { code: string } };
+
+      expect(response.status).toBe(400);
+      expect(json.error.code).toBe("INVALID_REQUEST");
+      expect(rateLimitStore.globals.size).toBe(0);
+      expect(requests).toHaveLength(0);
+    },
+  );
 });

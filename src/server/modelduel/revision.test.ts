@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { createCaseFingerprint } from "../../lib/modelduel/simulation";
 import { MOON_HERO_SAMPLE } from "../../lib/modelduel/samples";
@@ -90,4 +90,34 @@ describe("verified revision service", () => {
     const second = await evaluateRevisionRequest(VALID_REQUEST, NOW + 1_000);
     expect(second.feedback).toEqual(first.feedback);
   });
+});
+
+describe("live revision authorization boundary", () => {
+  it.each(["missing", "false"])(
+    "rejects a %s attestation before resolving safety identity or using a gateway",
+    async (variant) => {
+      const input: Record<string, unknown> = {
+        mode: "live",
+        requestId: "live-revision-request",
+        idempotencyKey: "live-revision-key",
+        requestedAt: NOW,
+        sessionId: "live-revision-session",
+        revisionText:
+          "Sunlight and viewing angle explain the observation because the shadow model does not.",
+        evaluationId: "v1.invalid",
+      };
+      if (variant === "false") input.liveUseAttestation = false;
+      const resolveSafetyIdentifier = vi.fn();
+      const beforeLiveGateway = vi.fn();
+
+      await expectInvalid(() =>
+        evaluateRevisionRequest(input as never, NOW, {
+          resolveSafetyIdentifier,
+          beforeLiveGateway,
+        }),
+      );
+      expect(resolveSafetyIdentifier).not.toHaveBeenCalled();
+      expect(beforeLiveGateway).not.toHaveBeenCalled();
+    },
+  );
 });

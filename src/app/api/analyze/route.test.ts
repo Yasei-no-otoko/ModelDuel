@@ -10,6 +10,7 @@ const BODY = {
   sessionId: "analyze-route-session",
   requestedAt: 1_800_000_000_000,
   scenarioId: "moon-phases",
+  liveUseAttestation: true,
   explanation: "Earth's shadow causes phases.",
   sketch: null,
 };
@@ -24,6 +25,9 @@ function request(
     body: JSON.stringify(body),
   });
 }
+
+const BODY_WITHOUT_LIVE_ATTESTATION: Record<string, unknown> = { ...BODY };
+delete BODY_WITHOUT_LIVE_ATTESTATION.liveUseAttestation;
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -74,6 +78,38 @@ describe("POST /api/analyze safe boundary", () => {
     );
     expect(rateLimitStore.globals.size).toBe(0);
   });
+
+  it.each([
+    ["missing", BODY_WITHOUT_LIVE_ATTESTATION],
+    ["false", { ...BODY, liveUseAttestation: false }],
+  ])(
+    "rejects a %s live-use attestation before rate limiting or model calls",
+    async (_label, body) => {
+      const rateLimitStore = createRateLimitStore();
+      const gateway = {
+        analysisModel: "gpt-5.6-terra" as const,
+        revisionModel: "gpt-5.6-luna" as const,
+        parseLearnerModel: vi.fn(),
+        runProgramTurn: vi.fn(),
+        parseRevisionFeedback: vi.fn(),
+      };
+
+      const response = await handleAnalyzeRequest(request(body), {
+        gateway,
+        now: 1_000,
+        rateLimitStore,
+      });
+
+      expect(response.status).toBe(400);
+      expect(
+        ((await response.json()) as { error: { code: string } }).error.code,
+      ).toBe("INVALID_REQUEST");
+      expect(rateLimitStore.globals.size).toBe(0);
+      expect(gateway.parseLearnerModel).not.toHaveBeenCalled();
+      expect(gateway.runProgramTurn).not.toHaveBeenCalled();
+      expect(gateway.parseRevisionFeedback).not.toHaveBeenCalled();
+    },
+  );
 
   it("does not charge requests that fail model configuration preflight", async () => {
     process.env.MODELDUEL_EVALUATION_SECRET = "a".repeat(32);
