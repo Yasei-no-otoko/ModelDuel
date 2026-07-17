@@ -298,9 +298,9 @@ Paid live canary inherited from earlier main merge `e04443f`: one analysis retur
 
 ## Official sources
 
-- [OpenAI Open Model Hackathon rules](https://openai.devpost.com/rules)
-- [OpenAI Open Model Hackathon FAQ](https://openai.devpost.com/details/faqs)
-- [OpenAI Open Model Hackathon](https://openai.devpost.com/)
+- [OpenAI Build Week rules](https://openai.devpost.com/rules)
+- [OpenAI Build Week FAQ](https://openai.devpost.com/details/faqs)
+- [OpenAI Build Week](https://openai.devpost.com/)
 - [Devpost Help: How do I set up the submission period?](https://help.devpost.com/article/145-how-do-i-set-up-the-submission-period)
 - [Devpost Help: How to enter a submission](https://help.devpost.com/article/122-how-to-enter-a-submission)
 - [Devpost Help: Uploading a demo video](https://help.devpost.com/article/85-uploading-a-demo-video)
