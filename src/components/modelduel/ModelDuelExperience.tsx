@@ -45,8 +45,11 @@ import {
 } from "./flow";
 import { getTraceHeroCopy } from "./trace-copy";
 import { formatCausalRelation } from "./learner-copy";
-import { WorldComparison } from "./WorldComparison";
 import { useHydrationReady } from "./browser";
+import {
+  DynamicWorldComparison,
+  loadWorldComparison,
+} from "./world-comparison-loader";
 
 type SessionContainer = Readonly<{
   value: ModelDuelSession;
@@ -566,6 +569,7 @@ export function ModelDuelExperience() {
   function handleLockPrediction() {
     if (!session.prediction) return;
     dispatch({ type: "LOCK_PREDICTION", lockedAt: nextTimestamp(clock) });
+    void loadWorldComparison().catch(() => undefined);
     setStatus("Prediction locked. It can no longer be changed.");
   }
 
@@ -1273,7 +1277,7 @@ export function ModelDuelExperience() {
               <>
                 {analysis.caseSpec.scenario === "moon-phases" &&
                 scenarioComparison.scenario === "moon-phases" ? (
-                  <WorldComparison
+                  <DynamicWorldComparison
                     scenario="moon-phases"
                     caseSpec={analysis.caseSpec}
                     learner={scenarioComparison.learner}
@@ -1281,7 +1285,7 @@ export function ModelDuelExperience() {
                   />
                 ) : analysis.caseSpec.scenario === "seasons" &&
                   scenarioComparison.scenario === "seasons" ? (
-                  <WorldComparison
+                  <DynamicWorldComparison
                     scenario="seasons"
                     caseSpec={analysis.caseSpec}
                     learner={scenarioComparison.learner}

@@ -1095,6 +1095,49 @@ textarea:disabled {
   box-shadow: 0 30px 88px rgba(0, 0, 0, 0.32);
 }
 
+.world-comparison-loading {
+  min-height: clamp(32rem, 62vw, 42rem);
+  padding: clamp(1.4rem, 4vw, 2.4rem);
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 0.65rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 1.2rem;
+  color: #dce4f8;
+  background: rgba(8, 14, 33, 0.82);
+  box-shadow: 0 30px 88px rgba(0, 0, 0, 0.32);
+  text-align: center;
+}
+
+.world-comparison-loading strong,
+.world-comparison-loading p {
+  margin: 0;
+}
+
+.world-comparison-loading p {
+  color: var(--muted);
+  font-size: var(--text-caption);
+  line-height: 1.5;
+}
+
+.comparison-loading-worlds {
+  width: min(100%, 42rem);
+  margin-bottom: 0.7rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.comparison-loading-worlds span {
+  min-height: 13rem;
+  border: 1px solid var(--line);
+  border-radius: 0.95rem;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(87, 226, 242, 0.12), transparent 3.5rem),
+    rgba(8, 14, 32, 0.78);
+}
+
 .case-toolbar {
   padding: 0.3rem 0.3rem 1rem;
   display: flex;

@@ -127,3 +127,54 @@ test("requires a fresh live-use confirmation after changing challenge", async ({
     }),
   ).toBeEnabled();
 });
+
+test("defers WebGL probing until the evidence comparison mounts", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const state = globalThis as typeof globalThis & {
+      __modelDuelWebGlProbeCount?: number;
+    };
+    state.__modelDuelWebGlProbeCount = 0;
+    const getContext = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (
+      this: HTMLCanvasElement,
+      contextId: string,
+      ...argumentsList: unknown[]
+    ) {
+      if (contextId === "webgl" || contextId === "webgl2") {
+        state.__modelDuelWebGlProbeCount =
+          (state.__modelDuelWebGlProbeCount ?? 0) + 1;
+        return null;
+      }
+      return Reflect.apply(getContext, this, [contextId, ...argumentsList]);
+    } as typeof HTMLCanvasElement.prototype.getContext;
+  });
+
+  const probeCount = () =>
+    page.evaluate(
+      () =>
+        (
+          globalThis as typeof globalThis & {
+            __modelDuelWebGlProbeCount?: number;
+          }
+        ).__modelDuelWebGlProbeCount ?? 0,
+    );
+
+  await page.goto("/");
+  expect(await probeCount()).toBe(0);
+  await page.getByRole("button", { name: "Run verified sample" }).click();
+  await page.getByRole("button", { name: "Make a prediction" }).click();
+  await page.getByLabel("Earth's shadow masks half of the Moon").check();
+  await page.getByRole("button", { name: "Lock prediction" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Your prediction is locked." }),
+  ).toBeVisible();
+  expect(await probeCount()).toBe(0);
+
+  await page
+    .getByRole("button", { name: "Run both worlds and reveal evidence" })
+    .click();
+  await expect.poll(probeCount).toBeGreaterThan(0);
+  await expect(page.locator(".world-html-fallback")).toHaveCount(2);
+});
