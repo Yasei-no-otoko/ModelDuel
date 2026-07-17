@@ -195,6 +195,7 @@ function WorldViewport({
         {webglAvailable ? (
           <CanvasBoundary fallback={fallback}>
             <Canvas
+              role="img"
               aria-label={`${kind === "learner" ? "Learner" : "Scientific"} model 3D view. Drag horizontally or use the view buttons to orbit.`}
               camera={{ fov: 43, near: 0.1, far: 100, position: [0, 4.8, 8.8] }}
               dpr={reducedMotion ? 1 : [1, 1.5]}
@@ -428,6 +429,7 @@ function SeasonsWorldViewport({
         {webglAvailable ? (
           <CanvasBoundary fallback={fallback}>
             <Canvas
+              role="img"
               aria-label={`${kind === "learner" ? "Learner" : "Scientific"} seasons model 3D view. Drag horizontally or use the view buttons to orbit.`}
               camera={{ fov: 43, near: 0.1, far: 100, position: [0, 4.8, 8.8] }}
               dpr={reducedMotion ? 1 : [1, 1.5]}

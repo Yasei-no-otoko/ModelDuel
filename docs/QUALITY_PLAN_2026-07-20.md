@@ -32,7 +32,9 @@ The work must improve all four equally weighted judging dimensions:
 - Technical depth must be visible in the experience and the submission narrative without exposing internal complexity to the learner.
 - Accessibility, safe failure modes, cost control, and deterministic fallbacks are part of implementation quality, not post-demo polish.
 
-## Current Evidence Baseline
+## Dated pre-quality evidence baseline — 2026-07-16 (superseded)
+
+The bullets below are retained as the conditions that motivated this plan, not as claims about the current implementation. Later quality work made the verified sample primary, added the listed security headers and live-use boundary, and raised the automated gate to 31 Vitest files / 332 tests plus 34 Chromium E2E tests before the cross-browser release-gate work.
 
 - `pnpm check` passes: lint, typecheck, 27 Vitest files, 311 tests, Next production build.
 - Playwright Chromium E2E passes 23/23.

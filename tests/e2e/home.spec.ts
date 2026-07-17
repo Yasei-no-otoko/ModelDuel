@@ -530,8 +530,10 @@ test("blocks live analysis when both explanation and sketch are empty", async ({
   });
 
   await page.goto("/");
-  await page.getByLabel("Your current explanation").fill("");
   await confirmLiveUse(page);
+  const explanation = page.getByLabel("Your current explanation");
+  await explanation.fill("");
+  await expect(explanation).toHaveValue("");
   await page.getByRole("button", { name: "Analyze with GPT-5.6" }).click();
 
   await expect(
@@ -568,7 +570,7 @@ test("submits a sketch-only live analysis with an empty explanation", async ({
   });
 
   await page.goto("/");
-  await page.getByLabel("Your current explanation").fill("");
+  await confirmLiveUse(page);
   await page.getByLabel("Choose sketch").setInputFiles({
     name: "moon-sketch.png",
     mimeType: "image/png",
@@ -579,7 +581,9 @@ test("submits a sketch-only live analysis with an empty explanation", async ({
       exact: false,
     }),
   ).toBeVisible();
-  await confirmLiveUse(page);
+  const explanation = page.getByLabel("Your current explanation");
+  await explanation.fill("");
+  await expect(explanation).toHaveValue("");
   await page.getByRole("button", { name: "Analyze with GPT-5.6" }).click();
 
   await expect(

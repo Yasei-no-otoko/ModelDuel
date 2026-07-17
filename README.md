@@ -94,8 +94,11 @@ All learner-data Responses requests use `store: false`. Live analysis and revisi
 | `pnpm typecheck` | Run TypeScript checks. |
 | `pnpm test` | Run unit and integration tests. |
 | `pnpm test:watch` | Run tests in watch mode. |
-| `pnpm test:e2e` | Run Playwright journeys. |
-| `pnpm check` | Run `lint && typecheck && test && build`. |
+| `pnpm test:e2e` | Run Playwright journeys in Chromium, Firefox, and WebKit. |
+| `pnpm test:e2e:chromium` | Run the Chromium project only for a quick local check. |
+| `pnpm video:validate:contracts` | Validate the approved 10-row timeline, selector inventory, production origin, and exact API ledger without external tools or network access. |
+| `pnpm video:submission -- --validate-only` | Validate the full local FFmpeg, FFprobe, Chromium, subtitle, and codec toolchain without recording or API calls. |
+| `pnpm check` | Run lint, typecheck, Vitest, portable video-contract validation, and the production build. |
 | `pnpm cf:typegen` | Build the OpenNext entrypoint, then regenerate checked-in Workers binding and runtime types. |
 | `pnpm cf:typecheck` | Rebuild the OpenNext entrypoint and verify checked-in Workers types have no drift. |
 | `pnpm cf:build` | Build the OpenNext Worker and static assets. |
@@ -104,6 +107,20 @@ All learner-data Responses requests use `store: false`. Live analysis and revisi
 | `pnpm cf:deploy` | Build and deploy the production Worker. |
 
 Cloudflare deployment requires both server secrets already configured for the Worker. Never place them in `vars` or command-line history. Before deployment, run the normal checks, `pnpm cf:typegen`, `pnpm cf:typecheck`, and `wrangler deploy --dry-run`; both type commands rebuild the OpenNext entrypoint before asking Wrangler to generate or compare types. Verify the compressed Worker is below the account-plan-specific limit. The production endpoint is [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev); dated integration evidence and the final main deployment/canary are recorded below without secrets, cookie values, or learner data.
+
+### Reproducible submission video
+
+The generator reads the exact 10-row narration table from [`docs/DEVPOST_SUBMISSION.md`](docs/DEVPOST_SUBMISSION.md), records only the production verified-sample path, and publishes an immutable MP4/SRT/contact-sheet/manifest bundle under `~/.gstack/projects/DevPostOpenAI/submission/runs/`. It refuses an in-repository output root, blocks service workers and external HTTP, rejects live analysis, and requires the exact `GET /api/demo` → verified `POST /api/revision` → `POST /api/transfer` ledger.
+
+Narration uses OpenAI `tts-1` with the `nova` voice and displays **AI-generated narration · OpenAI TTS** throughout the video. The first approved generation is cost-gated:
+
+Load `OPENAI_API_KEY` through the parent process environment or a secure secret manager before the first run; never place the key itself in the command line or shell history. The recorder strips API keys, tokens, passwords, cookies, and secrets from FFmpeg, FFprobe, Git, and Chromium child environments.
+
+```bash
+MODELDUEL_ALLOW_PAID_TTS=1 pnpm video:submission
+```
+
+Only the public, approved narration rows are sent to the Speech API. Generated WAV sources are cached by model, voice, and narration hash inside the managed external output root; a per-row exclusive lock prevents concurrent cache misses from issuing duplicate paid requests. After the cache exists, run `pnpm video:submission` without the opt-in variable. Full recording refuses a dirty worktree and snapshots its commit and source hashes before paid or network work. Do not publish any earlier local draft narrated with a macOS System Voice; current Apple licensing limits System Voice projects to personal, non-commercial use and excludes public sharing.
 
 ## Architecture
 
@@ -130,6 +147,8 @@ The server routes are:
 - [Devpost submission working document](docs/DEVPOST_SUBMISSION.md)
 - [OpenAI SDK integration reference](docs/OPENAI_SDK_REFERENCE.md)
 - [Cloudflare Workers deployment reference](docs/CLOUDFLARE_DEPLOYMENT_REFERENCE.md)
+- [Submission media, narration rights, browser, and accessibility reference](docs/SUBMISSION_MEDIA_REFERENCE.md)
+- [Final local submission-video evidence](docs/VIDEO_EVIDENCE_2026-07-17.md)
 - [Product specification](docs/PRODUCT_SPEC.md)
 
 ### Authored samples
@@ -186,7 +205,7 @@ The runtime ships no third-party image, audio, video, or 3D media. Astronomy vis
 | [`docs/media/seasons-evidence.png`](docs/media/seasons-evidence.png) | 1280×900 | 193,841 B | Seasons two-world evidence |
 | [`docs/media/mobile-hero.png`](docs/media/mobile-hero.png) | 375×812 | 194,744 B | Responsive landing and verified CTA |
 
-Production visual QA completed the Moon journey through trace at 1280px and 375px, and the Seasons journey through evidence at 1280px. Each evidence view rendered two canvases with no 2D recovery view. Horizontal overflow, page errors, failed requests, and unexpected console messages were all zero. The capture used no login and made zero analyze calls: the verified CTA remained primary, revision remained authored, authored-source labels stayed visible, and live analysis stayed disabled before confirmation. The screenshot and cover rights audit is complete; final video, music, or other future media must still be audited before publishing.
+Production visual QA completed the Moon journey through trace at 1280px and 375px, and the Seasons journey through evidence at 1280px. Each evidence view rendered two canvases with no 2D recovery view. Horizontal overflow, page errors, failed requests, and unexpected console messages were all zero. The capture used no login and made zero analyze calls: the verified CTA remained primary, revision remained authored, authored-source labels stayed visible, and live analysis stayed disabled before confirmation. The screenshot and cover rights audit is complete. The publishable video must use the disclosed OpenAI TTS narration path above; local macOS System Voice drafts are not cleared for public sharing. Any future music or additional media requires a separate rights review.
 
 ## Historical integration verification and final gates
 
@@ -209,7 +228,7 @@ The dated production integration sequence made one Terra HTTP request and one Lu
 
 After main merge `e04443f`, the final runtime canary made exactly one live analysis request and one live revision request with zero retries. Analysis returned HTTP 200 in **17.642 seconds**, source `live`, model `gpt-5.6-terra`, with the exact tool order `validate_world_spec` → `simulate_world` → `compare_predictions` → `select_discriminating_case`. Revision returned HTTP 200 in **1.404 seconds**, source `gpt-5.6`, model `gpt-5.6-luna`; the same session and signed evaluation were accepted, conceptual change was `revised` with score `1`, and `liveUseAttestation: true` was carried by both requests. The server-minted cookie was reused with `Path=/`, `HttpOnly`, `Secure`, and `SameSite=Strict`; its value was not recorded. The strict responses did not expose token usage or cost, so neither is guessed or presented as a measured final-build cost.
 
-The deployed runtime corresponds to main merge `e04443f`; this documentation-only evidence branch follows that runtime deployment. Remaining external gates are exact Workers CPU telemetry/account-plan confirmation, public repository access, the `/feedback` Session ID, the final video and any additional submission media, and placeholder replacement. Track the canonical handoff in [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md); the external submission is not yet complete.
+The deployed runtime still corresponds to main merge `e04443f`. Submission-quality commit `f13a2e5` adds the accessible 3D-canvas role and hardened recording/CI gates, but is not production until it is merged, deployed, and verified. The exact local video candidate is complete and recorded in [the dated video evidence](docs/VIDEO_EVIDENCE_2026-07-17.md); public upload, repository access, `/feedback` Session ID, placeholder replacement, logged-out link checks, and final form submission remain external gates. Track the canonical handoff in [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md).
 
 ## License
 
