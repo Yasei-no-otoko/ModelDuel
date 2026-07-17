@@ -134,6 +134,33 @@ test("keeps learner-facing captions legible through the Moon evidence flow", asy
   await expect(page.locator(".stage-action-row p")).toBeVisible();
   await expectCaptionFloorForPresentElements(page);
 
+  const newAttempt = page.getByRole("button", {
+    name: "New attempt",
+    exact: true,
+  });
+  await expect(newAttempt).toHaveCSS("color", "rgb(122, 138, 182)");
+  await expect(newAttempt).toHaveCSS(
+    "background-color",
+    "rgba(15, 26, 57, 0.7)",
+  );
+  const quietButtonForeground = relativeLuminance(122, 138, 182);
+  const quietButtonSurface = relativeLuminance(15, 26, 57);
+  const quietButtonContrast =
+    (quietButtonForeground + 0.05) / (quietButtonSurface + 0.05);
+  expect(quietButtonContrast).toBeGreaterThanOrEqual(4.5);
+
+  await newAttempt.hover();
+  await expect(newAttempt).toHaveCSS("color", "rgb(122, 138, 182)");
+  await newAttempt.focus();
+  await expect(newAttempt).toHaveCSS("color", "rgb(122, 138, 182)");
+  await newAttempt.evaluate((button) => {
+    (button as HTMLButtonElement).disabled = true;
+  });
+  await expect(newAttempt).toHaveCSS("color", "rgb(122, 138, 182)");
+  await newAttempt.evaluate((button) => {
+    (button as HTMLButtonElement).disabled = false;
+  });
+
   await page.getByRole("button", { name: "Make a prediction" }).click();
   await expect(page.locator(".option-list legend")).toBeVisible();
   await expectCaptionFloorForPresentElements(page);

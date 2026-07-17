@@ -169,11 +169,12 @@ dd {
   padding: 0.55rem 0.85rem;
   border: 1px solid var(--line);
   border-radius: 0.62rem;
+  color: #7a8ab6;
   background: rgba(15, 26, 57, 0.7);
   cursor: pointer;
 }
 
-.quiet-button:hover {
+.quiet-button:hover:not(:disabled) {
   border-color: rgba(87, 226, 242, 0.5);
 }
 
