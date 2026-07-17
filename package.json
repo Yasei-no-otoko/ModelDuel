@@ -11,6 +11,7 @@
     "pnpm": ">=11.13.0 <12"
   },
   "scripts": {
+    "video:submission": "node scripts/record-submission-video.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
