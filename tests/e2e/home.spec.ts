@@ -1,5 +1,50 @@
 import { expect, test, type Page } from "@playwright/test";
 
+const TEST_ORIGIN = "http://localhost:3000";
+
+type VerifiedRequestLedger = {
+  api: Array<{
+    method: string;
+    pathname: string;
+    revisionMode: string | null;
+  }>;
+  externalHttp: string[];
+};
+
+const EXPECTED_VERIFIED_API_LEDGER = [
+  { method: "GET", pathname: "/api/demo", revisionMode: null },
+  {
+    method: "POST",
+    pathname: "/api/revision",
+    revisionMode: "verified-sample",
+  },
+  { method: "POST", pathname: "/api/transfer", revisionMode: null },
+] as const;
+
+function observeVerifiedRequestLedger(page: Page): VerifiedRequestLedger {
+  const ledger: VerifiedRequestLedger = { api: [], externalHttp: [] };
+  page.on("request", (request) => {
+    const url = new URL(request.url());
+    if (url.protocol !== "http:" && url.protocol !== "https:") return;
+    if (url.origin !== TEST_ORIGIN) {
+      ledger.externalHttp.push(`${request.method()} ${url.origin}${url.pathname}`);
+      return;
+    }
+    if (!url.pathname.startsWith("/api/")) return;
+
+    const body =
+      request.method() === "GET"
+        ? null
+        : (request.postDataJSON() as Record<string, unknown> | null);
+    ledger.api.push({
+      method: request.method(),
+      pathname: url.pathname,
+      revisionMode: typeof body?.mode === "string" ? body.mode : null,
+    });
+  });
+  return ledger;
+}
+
 const revisedExplanation =
   "The Moon appears half illuminated because sunlight lights one half and our viewing angle reveals half, while Earth's shadow does not intersect it.";
 
@@ -117,6 +162,7 @@ async function expectFreshCaptureAndVerifiedReuse(page: Page) {
 }
 
 test("completes the verified Seasons journey with sealed evidence and a transfer trace", async ({ page }) => {
+  const verifiedLedger = observeVerifiedRequestLedger(page);
   await startSeasonsChallenge(page);
   await expect(page.getByText("Verified authored sample", { exact: true })).toBeVisible();
   await expect(
@@ -189,6 +235,8 @@ test("completes the verified Seasons journey with sealed evidence and a transfer
     "Northern summer; Southern winter; relative incident energy",
   );
   await expect(seasonsHandoff).not.toContainText("deterministic-question-bank");
+  expect(verifiedLedger.api).toEqual(EXPECTED_VERIFIED_API_LEDGER);
+  expect(verifiedLedger.externalHttp).toEqual([]);
 
   await page
     .getByRole("button", { name: "New attempt", exact: true })
@@ -730,7 +778,7 @@ test("completes the Moon path with server-authenticated transfer evidence", asyn
       },
     });
   });
-  const requests: string[] = [];
+  const verifiedLedger = observeVerifiedRequestLedger(page);
   const internalIdentifiers = {
     sessionId: new Set<string>(),
     requestId: new Set<string>(),
@@ -741,7 +789,6 @@ test("completes the Moon path with server-authenticated transfer evidence", asyn
   page.on("request", (request) => {
     const url = new URL(request.url());
     if (!url.pathname.startsWith("/api/")) return;
-    requests.push(request.url());
     const sessionId = url.searchParams.get("sessionId");
     if (sessionId) internalIdentifiers.sessionId.add(sessionId);
     if (request.method() !== "GET") {
@@ -801,7 +848,9 @@ test("completes the Moon path with server-authenticated transfer evidence", asyn
   await expect(copyButton).toBeDisabled();
   await expect(downloadButton).toBeDisabled();
 
-  const requestCountBeforeHandoff = requests.length;
+  expect(verifiedLedger.api).toEqual(EXPECTED_VERIFIED_API_LEDGER);
+  expect(verifiedLedger.externalHttp).toEqual([]);
+  const requestCountBeforeHandoff = verifiedLedger.api.length;
   const storageBeforeHandoff = await page.evaluate(() => ({
     local: { ...localStorage },
     session: { ...sessionStorage },
@@ -863,7 +912,7 @@ test("completes the Moon path with server-authenticated transfer evidence", asyn
   for (const identifiers of Object.values(internalIdentifiers)) {
     for (const identifier of identifiers) expect(downloadedTrace).not.toContain(identifier);
   }
-  expect(requests).toHaveLength(requestCountBeforeHandoff);
+  expect(verifiedLedger.api).toHaveLength(requestCountBeforeHandoff);
   expect(
     await page.evaluate(() => ({
       local: { ...localStorage },
