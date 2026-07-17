@@ -148,6 +148,7 @@ The server routes are:
 - [OpenAI SDK integration reference](docs/OPENAI_SDK_REFERENCE.md)
 - [Cloudflare Workers deployment reference](docs/CLOUDFLARE_DEPLOYMENT_REFERENCE.md)
 - [Submission media, narration rights, browser, and accessibility reference](docs/SUBMISSION_MEDIA_REFERENCE.md)
+- [Final local submission-video evidence](docs/VIDEO_EVIDENCE_2026-07-17.md)
 - [Product specification](docs/PRODUCT_SPEC.md)
 
 ### Authored samples
@@ -227,7 +228,7 @@ The dated production integration sequence made one Terra HTTP request and one Lu
 
 After main merge `e04443f`, the final runtime canary made exactly one live analysis request and one live revision request with zero retries. Analysis returned HTTP 200 in **17.642 seconds**, source `live`, model `gpt-5.6-terra`, with the exact tool order `validate_world_spec` → `simulate_world` → `compare_predictions` → `select_discriminating_case`. Revision returned HTTP 200 in **1.404 seconds**, source `gpt-5.6`, model `gpt-5.6-luna`; the same session and signed evaluation were accepted, conceptual change was `revised` with score `1`, and `liveUseAttestation: true` was carried by both requests. The server-minted cookie was reused with `Path=/`, `HttpOnly`, `Secure`, and `SameSite=Strict`; its value was not recorded. The strict responses did not expose token usage or cost, so neither is guessed or presented as a measured final-build cost.
 
-The deployed runtime corresponds to main merge `e04443f`; this documentation-only evidence branch follows that runtime deployment. Remaining external gates are exact Workers CPU telemetry/account-plan confirmation, public repository access, the `/feedback` Session ID, the final video and any additional submission media, and placeholder replacement. Track the canonical handoff in [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md); the external submission is not yet complete.
+The deployed runtime still corresponds to main merge `e04443f`. Submission-quality commit `f13a2e5` adds the accessible 3D-canvas role and hardened recording/CI gates, but is not production until it is merged, deployed, and verified. The exact local video candidate is complete and recorded in [the dated video evidence](docs/VIDEO_EVIDENCE_2026-07-17.md); public upload, repository access, `/feedback` Session ID, placeholder replacement, logged-out link checks, and final form submission remain external gates. Track the canonical handoff in [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md).
 
 ## License
 
