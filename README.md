@@ -186,10 +186,14 @@ The results below are a dated 2026-07-17 integration baseline. They are not curr
 | 2026-07-17 production public smoke | Root HEAD and Moon verified demo returned HTTP 200 for the dated integration deployment. |
 | 2026-07-17 production integration smoke — Terra | HTTP 200, exact four-tool ledger in five PTC rounds, 7,581 total tokens, estimated **$0.013358**. |
 | 2026-07-17 production integration smoke — Luna | HTTP 200, 493 total tokens, estimated **$0.001083**. |
-| Final post-merge quality gate | `{{FINAL_TEST_BUILD_AUDIT_RESULTS}}` |
+| 2026-07-17 pre-merge quality-branch gate — HEAD `682c206` | Vitest **332/332** across **31 files**; Chromium E2E **34/34**; Next.js, OpenNext, Wrangler, and dependency audit **Pass**; **no known vulnerabilities**. |
+| Worker and asset evidence — HEAD `682c206` | Worker **8,277.49 KiB raw / 1,619.89 KiB gzip**; Wrangler **18 deployable asset entries**; **14 physical assets**; largest dynamic 3D chunk **896,059 bytes**. |
+| Rendered design evidence — HEAD `682c206` | **B+ / 3.37**, AI Slop **B-**, goodwill **93**, Critical/High/Medium findings **0/0/0**. |
+| Entry-path performance evidence | Pre-recovery encoded initial JS **229,931 bytes**; final recovery build at HEAD `682c206` **231,708 bytes**; under 4× CPU throttling, the primary CTA became ready in **363 ms** during the performance audit. |
+| Final post-merge `main` gate | **Pending** — rerun the complete gate after merge; do not reuse the pre-merge result as post-merge proof. |
 | Final deployment and public canary | `{{FINAL_DEPLOYMENT_CANARY_RESULTS}}` |
 
-The dated production integration sequence made one Terra HTTP request and one Luna HTTP request with zero HTTP retries. Combined telemetry was 8,074 total tokens and an estimated **$0.014441**; the configured dollar ceilings remain output-only bounds, not an all-in preflight guarantee. This is integration evidence, not proof of the final build. Pending gates include final merge, current test/build/audit results, final deployment and canary verification, exact Workers CPU telemetry/account-plan confirmation, public repository access, the `/feedback` Session ID, final media/video/screenshots, and placeholder replacement. Track the canonical handoff in [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md); the external submission is not yet complete.
+The dated production integration sequence made one Terra HTTP request and one Luna HTTP request with zero HTTP retries. Combined telemetry was 8,074 total tokens and an estimated **$0.014441**; the configured dollar ceilings remain output-only bounds, not an all-in preflight guarantee. This is integration evidence, not proof of the final build. Pending gates include final merge, post-merge test/build/audit results, final deployment and canary verification, exact Workers CPU telemetry/account-plan confirmation, public repository access, the `/feedback` Session ID, final media/video/screenshots, and placeholder replacement. Track the canonical handoff in [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md); the external submission is not yet complete.
 
 ## License
 

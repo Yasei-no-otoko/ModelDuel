@@ -226,23 +226,25 @@ Capture only the final merged production build. Do not include audit “before�
 
 ### Code and tests
 
-- [ ] Finish on a clean branch and review the final diff.
+- [x] Complete and review the 2026-07-17 pre-merge local quality gate at HEAD `682c206`.
 - [ ] Merge the approved work to `main`.
 - [ ] Run and record `pnpm check` after the merge.
 - [ ] Run and record `pnpm test:e2e` after the merge.
 - [ ] Manually verify Moon and Seasons on the final desktop and mobile build.
 
-Final `main` gate: `{{FINAL_VITEST_RESULT}}`; `{{FINAL_E2E_RESULT}}`; `{{FINAL_NEXT_BUILD_RESULT}}`; `{{FINAL_CLOUDFLARE_BUILD_RESULT}}`; `{{FINAL_WRANGLER_DRY_RUN_RESULT}}`; `{{FINAL_DEPENDENCY_AUDIT_RESULT}}`. Populate only after the approved branch is merged and the complete final gate is rerun.
+Pre-merge local gate at HEAD `682c206`: Vitest **332/332** across **31 files**; Chromium E2E **34/34**; Next.js, OpenNext, and Wrangler **Pass**; Worker **8,277.49 KiB raw / 1,619.89 KiB gzip**; dependency audit **no known vulnerabilities**. Wrangler reported **18 deployable asset entries** backed by **14 physical assets**; the largest dynamic 3D chunk was **896,059 bytes**. The rendered design audit scored **B+ / 3.37**, AI Slop **B-**, goodwill **93**, with Critical/High/Medium findings **0/0/0**. The performance audit recorded **229,931 encoded bytes** of initial JS before the outer recovery addition and **231,708 encoded bytes** for the final recovery build at HEAD `682c206`; under 4× CPU throttling, the primary CTA became ready in **363 ms**.
+
+Final post-merge `main` gate: **Pending**. Rerun the complete check, E2E, Cloudflare build/type/dry-run, audit, and public canary after merge; do not present the pre-merge result as post-merge or deployed proof.
 
 ### GPT-5.6 proof
 
 - [x] Preserve the dated 2026-07-17 Terra/Luna production integration smoke as historical integration evidence, not final-build proof.
 - [ ] Run the minimum approved final-build Terra/Luna production smoke only after local gates and the spend gate pass.
-- [ ] Build the final OpenNext Worker and record `{{FINAL_WORKER_GZIP_SIZE}}` against the confirmed account-plan limit.
-- [ ] Verify final generated Cloudflare binding types and record `{{FINAL_ASSET_INVENTORY}}`.
-- [ ] Verify visible live-source labels and fail-closed behavior on the final build.
+- [x] Build the pre-merge OpenNext Worker at HEAD `682c206`: **8,277.49 KiB raw / 1,619.89 KiB gzip**; account-plan-specific production confirmation remains pending.
+- [x] Verify pre-merge generated Cloudflare binding types and inventory: **18 deployable entries**, **14 physical assets**, largest dynamic 3D chunk **896,059 bytes**.
+- [x] Verify visible live-source labels and fail-closed behavior on the pre-merge quality branch.
 - [ ] Capture safe final-build proof of configured model usage without exposing prompts, learner data, or secrets.
-- [ ] Confirm final-build learner-data Responses requests still use `store: false`.
+- [x] Confirm pre-merge learner-data Responses requests still use `store: false`.
 
 ### Deployment and repository
 
