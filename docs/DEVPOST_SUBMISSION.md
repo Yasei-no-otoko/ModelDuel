@@ -34,13 +34,13 @@ AI tutors can generate clear explanations, but a correct answer does not prove t
 
 ModelDuel guides a learner through one protected sequence: capture → interpret → predict → observe → revise → transfer → trace. The learner explains an idea in text, optionally adds a sketch, and deliberately chooses either configured live analysis or an authored verified sample. The app compares a learner model with a scientific model, requires a prediction before revealing evidence, renders both worlds under the same case, asks for a revised explanation, and checks a transfer question. The final Model Revision Trace preserves the initial belief, prediction, observation, revision, and transfer result.
 
-Two complete challenges share this loop. The Moon challenge confronts the belief that Earth's shadow causes regular phases. The Seasons challenge tests the belief that Earth-Sun distance causes summer and winter. Verified samples are visibly labeled, require no account or API key, and never masquerade as live output. The production configuration routes analysis and PTC to GPT-5.6 Terra and live revision feedback to GPT-5.6 Luna. The final Cloudflare build completed one paid Terra analysis/PTC smoke and one paid Luna revision smoke with no HTTP retry.
+Two complete challenges share this loop. The Moon challenge confronts the belief that Earth's shadow causes regular phases. The Seasons challenge tests the belief that Earth-Sun distance causes summer and winter. Verified samples are visibly labeled, require no account or API key, and never masquerade as live output. The production configuration routes analysis and PTC to GPT-5.6 Terra and live revision feedback to GPT-5.6 Luna. A dated 2026-07-17 production integration smoke completed one paid Terra analysis/PTC request and one paid Luna revision request with no HTTP retry; it is not proof of the final build.
 
 ### How we built it
 
 The browser experience uses Next.js, React, and TypeScript. Zod schemas constrain learner models and server contracts. GPT output is validated before it can cross into the application domain. The application—not the model—owns the allowed cases, WorldSpecs, simulation constants, evidence, transfer answer keys, and grading. Deterministic simulation code produces the astronomy state, and Three.js renders the resulting scenes; GPT never generates or executes arbitrary Three.js code.
 
-The server exposes separate live, verified-sample, revision, and transfer routes. Live learner-data Responses requests use `store: false`. Transfer answer keys remain inside a private server registry, and the client receives an AES-256-GCM authenticated token that binds the session, question, options, answer, rationale, expiry, and live revision context. Unsupported or cross-scenario output fails closed. Four fail-closed Cloudflare Rate Limiting bindings implement hashed-client and aggregate limits for analysis and revision. Their configuration, local `workerd` behavior, production bindings, and deployed live paths are verified.
+The server exposes separate live, verified-sample, revision, and transfer routes. Live learner-data Responses requests use `store: false`. Transfer answer keys remain inside a private server registry, and the client receives an AES-256-GCM authenticated token that binds the session, question, options, answer, rationale, expiry, and live revision context. Unsupported or cross-scenario output fails closed. Four fail-closed Cloudflare Rate Limiting bindings implement hashed-client and aggregate limits for analysis and revision. Their configuration, local `workerd` behavior, production bindings, and deployed live paths were verified in the dated integration baseline; the final build requires post-merge re-verification.
 
 ### How Codex helped
 
@@ -67,11 +67,13 @@ The useful boundary is not “AI versus deterministic code.” It is deciding wh
 
 ### What's next
 
-Before submission, we will confirm exact Workers CPU telemetry/account-plan limits, publish the repository, capture only final-build screenshots, record the 2:55 demo, and replace the remaining placeholders. The final merge, post-merge gates, production deployment, and real Terra/Luna smoke checks are complete. After the hackathon, the same constrained-world pattern could expand to additional science misconceptions and a teacher-facing view of Model Revision Traces. Any impact or learning-gain claim would require a separate classroom evaluation.
+Before submission, we will complete the final merge and post-merge gates, deploy and verify the final build, confirm exact Workers CPU telemetry/account-plan limits, publish the repository, capture only final-build screenshots, record the 2:45 demo, and replace the remaining placeholders. The dated 2026-07-17 Terra/Luna production integration smoke remains useful integration evidence but is not final-build proof. After the hackathon, the same constrained-world pattern could expand to additional science misconceptions and a teacher-facing view of Model Revision Traces. Any impact or learning-gain claim would require a separate classroom evaluation.
 
 ### Production verification
 
-The final runtime is live at [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev). A text-only Terra analysis returned HTTP 200 in 19,378 ms, completed the exact four-tool ledger in five PTC rounds, and emitted no PTC failure. Its six Responses calls used 7,581 total tokens for an estimated **$0.013358**. Only after that usage gate passed, one Luna revision returned HTTP 200 in 1,742 ms with 493 total tokens for an estimated **$0.001083**. The successful sequence totaled 8,074 tokens and an estimated **$0.014441**, with zero HTTP retries. The evidence records aggregate counters and model IDs only; it excludes prompts, learner and feedback text, secrets, encrypted evaluation tokens, and request identifiers.
+### Dated production integration smoke — 2026-07-17
+
+At the dated integration-smoke point, the runtime at [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev) completed a text-only Terra analysis with HTTP 200 in 19,378 ms, the exact four-tool ledger in five PTC rounds, and no PTC failure. Its six Responses calls used 7,581 total tokens for an estimated **$0.013358**. Only after that usage gate passed, one Luna revision returned HTTP 200 in 1,742 ms with 493 total tokens for an estimated **$0.001083**. The successful sequence totaled 8,074 tokens and an estimated **$0.014441**, with zero HTTP retries. The evidence records aggregate counters and model IDs only; it excludes prompts, learner and feedback text, secrets, encrypted evaluation tokens, and request identifiers. This evidence predates the current quality branch and is not proof that the final build is merged or deployed.
 
 ## Judging criteria map
 
@@ -124,7 +126,7 @@ After the verified journey works, copy the environment template:
 cp .env.example .env.local
 ```
 
-Set `OPENAI_API_KEY` in `.env.local`, keep the configured Terra and Luna model names, and restart the development server. Enter at least 20 characters of learner text, attach a PNG/JPEG/WebP sketch, or provide both. A failed live request must remain an explicit failure; it must not become a verified result. The recorded production proof above is the authoritative paid-smoke evidence; local behavior must not be presented as production proof.
+Set `OPENAI_API_KEY` in `.env.local`, keep the configured Terra and Luna model names, and restart the development server. Enter at least 20 characters of learner text, attach a PNG/JPEG/WebP sketch, or provide both. A failed live request must remain an explicit failure; it must not become a verified result. The dated production integration smoke above is historical paid integration evidence; local behavior must not be presented as production proof, and the dated smoke must not be presented as final-build proof.
 
 For production, set `MODELDUEL_EVALUATION_SECRET` to a private value of at least 32 characters. Development can generate an ephemeral secret; production fails configuration when the value is missing or too short.
 
@@ -187,29 +189,28 @@ Then repeat the verified Moon and Seasons journeys in the final production build
 
 All learner-data Responses requests use `store: false`. Live budgets are charged only after validation, gateway configuration, and signed-context preflight. Local tests use only explicitly injected, isolated in-memory stores; runtime code has no module-global mutable counter. Cloudflare production is configured with fail-closed per-POP hashed-client and aggregate bindings, which are soft abuse/spend guards rather than an exact global OpenAI budget. See [OpenAI SDK reference](OPENAI_SDK_REFERENCE.md) for SDK-level details and [product specification](PRODUCT_SPEC.md) for the full domain contract.
 
-## 2:55 demo narration and shot list
+## 2:45 demo narration and shot list
 
-Use the verified sample for the recording for a deterministic, account-free demonstration. Real Terra and Luna smoke checks have succeeded separately, and the recording must keep the verified-source label visible rather than presenting authored output as the live response.
+Use the verified sample for the recorded working journey. Keep its authored-source label visible. Show the configured live controls and documented production proof without presenting authored output as a live response.
 
 | Time | Shot | Exact narration |
 | --- | --- | --- |
-| 0:00–0:12 | Hero and tagline. | “AI can give a student an answer. ModelDuel asks a harder question: did the student's causal model actually change?” |
-| 0:12–0:30 | Moon capture card; show text and the optional sketch control, then select the verified sample. | “A learner explains why the Moon changes shape and can add a sketch. For this recording, I use the explicit verified sample, which needs no account or API key and never pretends to be live.” |
-| 0:30–0:48 | Learner-model card and visible verified-source label; briefly show the live-path label without executing it. | “The live configuration routes analysis to GPT-5.6 Terra to extract a strict learner model from text or image input. Here, an authored sample demonstrates the same validated contract, and its source stays clearly labeled.” |
-| 0:48–1:03 | Select **Make a prediction**, choose an option, and lock it. | “Before any evidence appears, the learner must make and lock a prediction. That commitment turns an explanation into something the two worlds can test.” |
-| 1:03–1:29 | Run the learner and scientific worlds side by side; rotate the view and reveal evidence. | “Both worlds now run under the same deterministic case. One treats Earth's shadow as the cause of regular phases. The scientific world keeps half the Moon illuminated while the orbit changes our viewing angle. The evidence exposes which causal model survives.” |
-| 1:29–1:48 | Open revision, enter the full-scoring explanation, and continue. | “The learner revises the explanation after observing the contradiction. Production routes bounded revision feedback to GPT-5.6 Luna; this recorded journey remains the visibly authored path, while the separate live smoke is documented in the repository.” |
-| 1:48–2:09 | Answer transfer, lock it, then reveal the Model Revision Trace. | “A new transfer question checks whether the revised model generalizes. The server—not the model—protects the answer key and grades the choice. The trace connects initial belief, prediction, observation, revision, and transfer result.” |
-| 2:09–2:23 | Select **New attempt**, switch to **Seasons**, and show the two comparison cards. | “The Seasons challenge reuses the same learning loop to test the distance misconception against axial tilt and opposite seasons across the hemispheres.” |
-| 2:23–2:37 | Architecture diagram: browser, validated routes, Responses, allow-listed WorldSpec, deterministic renderer. | “Schema-constrained Responses stop at a strict trust boundary. Application code owns cases, WorldSpecs, simulation, evidence, transfer keys, and grading, and every learner-data request uses store false.” |
-| 2:37–2:50 | Codex task, scoped commit timeline, and tests without secrets or environment files. | “Codex turned the concept into the complete state machine, scaffolded the stack, hardened API and token boundaries, and iterated through tests, races, accessibility, responsive behavior, and design review in scoped commits.” |
-| 2:50–2:55 | Return to hero and tagline. | “ModelDuel. Two models predict. Evidence decides.” |
+| 0:00–0:13 | Hero, tagline, and Moon/Seasons challenge selector. | “AI can generate an answer. ModelDuel is a science experience for Moon phases and seasons that asks learners to expose a causal model, predict with it, and revise only after evidence appears.” |
+| 0:13–0:30 | Moon capture card; show text, sketch input, and click **Run verified sample**. Keep the authored-source disclosure visible. | “A learner explains why the Moon changes shape and may add a sketch. I start the instant verified sample: it needs no account, makes no paid call, and is always labeled as authored, so judges can run the complete journey reliably.” |
+| 0:30–0:51 | Show the interpreted learner model, configured live label, and a brief overlay of the validated tool ledger; do not execute a paid call. | “The optional live path sends text or vision input to GPT-5.6 Terra. Structured output extracts a bounded learner model, while validated Programmatic Tool Calling requires the exact allow-listed ledger before a result can enter the experience. A failed live request stays a visible error; it never becomes this verified sample.” |
+| 0:51–1:04 | Click **Make a prediction**, choose an option, and lock it while evidence remains sealed. | “Before any evidence appears, I choose and lock a prediction. That commitment turns the learner’s explanation into a falsifiable claim and prevents the result from being rewritten after observation.” |
+| 1:04–1:28 | Reveal the two Moon worlds, rotate the view, and hold on the verified observation. | “Now both worlds run the same deterministic Moon case. One predicts that Earth’s shadow causes regular phases. The scientific world keeps half the Moon illuminated while its orbit changes Earth’s viewing angle. The application, not GPT, owns the WorldSpec, simulation constants, physical evidence, and Three.js rendering, so model prose can never redefine scientific truth.” |
+| 1:28–1:48 | Open revision, enter the full-scoring explanation, and show the visibly authored feedback/source. | “After seeing the contradiction, the learner writes a revised causal explanation. In the configured live path, GPT-5.6 Luna gives bounded feedback on that prose. In this recording, the verified feedback remains visibly authored. Either way, the learner’s locked prediction and the deterministic observation remain unchanged.” |
+| 1:48–2:08 | Answer transfer, lock it, and reveal the Model Revision Trace. | “A new transfer question checks the revised explanation in a different case. The server protects the answer key and grades the choice; GPT does neither. The trace connects the initial belief, prediction, observation, revision attempt, and transfer result—reviewable evidence of revision, not proof of durable learning.” |
+| 2:08–2:30 | Architecture diagram with exact four-tool sequence, then the live-use confirmation and privacy copy. | “The live architecture uses schema-constrained Responses, store false, strict validation, and the validated tool sequence: validate the WorldSpec, simulate, compare predictions, then select a discriminating case. Live input is limited to people eighteen or older, or learners with teacher or guardian authorization, requires a no-personal-information confirmation, and fails closed across privacy, rate, token, and scenario boundaries.” |
+| 2:30–2:42 | Primary Codex task, representative scoped commits, and final test summary; show no secrets or environment files. | “Codex built the state machine, routes, deterministic simulations, Three.js views, encrypted transfer boundary, and test suite, then iterated through races, accessibility, responsive design, security review, and scoped commits.” |
+| 2:42–2:45 | Return to hero/tagline. | “ModelDuel. Two models predict. Evidence decides.” |
 
 ### Recording gates
 
 - State live Terra or Luna success only from the recorded production evidence, never from an authored sample or local fixture.
 - Never show `.env*` files, API keys, evaluation secrets, request headers, encrypted tokens, or other credentials.
-- Keep the final cut at or below 2:55 and retain audible narration.
+- Keep the final cut at or below 2:45 and retain audible narration.
 - Show the verified source label whenever the authored path is used.
 
 ## Screenshot list
@@ -225,31 +226,31 @@ Capture only the final merged production build. Do not include audit “before�
 
 ### Code and tests
 
-- [x] Finish on a clean branch and review the final diff.
-- [x] Merge the approved work to `main`.
-- [x] Run and record `pnpm check` after the merge.
-- [x] Run and record `pnpm test:e2e` after the merge.
+- [ ] Finish on a clean branch and review the final diff.
+- [ ] Merge the approved work to `main`.
+- [ ] Run and record `pnpm check` after the merge.
+- [ ] Run and record `pnpm test:e2e` after the merge.
 - [ ] Manually verify Moon and Seasons on the final desktop and mobile build.
 
-Final `main` gate: Vitest unit/API **311/311** across **27 files**, Chromium E2E **23/23**, Next.js 16.2.10 production build **Pass**, OpenNext/Workers type and build checks **Pass**, Wrangler strict dry-run **Pass** at 1,614.05 KiB gzip, and production dependency audit **No known vulnerabilities**.
+Final `main` gate: `{{FINAL_VITEST_RESULT}}`; `{{FINAL_E2E_RESULT}}`; `{{FINAL_NEXT_BUILD_RESULT}}`; `{{FINAL_CLOUDFLARE_BUILD_RESULT}}`; `{{FINAL_WRANGLER_DRY_RUN_RESULT}}`; `{{FINAL_DEPENDENCY_AUDIT_RESULT}}`. Populate only after the approved branch is merged and the complete final gate is rerun.
 
 ### GPT-5.6 proof
 
-- [x] Run a real paid Terra analysis/PTC smoke against the final build.
-- [x] Run a real paid Luna revision smoke against the final build.
-- [x] Build the OpenNext Worker and verify Wrangler dry-run size: 1,614.05 KiB gzip, below the conservative 3 MiB limit.
-- [x] Verify generated Cloudflare binding types have no drift and inventory 12 assets (largest 1,253,594 bytes).
-- [x] Verify visible live-source labels and fail-closed behavior.
-- [x] Capture safe proof of configured model usage without exposing prompts, learner data, or secrets.
-- [x] Confirm learner-data Responses requests still use `store: false`.
+- [x] Preserve the dated 2026-07-17 Terra/Luna production integration smoke as historical integration evidence, not final-build proof.
+- [ ] Run the minimum approved final-build Terra/Luna production smoke only after local gates and the spend gate pass.
+- [ ] Build the final OpenNext Worker and record `{{FINAL_WORKER_GZIP_SIZE}}` against the confirmed account-plan limit.
+- [ ] Verify final generated Cloudflare binding types and record `{{FINAL_ASSET_INVENTORY}}`.
+- [ ] Verify visible live-source labels and fail-closed behavior on the final build.
+- [ ] Capture safe final-build proof of configured model usage without exposing prompts, learner data, or secrets.
+- [ ] Confirm final-build learner-data Responses requests still use `store: false`.
 
 ### Deployment and repository
 
 - [x] Configure a production evaluation secret of at least 32 characters.
 - [x] Configure and locally verify four fail-closed Cloudflare Rate Limiting bindings for live endpoints.
-- [x] Verify all four Rate Limiting bindings after production deployment.
+- [ ] Verify all four Rate Limiting bindings after final production deployment.
 - [ ] Record exact production CPU time and confirm the account-plan-specific limit.
-- [x] Deploy the final runtime commit and verify 100% active traffic plus public HTTP checks.
+- [ ] Deploy the final runtime commit and record `{{FINAL_DEPLOYMENT_VERSION}}`, active traffic, and public HTTP canary results.
 - [ ] Publish the intended repository and verify judge access.
 - [ ] Replace the repository, video, and Codex Feedback placeholders.
 
@@ -263,7 +264,7 @@ Final `main` gate: Vitest unit/API **311/311** across **27 files**, Chromium E2E
 ### Video and media
 
 - [ ] Capture only final-build screenshots.
-- [ ] Record the exact 2:55 shot list with audible English narration.
+- [ ] Record the exact 2:45 shot list with audible English narration.
 - [ ] Remove secrets, environment files, private tokens, and unrelated personal data from every frame.
 - [ ] Audit any added video, music, screenshots, fonts, or other media for rights and attribution.
 - [ ] Upload the final video to YouTube as public, verify playback and embedding while logged out, then replace `{{VIDEO_URL}}`.
