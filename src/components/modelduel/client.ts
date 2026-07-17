@@ -321,6 +321,7 @@ export async function analyzeSubmission(
 ): Promise<AnalysisLoad> {
   const response = await fetchImplementation("/api/analyze", {
     method: "POST",
+    credentials: "same-origin",
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
@@ -358,6 +359,7 @@ export async function submitRevision(
 ): Promise<RevisionSubmissionResult> {
   const response = await fetchImplementation("/api/revision", {
     method: "POST",
+    credentials: "same-origin",
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",

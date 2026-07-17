@@ -13,6 +13,11 @@ import {
   readStrictJson,
   safeErrorResponse,
 } from "../../../server/modelduel/http";
+import {
+  attachSafetyIdentifierCookie,
+  resolveSafetyIdentifier,
+} from "../../../server/modelduel/safety-identifier";
+import type { SafetyIdentifierResolution } from "../../../server/modelduel/safety-identifier";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -27,6 +32,8 @@ export async function handleRevisionRequest(
     cloudflareRateLimitBindings?: CloudflareRateLimitBindings;
   }> = {},
 ): Promise<Response> {
+  let safety: SafetyIdentifierResolution | undefined;
+
   try {
     const signal = AbortSignal.any([
       request.signal,
@@ -37,9 +44,16 @@ export async function handleRevisionRequest(
       RevisionEvaluationRequestSchema,
       { signal },
     );
-    return jsonResponse(
+    const response = jsonResponse(
       await evaluateRevisionRequest(input, dependencies.now ?? Date.now(), {
         signal,
+        resolveSafetyIdentifier: () => {
+          const resolution = resolveSafetyIdentifier(
+            request.headers.get("cookie"),
+          );
+          safety = resolution;
+          return resolution.safetyIdentifier;
+        },
         gateway: dependencies.gateway,
         beforeLiveGateway: () =>
           enforcePaidApiRateLimit("live-revision", request, {
@@ -49,8 +63,14 @@ export async function handleRevisionRequest(
           }),
       }),
     );
+    return safety === undefined
+      ? response
+      : attachSafetyIdentifierCookie(response, safety);
   } catch (error) {
-    return safeErrorResponse(error);
+    const response = safeErrorResponse(error);
+    return safety === undefined
+      ? response
+      : attachSafetyIdentifierCookie(response, safety);
   }
 }
 

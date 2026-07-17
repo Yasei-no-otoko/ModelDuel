@@ -44,10 +44,13 @@ function fakeGateway(
   };
 }
 
+const SAFETY_IDENTIFIER = `mds1_${"A".repeat(43)}`;
+
 const INPUT = {
   scenarioId: "moon-phases",
   explanation: "Earth's shadow causes the phases.",
   requestId: "extraction-test-request",
+  safetyIdentifier: SAFETY_IDENTIFIER,
   signal: AbortSignal.timeout(10_000),
 };
 
@@ -102,6 +105,10 @@ describe("extractLearnerModel", () => {
     expect(requests[0]?.imageDataUrl).toBeDefined();
     expect(requests[1]?.repair).toBe(true);
     expect(requests[1]?.imageDataUrl).toBeUndefined();
+    expect(requests.map((request) => request.safetyIdentifier)).toEqual([
+      SAFETY_IDENTIFIER,
+      SAFETY_IDENTIFIER,
+    ]);
   });
 
   it("propagates arbitrary parser defects without a repair call", async () => {

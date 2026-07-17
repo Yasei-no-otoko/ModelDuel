@@ -35,6 +35,7 @@ export async function analyzeSubmission(
   input: AnalyzeRequest,
   options: Readonly<{
     signal: AbortSignal;
+    safetyIdentifier: string;
     gateway?: ModelDuelGateway;
     now?: number;
     beforeModelCall?: () => void | Promise<void>;
@@ -53,6 +54,7 @@ export async function analyzeSubmission(
     explanation: input.explanation,
     imageDataUrl: image?.dataUrl,
     requestId: input.requestId,
+    safetyIdentifier: options.safetyIdentifier,
     signal: options.signal,
   });
   const plan = resolveRegistryPlan({
@@ -64,6 +66,7 @@ export async function analyzeSubmission(
     learnerSummary: learnerModel.summary,
     misconceptionType: learnerModel.misconceptionType,
     plan,
+    safetyIdentifier: options.safetyIdentifier,
     signal: options.signal,
   });
 

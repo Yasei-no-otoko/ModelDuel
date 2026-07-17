@@ -45,6 +45,7 @@ export type LearnerParseRequest = Readonly<{
   explanation: string;
   imageDataUrl?: string;
   previousOutputText?: string;
+  safetyIdentifier: string;
   repair: boolean;
   idempotencyKey: string;
   signal: AbortSignal;
@@ -58,6 +59,7 @@ export type RevisionParseRequest = Readonly<{
   rubric: string;
   revisionText: string;
   previousOutputText?: string;
+  safetyIdentifier: string;
   repair: boolean;
   idempotencyKey: string;
   signal: AbortSignal;
@@ -290,6 +292,7 @@ class ProductionModelDuelGateway implements ModelDuelGateway {
       const body = {
         model: this.analysisModel,
         store: false,
+        safety_identifier: request.safetyIdentifier,
         input: buildLearnerResponseInput(request),
         ...LEARNER_REQUEST_POLICY,
         text: {
@@ -380,6 +383,7 @@ class ProductionModelDuelGateway implements ModelDuelGateway {
       const body = {
         model: this.revisionModel,
         store: false,
+        safety_identifier: request.safetyIdentifier,
         input: buildRevisionResponseInput(request),
         ...REVISION_REQUEST_POLICY,
         text: {

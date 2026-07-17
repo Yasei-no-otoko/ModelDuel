@@ -11,6 +11,10 @@ import {
   readStrictJson,
   safeErrorResponse,
 } from "../../../server/modelduel/http";
+import {
+  attachSafetyIdentifierCookie,
+  resolveSafetyIdentifier,
+} from "../../../server/modelduel/safety-identifier";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -25,6 +29,8 @@ export async function handleAnalyzeRequest(
     cloudflareRateLimitBindings?: CloudflareRateLimitBindings;
   }> = {},
 ): Promise<Response> {
+  const safety = resolveSafetyIdentifier(request.headers.get("cookie"));
+
   try {
     const signal = AbortSignal.any([
       request.signal,
@@ -34,9 +40,10 @@ export async function handleAnalyzeRequest(
       maxBytes: MAX_ANALYZE_JSON_BYTES,
       signal,
     });
-    return jsonResponse(
+    const response = jsonResponse(
       await analyzeSubmission(input, {
         signal,
+        safetyIdentifier: safety.safetyIdentifier,
         gateway: dependencies.gateway,
         now: dependencies.now,
         beforeModelCall: () =>
@@ -47,8 +54,9 @@ export async function handleAnalyzeRequest(
           }),
       }),
     );
+    return attachSafetyIdentifierCookie(response, safety);
   } catch (error) {
-    return safeErrorResponse(error);
+    return attachSafetyIdentifierCookie(safeErrorResponse(error), safety);
   }
 }
 

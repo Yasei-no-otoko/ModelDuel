@@ -43,6 +43,8 @@ function finalAssistantMessage() {
   } satisfies Responses.ResponseOutputItem;
 }
 
+const SAFETY_IDENTIFIER = `mds1_${"A".repeat(43)}`;
+
 function successfulGateway(
   sample: typeof MOON_HERO_SAMPLE | typeof SEASONS_SAMPLE = MOON_HERO_SAMPLE,
 ): ModelDuelGateway {
@@ -143,6 +145,7 @@ describe("live analysis service", () => {
           sketch: null,
         },
         {
+          safetyIdentifier: SAFETY_IDENTIFIER,
           gateway,
           signal: AbortSignal.timeout(10_000),
           now: 1_800_000_000_000,
@@ -176,6 +179,7 @@ describe("live analysis service", () => {
           },
         },
         {
+          safetyIdentifier: SAFETY_IDENTIFIER,
           gateway: successfulGateway(),
           signal: AbortSignal.timeout(10_000),
           now: 1_800_000_000_000,
@@ -206,6 +210,7 @@ describe("live analysis service", () => {
           sketch: null,
         },
         {
+          safetyIdentifier: SAFETY_IDENTIFIER,
           signal: AbortSignal.timeout(10_000),
           now: 1_800_000_000_000,
           beforeModelCall,
@@ -245,6 +250,7 @@ describe("live analysis service", () => {
           sketch: null,
         },
         {
+          safetyIdentifier: SAFETY_IDENTIFIER,
           gateway,
           signal: AbortSignal.timeout(10_000),
           now: 1_800_000_000_000,
@@ -274,6 +280,7 @@ describe("live analysis service", () => {
         sketch: null,
       },
       {
+        safetyIdentifier: SAFETY_IDENTIFIER,
         gateway: successfulGateway(SEASONS_SAMPLE),
         signal: AbortSignal.timeout(10_000),
         now: 1_800_000_000_000,
@@ -353,8 +360,9 @@ describe("live analysis service", () => {
         explanation: "Earth's shadow causes the phases.",
         sketch: null,
       },
-      {
-        gateway: successfulGateway(),
+        {
+          safetyIdentifier: SAFETY_IDENTIFIER,
+          gateway: successfulGateway(),
         signal: AbortSignal.timeout(10_000),
         now: 1_800_000_000_000,
         beforeModelCall,

@@ -19,6 +19,7 @@ import { createProductionModelDuelGateway } from "./openai/gateway";
 import type { ModelDuelGateway } from "./openai/gateway";
 import { evaluateLiveRevision } from "./openai/revision";
 import { verifyLiveRevisionToken } from "./evaluation";
+import { isValidSafetyIdentifier } from "./safety-identifier";
 
 const MAX_FUTURE_SKEW_MS = 5 * 60 * 1_000;
 const REVISION_NOTICE =
@@ -105,6 +106,7 @@ export async function evaluateRevisionRequest(
   now = Date.now(),
   options: Readonly<{
     signal?: AbortSignal;
+    resolveSafetyIdentifier?: () => string;
     gateway?: ModelDuelGateway;
     beforeLiveGateway?: () => void | Promise<void>;
   }> = {},
@@ -144,6 +146,10 @@ export async function evaluateRevisionRequest(
     requestedAt: parsed.data.requestedAt,
     now,
   });
+  const safetyIdentifier = options.resolveSafetyIdentifier?.();
+  if (!isValidSafetyIdentifier(safetyIdentifier)) {
+    throw new RevisionServiceError();
+  }
   const gateway = options.gateway ?? createProductionModelDuelGateway();
   await options.beforeLiveGateway?.();
   const feedback = await evaluateLiveRevision(
@@ -153,6 +159,7 @@ export async function evaluateRevisionRequest(
       idempotencyKey: parsed.data.idempotencyKey,
       sessionId: parsed.data.sessionId,
       revisionText: parsed.data.revisionText,
+      safetyIdentifier,
       ...revisionContext,
     },
     options.signal ?? AbortSignal.timeout(50_000),
