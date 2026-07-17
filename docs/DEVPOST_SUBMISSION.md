@@ -67,7 +67,7 @@ The useful boundary is not “AI versus deterministic code.” It is deciding wh
 
 ### What's next
 
-Before submission, we will complete the final merge and post-merge gates, deploy and verify the final build, confirm exact Workers CPU telemetry/account-plan limits, publish the repository, capture only final-build screenshots, record the 2:45 demo, and replace the remaining placeholders. The dated 2026-07-17 Terra/Luna production integration smoke remains useful integration evidence but is not final-build proof. After the hackathon, the same constrained-world pattern could expand to additional science misconceptions and a teacher-facing view of Model Revision Traces. Any impact or learning-gain claim would require a separate classroom evaluation.
+Main merge `e04443f`, the post-merge gates, final deployment, public canary, exact one-analysis/one-revision live canary, and production screenshot set are complete. Before submission, we will confirm exact Workers CPU telemetry/account-plan limits, publish the repository, record the 2:45 demo, and replace the remaining repository, video, and feedback placeholders. The dated 2026-07-17 Terra/Luna production integration smoke remains useful historical integration evidence; the separate final canary is recorded below without guessing usage or cost. After the hackathon, the same constrained-world pattern could expand to additional science misconceptions and a teacher-facing view of Model Revision Traces. Any impact or learning-gain claim would require a separate classroom evaluation.
 
 ### Production verification
 
@@ -215,44 +215,52 @@ Use the verified sample for the recorded working journey. Keep its authored-sour
 
 ## Screenshot list
 
-Capture only the final merged production build. Do not include audit “before” images.
+Captured from deployed Cloudflare version 3, build `La258MjHHcPyAMa5k13Uz`. These are production images, not audit “before” images.
 
-1. Hero/capture state with the ModelDuel promise and source choices.
-2. Moon learner world and scientific world with evidence visible.
-3. Completed Model Revision Trace.
-4. Seasons comparison showing the shared two-world system.
+| Production media path | Dimensions | Size | Role |
+| --- | ---: | ---: | --- |
+| `docs/media/modelduel-cover.png` | 1600×900 | 504,815 B | Devpost cover and landing hero |
+| `docs/media/moon-evidence.png` | 1280×900 | 205,850 B | Moon two-world evidence |
+| `docs/media/model-revision-trace.png` | 1280×900 | 306,443 B | Completed revision trace and transfer result |
+| `docs/media/seasons-evidence.png` | 1280×900 | 193,841 B | Seasons two-world evidence |
+| `docs/media/mobile-hero.png` | 375×812 | 194,744 B | Responsive landing and verified CTA |
+
+Production visual QA completed Moon at 1280px and 375px through the trace, and Seasons at 1280px through evidence. Both evidence views rendered two canvases and no 2D recovery view. Horizontal overflow, page errors, failed requests, and unexpected console messages were all zero. The journeys used no login, made zero analyze calls, used only verified authored revision, kept authored-source labels visible, exposed one primary verified CTA, and kept live analysis disabled before confirmation.
 
 ## Final submission checklist
 
 ### Code and tests
 
 - [x] Complete and review the 2026-07-17 pre-merge local quality gate at HEAD `682c206`.
-- [ ] Merge the approved work to `main`.
-- [ ] Run and record `pnpm check` after the merge.
-- [ ] Run and record `pnpm test:e2e` after the merge.
-- [ ] Manually verify Moon and Seasons on the final desktop and mobile build.
+- [x] Merge the approved work to `main` with merge commit `e04443f`.
+- [x] Run and record the post-merge `main` gate: Vitest **332/332** across **31 files**, Next.js/OpenNext **Pass**, `cf:typecheck` **Pass**, Wrangler dry run **8,277.49 KiB raw / 1,619.88 KiB gzip**, dependency audit **clean**.
+- [x] Run and record Chromium E2E **34/34** after the merge.
+- [x] Verify production visual journeys: Moon desktop and mobile through trace; Seasons desktop through evidence; zero overflow, page errors, failed requests, or unexpected console messages; no live submit.
 
 Pre-merge local gate at HEAD `682c206`: Vitest **332/332** across **31 files**; Chromium E2E **34/34**; Next.js, OpenNext, and Wrangler **Pass**; Worker **8,277.49 KiB raw / 1,619.89 KiB gzip**; dependency audit **no known vulnerabilities**. Wrangler reported **18 deployable asset entries** backed by **14 physical assets**; the largest dynamic 3D chunk was **896,059 bytes**. The rendered design audit scored **B+ / 3.37**, AI Slop **B-**, goodwill **93**, with Critical/High/Medium findings **0/0/0**. The performance audit recorded **229,931 encoded bytes** of initial JS before the outer recovery addition and **231,708 encoded bytes** for the final recovery build at HEAD `682c206`; under 4× CPU throttling, the primary CTA became ready in **363 ms**.
 
-Final post-merge `main` gate: **Pending**. Rerun the complete check, E2E, Cloudflare build/type/dry-run, audit, and public canary after merge; do not present the pre-merge result as post-merge or deployed proof.
+Final post-merge `main` gate: **Complete for merge `e04443f`**. The deployed runtime corresponds to that merge. This documentation-only evidence branch follows afterward and does not change the runtime.
 
 ### GPT-5.6 proof
 
 - [x] Preserve the dated 2026-07-17 Terra/Luna production integration smoke as historical integration evidence, not final-build proof.
-- [ ] Run the minimum approved final-build Terra/Luna production smoke only after local gates and the spend gate pass.
+- [x] Run the minimum approved final-build production canary after local gates: exactly one Terra analysis and one Luna revision, with zero retries.
 - [x] Build the pre-merge OpenNext Worker at HEAD `682c206`: **8,277.49 KiB raw / 1,619.89 KiB gzip**; account-plan-specific production confirmation remains pending.
 - [x] Verify pre-merge generated Cloudflare binding types and inventory: **18 deployable entries**, **14 physical assets**, largest dynamic 3D chunk **896,059 bytes**.
 - [x] Verify visible live-source labels and fail-closed behavior on the pre-merge quality branch.
-- [ ] Capture safe final-build proof of configured model usage without exposing prompts, learner data, or secrets.
-- [x] Confirm pre-merge learner-data Responses requests still use `store: false`.
+- [x] Capture safe final-build proof of configured Terra/Luna model usage without exposing prompts, learner data, cookie values, or secrets.
+- [x] Confirm final-build learner-data Responses requests still use `store: false`.
+
+Final paid live canary for main merge `e04443f`: one analysis returned HTTP 200 in **17.642 seconds**, source `live`, model `gpt-5.6-terra`, with the exact tool order `validate_world_spec` → `simulate_world` → `compare_predictions` → `select_discriminating_case`. One revision returned HTTP 200 in **1.404 seconds**, source `gpt-5.6`, model `gpt-5.6-luna`; the same session and signed evaluation were accepted, conceptual change was `revised` with score `1`, and `liveUseAttestation: true` was present on both requests. The server-minted cookie was reused with `Path=/`, `HttpOnly`, `Secure`, and `SameSite=Strict`; its value was not recorded. The strict responses did not expose token usage or cost. No final-build usage or cost is guessed, and this canary is not described as costing under any amount.
 
 ### Deployment and repository
 
 - [x] Configure a production evaluation secret of at least 32 characters.
 - [x] Configure and locally verify four fail-closed Cloudflare Rate Limiting bindings for live endpoints.
-- [ ] Verify all four Rate Limiting bindings after final production deployment.
-- [ ] Record exact production CPU time and confirm the account-plan-specific limit.
-- [ ] Deploy the final runtime commit and record `{{FINAL_DEPLOYMENT_VERSION}}`, active traffic, and public HTTP canary results.
+- [x] Verify all four production Rate Limiting bindings through deployed Cloudflare version 3 metadata.
+- [ ] Record exact production CPU p95 and confirm account Workers Paid telemetry. The connector subscription list showed no Workers Paid entry, and exact CPU metrics remain unavailable.
+- [x] Deploy main merge `e04443f` to [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev): Cloudflare version `b4665d5a-b1a2-4af1-9918-af475059d170` (**version 3**), created `2026-07-17T03:04:01.364891Z`, **100% active**, build ID `La258MjHHcPyAMa5k13Uz`.
+- [x] Verify the production root, security headers, Moon and Seasons verified journeys, 404 handling, invalid-request HTTP 400 handling, and the exact one-analysis/one-revision live canary.
 - [ ] Publish the intended repository and verify judge access.
 - [ ] Replace the repository, video, and Codex Feedback placeholders.
 
@@ -265,10 +273,13 @@ Final post-merge `main` gate: **Pending**. Rerun the complete check, E2E, Cloudf
 
 ### Video and media
 
-- [ ] Capture only final-build screenshots.
+- [x] Capture and inventory the five production screenshots from deployed version 3, build `La258MjHHcPyAMa5k13Uz`.
+- [x] Select `docs/media/modelduel-cover.png` as the Devpost cover/thumbnail and README hero.
+- [x] Confirm the deterministic authored-source label is visible and no live submit occurs in the production screenshot journeys.
+- [x] Complete the rights audit for the five first-party production screenshots and cover.
 - [ ] Record the exact 2:45 shot list with audible English narration.
 - [ ] Remove secrets, environment files, private tokens, and unrelated personal data from every frame.
-- [ ] Audit any added video, music, screenshots, fonts, or other media for rights and attribution.
+- [ ] Audit the final video, music, fonts, or any additional media for rights and attribution.
 - [ ] Upload the final video to YouTube as public, verify playback and embedding while logged out, then replace `{{VIDEO_URL}}`.
 
 ### Devpost form
