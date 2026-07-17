@@ -6,6 +6,8 @@ ModelDuel is an Education-category learning experience that turns a learner's ex
 
 The two complete challenges focus on common astronomy misconceptions: that Earth's shadow causes the phases of the Moon, and that Earth-Sun distance causes the seasons. Both use the same protected learning sequence and deterministic solar-system foundation.
 
+![ModelDuel production cover showing the Moon-phases capture experience](docs/media/modelduel-cover.png)
+
 ## Submission links
 
 - Live demo: [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev)
@@ -101,7 +103,7 @@ All learner-data Responses requests use `store: false`. Live analysis and revisi
 | `pnpm cf:upload` | Build and upload a preview Worker version without deploying it. |
 | `pnpm cf:deploy` | Build and deploy the production Worker. |
 
-Cloudflare deployment requires both server secrets already configured for the Worker. Never place them in `vars` or command-line history. Before deployment, run the normal checks, `pnpm cf:typegen`, `pnpm cf:typecheck`, and `wrangler deploy --dry-run`; both type commands rebuild the OpenNext entrypoint before asking Wrangler to generate or compare types. Verify the compressed Worker is below the account-plan-specific limit. The production endpoint is [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev); dated integration evidence is recorded below without secret or request identifiers, and the final quality commit still requires a post-merge deployment gate.
+Cloudflare deployment requires both server secrets already configured for the Worker. Never place them in `vars` or command-line history. Before deployment, run the normal checks, `pnpm cf:typegen`, `pnpm cf:typecheck`, and `wrangler deploy --dry-run`; both type commands rebuild the OpenNext entrypoint before asking Wrangler to generate or compare types. Verify the compressed Worker is below the account-plan-specific limit. The production endpoint is [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev); dated integration evidence and the final main deployment/canary are recorded below without secrets, cookie values, or learner data.
 
 ## Architecture
 
@@ -174,11 +176,21 @@ This repository was initialized from an empty root during the build week. The en
 
 ## Media and licensing
 
-The runtime ships no third-party image, audio, video, or 3D media. Astronomy visuals are rendered from application code, package dependencies are declared in the repository, and the source is MIT-licensed. Final screenshots, demo video, music, or other submission media are separate deliverables and are not claimed as inspected here; audit any such additions before publishing.
+The runtime ships no third-party image, audio, video, or 3D media. Astronomy visuals are rendered from application code, package dependencies are declared in the repository, and the source is MIT-licensed. The five production captures below are first-party screenshots of deployed Cloudflare version 3, build `La258MjHHcPyAMa5k13Uz`.
+
+| Production media | Dimensions | Size | Submission role |
+| --- | ---: | ---: | --- |
+| [`docs/media/modelduel-cover.png`](docs/media/modelduel-cover.png) | 1600×900 | 504,815 B | Devpost cover and landing hero |
+| [`docs/media/moon-evidence.png`](docs/media/moon-evidence.png) | 1280×900 | 205,850 B | Moon two-world evidence |
+| [`docs/media/model-revision-trace.png`](docs/media/model-revision-trace.png) | 1280×900 | 306,443 B | Completed revision trace and transfer result |
+| [`docs/media/seasons-evidence.png`](docs/media/seasons-evidence.png) | 1280×900 | 193,841 B | Seasons two-world evidence |
+| [`docs/media/mobile-hero.png`](docs/media/mobile-hero.png) | 375×812 | 194,744 B | Responsive landing and verified CTA |
+
+Production visual QA completed the Moon journey through trace at 1280px and 375px, and the Seasons journey through evidence at 1280px. Each evidence view rendered two canvases with no 2D recovery view. Horizontal overflow, page errors, failed requests, and unexpected console messages were all zero. The capture used no login and made zero analyze calls: the verified CTA remained primary, revision remained authored, authored-source labels stayed visible, and live analysis stayed disabled before confirmation. The screenshot and cover rights audit is complete; final video, music, or other future media must still be audited before publishing.
 
 ## Historical integration verification and final gates
 
-The results below are a dated 2026-07-17 integration baseline. They are not current quality-branch counts and do not prove that the final build is merged or deployed. Replace the final-gate placeholders after the approved branch is merged, rebuilt, deployed, and verified.
+The dated rows below preserve the 2026-07-17 integration baseline without presenting it as final-build proof. Separate rows record the now-proven pre-merge quality branch, post-merge main gate, and production deployment/canary. The runtime deployment corresponds to main merge `e04443f`; the documentation-only evidence branch follows afterward.
 
 | Verification | Result |
 | --- | --- |
@@ -190,10 +202,14 @@ The results below are a dated 2026-07-17 integration baseline. They are not curr
 | Worker and asset evidence — HEAD `682c206` | Worker **8,277.49 KiB raw / 1,619.89 KiB gzip**; Wrangler **18 deployable asset entries**; **14 physical assets**; largest dynamic 3D chunk **896,059 bytes**. |
 | Rendered design evidence — HEAD `682c206` | **B+ / 3.37**, AI Slop **B-**, goodwill **93**, Critical/High/Medium findings **0/0/0**. |
 | Entry-path performance evidence | Pre-recovery encoded initial JS **229,931 bytes**; final recovery build at HEAD `682c206` **231,708 bytes**; under 4× CPU throttling, the primary CTA became ready in **363 ms** during the performance audit. |
-| Final post-merge `main` gate | **Pending** — rerun the complete gate after merge; do not reuse the pre-merge result as post-merge proof. |
-| Final deployment and public canary | `{{FINAL_DEPLOYMENT_CANARY_RESULTS}}` |
+| Final post-merge `main` gate — merge `e04443f` | Vitest **332/332** across **31 files**; Chromium E2E **34/34**; Next.js, OpenNext, `cf:typecheck`, and Wrangler **Pass**; Wrangler dry run **8,277.49 KiB raw / 1,619.88 KiB gzip**; dependency audit **clean**. |
+| Final deployment and public canary | Cloudflare version `b4665d5a-b1a2-4af1-9918-af475059d170` (**version 3**) created `2026-07-17T03:04:01.364891Z`, **100% active**, build ID `La258MjHHcPyAMa5k13Uz`. Root, security headers, Moon and Seasons verified journeys, 404 handling, and invalid-request HTTP 400 handling passed at [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev). |
 
-The dated production integration sequence made one Terra HTTP request and one Luna HTTP request with zero HTTP retries. Combined telemetry was 8,074 total tokens and an estimated **$0.014441**; the configured dollar ceilings remain output-only bounds, not an all-in preflight guarantee. This is integration evidence, not proof of the final build. Pending gates include final merge, post-merge test/build/audit results, final deployment and canary verification, exact Workers CPU telemetry/account-plan confirmation, public repository access, the `/feedback` Session ID, final media/video/screenshots, and placeholder replacement. Track the canonical handoff in [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md); the external submission is not yet complete.
+The dated production integration sequence made one Terra HTTP request and one Luna HTTP request with zero HTTP retries. Combined telemetry was 8,074 total tokens and an estimated **$0.014441**; the configured dollar ceilings remain output-only bounds, not an all-in preflight guarantee. That remains historical integration evidence, not final-build cost evidence.
+
+After main merge `e04443f`, the final runtime canary made exactly one live analysis request and one live revision request with zero retries. Analysis returned HTTP 200 in **17.642 seconds**, source `live`, model `gpt-5.6-terra`, with the exact tool order `validate_world_spec` → `simulate_world` → `compare_predictions` → `select_discriminating_case`. Revision returned HTTP 200 in **1.404 seconds**, source `gpt-5.6`, model `gpt-5.6-luna`; the same session and signed evaluation were accepted, conceptual change was `revised` with score `1`, and `liveUseAttestation: true` was carried by both requests. The server-minted cookie was reused with `Path=/`, `HttpOnly`, `Secure`, and `SameSite=Strict`; its value was not recorded. The strict responses did not expose token usage or cost, so neither is guessed or presented as a measured final-build cost.
+
+The deployed runtime corresponds to main merge `e04443f`; this documentation-only evidence branch follows that runtime deployment. Remaining external gates are exact Workers CPU telemetry/account-plan confirmation, public repository access, the `/feedback` Session ID, the final video and any additional submission media, and placeholder replacement. Track the canonical handoff in [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md); the external submission is not yet complete.
 
 ## License
 
