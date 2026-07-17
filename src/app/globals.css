@@ -1857,6 +1857,52 @@ textarea:disabled {
     width: fit-content;
   }
 
+  .experience-progress {
+    overflow-x: visible;
+  }
+
+  .experience-progress ol {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    min-width: 0;
+  }
+
+  .experience-progress li {
+    min-width: 0;
+    gap: 0;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .experience-progress li:not(:last-child)::after {
+    top: 50%;
+    right: -50%;
+    left: 50%;
+  }
+
+  .experience-progress li > span:last-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .progress-current {
+    display: block;
+    margin: 0.65rem 0 0;
+    color: var(--faint);
+    font-size: var(--text-caption);
+    font-weight: 760;
+    line-height: 1.4;
+    letter-spacing: 0.04em;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
   .model-review-grid,
   .evidence-worlds,
   .revision-layout {
@@ -1912,52 +1958,6 @@ textarea:disabled {
   .promise-list {
     margin-top: 1rem;
     gap: 0.45rem;
-  }
-
-  .experience-progress {
-    overflow-x: visible;
-  }
-
-  .experience-progress ol {
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-    min-width: 0;
-  }
-
-  .experience-progress li {
-    min-width: 0;
-    gap: 0;
-    justify-content: center;
-    text-align: center;
-  }
-
-  .experience-progress li:not(:last-child)::after {
-    top: 50%;
-    right: -50%;
-    left: 50%;
-  }
-
-  .experience-progress li > span:last-child {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-  }
-
-  .progress-current {
-    display: block;
-    margin: 0.65rem 0 0;
-    color: var(--faint);
-    font-size: var(--text-caption);
-    font-weight: 760;
-    line-height: 1.4;
-    letter-spacing: 0.04em;
-    text-align: center;
-    text-transform: uppercase;
   }
 
   .scenario-selector {

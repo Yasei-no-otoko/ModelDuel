@@ -10,6 +10,51 @@ const STEP_LABELS = [
   "Trace",
 ] as const;
 
+test("keeps progress labels semantic and collision-free at 768px", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 768, height: 1024 });
+  await page.goto("/");
+
+  const progress = page.getByRole("navigation", {
+    name: "Moon challenge progress",
+  });
+  await expect(progress.locator(".progress-current")).toBeVisible();
+  await expect(progress.locator(".progress-current")).toHaveText(
+    "Step 1 of 7 · Capture",
+  );
+
+  const semanticLabels = progress.locator("ol li > span:last-child");
+  await expect(semanticLabels).toHaveCount(STEP_LABELS.length);
+  for (const label of STEP_LABELS) {
+    await expect(
+      progress.locator("ol").getByText(label, { exact: true }),
+    ).toHaveCount(1);
+  }
+
+  const labelLayouts = await semanticLabels.evaluateAll((elements) =>
+    elements.map((element) => {
+      const bounds = element.getBoundingClientRect();
+      return {
+        height: bounds.height,
+        position: getComputedStyle(element).position,
+        width: bounds.width,
+      };
+    }),
+  );
+  for (const label of labelLayouts) {
+    expect(label.position).toBe("absolute");
+    expect(label.width).toBeLessThanOrEqual(1);
+    expect(label.height).toBeLessThanOrEqual(1);
+  }
+
+  const widths = await page.evaluate(() => ({
+    client: document.documentElement.clientWidth,
+    scroll: document.documentElement.scrollWidth,
+  }));
+  expect(widths.scroll).toBeLessThanOrEqual(widths.client);
+});
+
 test("keeps the first task and all seven progress steps usable at 375px", async ({
   page,
 }) => {
