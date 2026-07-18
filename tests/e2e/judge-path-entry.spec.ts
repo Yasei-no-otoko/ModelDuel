@@ -37,7 +37,7 @@ test("makes the instant verified Moon duel the primary default path", async ({
 
   await expect(
     page.getByText(
-      "Live GPT is only for people 18 or older, or learners using it with teacher or guardian authorization. Do not enter a student’s name or any personal or identifying information. The verified sample is open to everyone, sends no learner input to GPT, and requires no confirmation.",
+      "Live GPT is only for people 18 or older, or learners using it with teacher or guardian authorization. Do not enter a student’s name or any personal or identifying information. For replay safety, ModelDuel schedules normalized live revision feedback for deletion after the authorization window and a one-minute grace. It attempts to re-arm cleanup after storage failures; its replay ledger does not store the raw revised explanation. The verified sample is open to everyone, sends no learner input to GPT, and requires no confirmation.",
       { exact: true },
     ),
   ).toBeVisible();

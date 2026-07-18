@@ -302,6 +302,7 @@ describe("live analysis adapter", () => {
     "PAYLOAD_TOO_LARGE",
     "UNSUPPORTED_MEDIA_TYPE",
     "MODEL_REFUSAL",
+    "REVISION_IN_PROGRESS",
     "RATE_LIMITED",
     "MODEL_OUTPUT_INVALID",
     "UPSTREAM_INCOMPLETE",

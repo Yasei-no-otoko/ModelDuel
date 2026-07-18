@@ -80,8 +80,9 @@ Do not commit `.env.local` or expose its values in screenshots, videos, logs, or
 | `MODELDUEL_EVALUATION_SECRET` | Production | Private AES evaluation-token secret. It is required in production and must be at least 32 characters; development alone may generate an ephemeral secret. |
 | `MODELDUEL_TRUSTED_PROXY` | Optional | Only `cloudflare` is accepted and requires origin restriction. Vercel is detected internally with `VERCEL=1`; otherwise forwarded headers are ignored. |
 | `MODELDUEL_CLOUDFLARE_RATE_LIMITS` | Cloudflare production | `wrangler.jsonc` sets `enabled`; leave blank under `next dev`. Production fails closed if any required Rate Limiting binding is absent or unavailable. |
+| `MODELDUEL_REVISION_REPLAY` | Cloudflare production | `wrangler.jsonc` sets `durable-object`; production fails closed if its per-signed-token Durable Object binding is absent or unavailable. Leave blank under `next dev` to use the process-local ephemeral coordinator. |
 
-All learner-data Responses requests use `store: false`. Live analysis and revision budgets are charged only after validation, configuration, and signed-context preflight. Local tests may inject an isolated in-memory store explicitly; runtime code keeps no module-global mutable counter. Cloudflare production is configured with fail-closed Rate Limiting bindings that check the hashed client before the per-POP aggregate ceiling.
+All learner-data Responses requests use `store: false`. Live analysis and revision budgets are charged only after validation, configuration, and signed-context preflight. To prevent a signed live-revision capability from being charged twice, the token's random `jti` selects a unique Cloudflare Durable Object through an HMAC-derived name. That object temporarily retains an HMAC-derived fingerprint, execution state, and normalized feedback/model result. It never stores the raw token, raw `jti`, session/request IDs, or revised explanation. Cleanup is scheduled after the authorization window plus a one-minute grace. If storage deletion fails, the alarm attempts to re-arm itself once per minute; a failed re-arm throws so Cloudflare's finite alarm retries can run. Normalized feedback may still reflect the learner's explanation until cleanup succeeds. Local development uses a process-local coordinator with timed eviction; tests may inject isolated coordinators explicitly. Cloudflare production is configured with fail-closed Rate Limiting bindings that check the hashed client before the per-POP aggregate ceiling.
 
 ## Commands
 
@@ -93,20 +94,21 @@ All learner-data Responses requests use `store: false`. Live analysis and revisi
 | `pnpm lint` | Run lint checks. |
 | `pnpm typecheck` | Run TypeScript checks. |
 | `pnpm test` | Run unit and integration tests. |
+| `pnpm test:workers` | Run the SQLite Durable Object concurrency and lifecycle suite in local `workerd`. |
 | `pnpm test:watch` | Run tests in watch mode. |
 | `pnpm test:e2e` | Run Playwright journeys in Chromium, Firefox, and WebKit. |
 | `pnpm test:e2e:chromium` | Run the Chromium project only for a quick local check. |
 | `pnpm video:validate:contracts` | Validate the approved 10-row timeline, selector inventory, production origin, and exact API ledger without external tools or network access. |
 | `pnpm video:submission -- --validate-only` | Validate the full local FFmpeg, FFprobe, Chromium, subtitle, and codec toolchain without recording or API calls. |
-| `pnpm check` | Run lint, typecheck, Vitest, portable video-contract validation, and the production build. |
+| `pnpm check` | Run lint, typecheck, Node and `workerd` Vitest suites, portable video-contract validation, and the production build. |
 | `pnpm cf:typegen` | Build the OpenNext entrypoint, then regenerate checked-in Workers binding and runtime types. |
 | `pnpm cf:typecheck` | Rebuild the OpenNext entrypoint and verify checked-in Workers types have no drift. |
 | `pnpm cf:build` | Build the OpenNext Worker and static assets. |
 | `pnpm cf:preview` | Build and run locally in the Workers `workerd` runtime. |
-| `pnpm cf:upload` | Build and upload a preview Worker version without deploying it. |
+| `pnpm cf:upload` | Build and upload an undeployed Worker version. This is a remote mutation and requires release authorization; it is not a dry-run preflight. |
 | `pnpm cf:deploy` | Build and deploy the production Worker. |
 
-Cloudflare deployment requires both server secrets already configured for the Worker. Never place them in `vars` or command-line history. Before deployment, run the normal checks, `pnpm cf:typegen`, `pnpm cf:typecheck`, and `wrangler deploy --dry-run`; both type commands rebuild the OpenNext entrypoint before asking Wrangler to generate or compare types. Verify the compressed Worker is below the account-plan-specific limit. The production endpoint is [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev); dated integration evidence and the final main deployment/canary are recorded below without secrets, cookie values, or learner data.
+Cloudflare deployment requires both server secrets already configured for the Worker. Never place them in `vars` or command-line history. Before deployment, run the normal checks, `pnpm cf:typegen`, `pnpm cf:typecheck`, and `wrangler deploy --dry-run`; both type commands rebuild the OpenNext entrypoint before asking Wrangler to generate or compare types. `cf:upload` and `cf:deploy` both mutate remote Cloudflare state and require release authorization. Verify the compressed Worker is below the account-plan-specific limit. The production endpoint is [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev); dated integration evidence and the final main deployment/canary are recorded below without secrets, cookie values, or learner data.
 
 ### Reproducible submission video
 
@@ -209,7 +211,7 @@ Production visual QA completed the Moon journey through trace at 1280px and 375p
 
 ## Historical integration verification and final gates
 
-The dated rows below preserve the 2026-07-17 integration baseline without presenting it as current-build proof. Separate rows record the earlier quality work and the current teacher-handoff post-merge gate and deployment. The runtime now corresponds to main merge `6186358`; the documentation-only evidence branch follows afterward.
+The dated rows below preserve the 2026-07-17 integration baseline without presenting it as current-build proof. Separate rows record the historical teacher-handoff gate and deployment. The Option 2 replay-hardening code is the current candidate and still requires main integration plus production verification.
 
 | Verification | Result |
 | --- | --- |
@@ -222,14 +224,15 @@ The dated rows below preserve the 2026-07-17 integration baseline without presen
 | Rendered design evidence — HEAD `682c206` | **B+ / 3.37**, AI Slop **B-**, goodwill **93**, Critical/High/Medium findings **0/0/0**. |
 | Entry-path performance evidence | Pre-recovery encoded initial JS **229,931 bytes**; final recovery build at HEAD `682c206` **231,708 bytes**; under 4× CPU throttling, the primary CTA became ready in **363 ms** during the performance audit. |
 | Earlier post-merge `main` gate — merge `e04443f` | Vitest **332/332** across **31 files**; Chromium E2E **34/34**; Next.js, OpenNext, `cf:typecheck`, and Wrangler **Pass**; Wrangler dry run **8,277.49 KiB raw / 1,619.88 KiB gzip**; dependency audit **clean**. |
-| Current teacher-handoff `main` gate — merge `6186358` | Vitest **335/335** across **32 files**; Chromium plus WebKit **69 passed / 1 intentional non-Chromium axe skip**; Chromium axe **Pass**; Next.js, OpenNext, `cf:typecheck`, and Wrangler **Pass**; Wrangler dry run **8,286.05 KiB raw / 1,621.89 KiB gzip**; production dependency audit **clean**. |
-| Current deployment and public canary | Cloudflare version `e400d0d7-3fb1-47be-8872-ef9caeefb5d9`, build ID `nkFYXp8co99asrn8bVd1U`. Root and security headers passed; the exact free three-request verified ledger returned HTTP 200 throughout; the teacher summary/handoff and pre-confirmation disabled state were visible; internal metadata, failed requests, and console errors were absent at [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev). |
+| Historical teacher-handoff `main` gate — merge `6186358` | Vitest **335/335** across **32 files**; Chromium plus WebKit **69 passed / 1 intentional non-Chromium axe skip**; Chromium axe **Pass**; Next.js, OpenNext, `cf:typecheck`, and Wrangler **Pass**; Wrangler dry run **8,286.05 KiB raw / 1,621.89 KiB gzip**; production dependency audit **clean**. |
+| Option 2 replay-hardening candidate — 2026-07-18 | Per-`jti` SQLite Durable Object replay coordination; Codex Security 25-file delta scan **0 reportable findings**, followed by independent alarm-failure review and rollback hardening; Node **344/344**, workerd **7/7**, Chromium **36/36**; Next.js/OpenNext/Workers types/Wrangler **Pass**; Wrangler dry run **8,849.96 KiB raw / 1,704.45 KiB gzip**; production dependency audit **clean**. |
+| Historical deployment and public canary — merge `6186358` | Cloudflare version `e400d0d7-3fb1-47be-8872-ef9caeefb5d9`, build ID `nkFYXp8co99asrn8bVd1U`. Root and security headers passed; the exact free three-request verified ledger returned HTTP 200 throughout; the teacher summary/handoff and pre-confirmation disabled state were visible; internal metadata, failed requests, and console errors were absent at [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev). |
 
 The dated production integration sequence made one Terra HTTP request and one Luna HTTP request with zero HTTP retries. Combined telemetry was 8,074 total tokens and an estimated **$0.014441**; the configured dollar ceilings remain output-only bounds, not an all-in preflight guarantee. That remains historical integration evidence, not final-build cost evidence.
 
 After earlier main merge `e04443f`, the paid runtime canary made exactly one live analysis request and one live revision request with zero retries. Analysis returned HTTP 200 in **17.642 seconds**, source `live`, model `gpt-5.6-terra`, with the exact tool order `validate_world_spec` → `simulate_world` → `compare_predictions` → `select_discriminating_case`. Revision returned HTTP 200 in **1.404 seconds**, source `gpt-5.6`, model `gpt-5.6-luna`; the same session and signed evaluation were accepted, conceptual change was `revised` with score `1`, and `liveUseAttestation: true` was carried by both requests. The server-minted cookie was reused with `Path=/`, `HttpOnly`, `Secure`, and `SameSite=Strict`; its value was not recorded. The strict responses did not expose token usage or cost, so neither is guessed. This is inherited integration evidence, not a paid canary of merge `6186358`; the handoff release intentionally used only the free verified path.
 
-The deployed runtime corresponds to main merge `6186358`. The exact 165-second local video candidate records that production build, includes the learner-controlled teacher handoff, and used 10/10 cached narration segments with zero Speech API calls; see [the dated video evidence](docs/VIDEO_EVIDENCE_2026-07-17.md). Public video upload, repository access, `/feedback` Session ID, placeholder replacement, logged-out link checks, Ubuntu three-engine CI, and final form submission remain external gates. Track the canonical handoff in [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md).
+The last recorded deployment evidence corresponds to main merge `6186358`. The exact 165-second local video candidate records that production build, includes the learner-controlled teacher handoff, and used 10/10 cached narration segments with zero Speech API calls; see [the dated video evidence](docs/VIDEO_EVIDENCE_2026-07-17.md). Public video upload and visibility are user-owned manual actions that Codex does not perform. Repository access, `/feedback` Session ID, placeholder replacement, logged-out link checks, Ubuntu three-engine CI, and final form submission also remain external gates. Track the canonical handoff in [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md).
 
 ## License
 

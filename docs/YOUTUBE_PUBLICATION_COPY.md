@@ -1,5 +1,8 @@
 # YouTube publication copy
 
+This file contains copy only. Uploading, publishing, visibility selection, and
+the final public URL remain user-owned actions; Codex has not published a video.
+
 ## Title
 
 ```text

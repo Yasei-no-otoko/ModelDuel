@@ -5,5 +5,8 @@ allowBuilds:
   workerd: true
 minimumReleaseAgeExclude:
   - openai@6.47.0
+  - '@cloudflare/vitest-pool-workers@0.18.6'
+  - miniflare@4.20260714.0
+  - wrangler@4.112.0
 overrides:
   "next@16.2.10>postcss": "8.5.10"

@@ -7,12 +7,18 @@ import {
 import { createCaseFingerprint } from "../../../lib/modelduel/simulation";
 import { evaluateRevisionRequest } from "../revision";
 import { issueEvaluationToken } from "../evaluation-core";
+import { createEphemeralRevisionReplayCoordinator } from "../revision-replay-memory";
 import { ModelDuelUpstreamError } from "./errors";
 import type { ModelDuelGateway } from "./gateway";
 
 const NOW = 1_800_000_000_000;
 const SAFETY_IDENTIFIER = `mds1_${"A".repeat(43)}`;
 const SECRET = "live-revision-token-test-secret-long-enough";
+
+function resolveReplayCoordinator() {
+  const coordinator = createEphemeralRevisionReplayCoordinator();
+  return async () => coordinator;
+}
 
 function seasonsLiveRequest() {
   const sessionId = "seasons-live-revision-cost-session";
@@ -144,6 +150,7 @@ describe("live revision cost boundary", () => {
       evaluateRevisionRequest(liveRequest(), NOW, {
         resolveSafetyIdentifier: () => SAFETY_IDENTIFIER,
         gateway: countingGateway(counter),
+        resolveReplayCoordinator: resolveReplayCoordinator(),
         signal: AbortSignal.timeout(10_000),
         beforeLiveGateway,
       }),
@@ -160,11 +167,36 @@ describe("live revision cost boundary", () => {
       evaluateRevisionRequest(seasonsLiveRequest(), NOW, {
         resolveSafetyIdentifier: () => SAFETY_IDENTIFIER,
         gateway: countingGateway(counter),
+        resolveReplayCoordinator: resolveReplayCoordinator(),
         signal: AbortSignal.timeout(10_000),
         beforeLiveGateway,
       }),
     ).rejects.toThrow("Model boundary reached");
 
+    expect(beforeLiveGateway).toHaveBeenCalledTimes(1);
+    expect(counter.calls).toBe(1);
+  });
+
+  it("accepts a signed token through the trusted clock-skew window", async () => {
+    const counter = { calls: 0 };
+    const beforeLiveGateway = vi.fn();
+
+    await expect(
+      evaluateRevisionRequest(
+        liveRequest({
+          issuedAt: NOW - 20 * 60 * 1_000,
+          expiresAt: NOW - 59 * 1_000,
+        }),
+        NOW,
+        {
+          resolveSafetyIdentifier: () => SAFETY_IDENTIFIER,
+          gateway: countingGateway(counter),
+          resolveReplayCoordinator: resolveReplayCoordinator(),
+          signal: AbortSignal.timeout(10_000),
+          beforeLiveGateway,
+        },
+      ),
+    ).rejects.toThrow("Model boundary reached");
     expect(beforeLiveGateway).toHaveBeenCalledTimes(1);
     expect(counter.calls).toBe(1);
   });
@@ -193,6 +225,7 @@ describe("live revision cost boundary", () => {
       evaluateRevisionRequest(liveRequest(), NOW, {
         resolveSafetyIdentifier: () => SAFETY_IDENTIFIER,
         gateway,
+        resolveReplayCoordinator: resolveReplayCoordinator(),
         signal: AbortSignal.timeout(10_000),
         beforeLiveGateway,
       }),
@@ -243,19 +276,35 @@ describe("live revision cost boundary", () => {
 
   it("stops before the model when the limiter denies a valid token", async () => {
     const counter = { calls: 0 };
-    const beforeLiveGateway = vi.fn(() => {
-      throw new ModelDuelUpstreamError("RATE_LIMITED");
-    });
+    const beforeLiveGateway = vi
+      .fn()
+      .mockImplementationOnce(() => {
+        throw new ModelDuelUpstreamError("RATE_LIMITED");
+      })
+      .mockImplementationOnce(() => undefined);
+    const coordinator = createEphemeralRevisionReplayCoordinator();
+    const resolveCoordinator = async () => coordinator;
+    const input = liveRequest();
 
     await expect(
-      evaluateRevisionRequest(liveRequest(), NOW, {
+      evaluateRevisionRequest(input, NOW, {
         resolveSafetyIdentifier: () => SAFETY_IDENTIFIER,
         gateway: countingGateway(counter),
+        resolveReplayCoordinator: resolveCoordinator,
         signal: AbortSignal.timeout(10_000),
         beforeLiveGateway,
       }),
     ).rejects.toMatchObject({ code: "RATE_LIMITED" });
-    expect(beforeLiveGateway).toHaveBeenCalledTimes(1);
-    expect(counter.calls).toBe(0);
+    await expect(
+      evaluateRevisionRequest(input, NOW, {
+        resolveSafetyIdentifier: () => SAFETY_IDENTIFIER,
+        gateway: countingGateway(counter),
+        resolveReplayCoordinator: resolveCoordinator,
+        signal: AbortSignal.timeout(10_000),
+        beforeLiveGateway,
+      }),
+    ).rejects.toThrow("Model boundary reached");
+    expect(beforeLiveGateway).toHaveBeenCalledTimes(2);
+    expect(counter.calls).toBe(1);
   });
 });

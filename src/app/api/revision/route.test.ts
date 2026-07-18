@@ -4,6 +4,7 @@ import { createCaseFingerprint } from "../../../lib/modelduel/simulation";
 import { MOON_HERO_SAMPLE } from "../../../lib/modelduel/samples";
 import { issueEvaluationToken } from "../../../server/modelduel/evaluation-core";
 import { createRateLimitStore } from "../../../server/modelduel/rate-limit";
+import { createEphemeralRevisionReplayCoordinator } from "../../../server/modelduel/revision-replay-memory";
 import type {
   RevisionFeedbackExtraction,
 } from "../../../server/modelduel/openai/contracts";
@@ -11,6 +12,7 @@ import type {
   ModelDuelGateway,
   RevisionParseRequest,
 } from "../../../server/modelduel/openai/gateway";
+import { ModelDuelUpstreamError } from "../../../server/modelduel/openai/errors";
 import { handleRevisionRequest, POST } from "./route";
 
 const NOW = 1_800_000_000_000;
@@ -180,13 +182,16 @@ describe("POST /api/revision", () => {
 
   it("mints and reuses a live cookie after signed-token verification", async () => {
     const requests: RevisionParseRequest[] = [];
+    const rateLimitStore = createRateLimitStore();
     const dependencies = {
       gateway: liveGateway(requests),
       now: NOW,
-      rateLimitStore: createRateLimitStore(),
+      rateLimitStore,
+      replayCoordinator: createEphemeralRevisionReplayCoordinator(),
     };
+    const replayedBody = liveBody();
     const firstResponse = await handleRevisionRequest(
-      request(liveBody()),
+      request(replayedBody),
       dependencies,
     );
 
@@ -201,7 +206,7 @@ describe("POST /api/revision", () => {
     const secondResponse = await handleRevisionRequest(
       request(
         {
-          ...liveBody(),
+          ...replayedBody,
           requestId: "revision-route-live-request-2",
           idempotencyKey: "revision-route-live-idempotency-2",
         },
@@ -212,10 +217,206 @@ describe("POST /api/revision", () => {
     );
     expect(secondResponse.status).toBe(200);
     expect(secondResponse.headers.has("set-cookie")).toBe(false);
-    expect(requests).toHaveLength(2);
-    expect(requests[0]?.safetyIdentifier).toBe(
-      requests[1]?.safetyIdentifier,
+    const secondJson = (await secondResponse.json()) as {
+      requestId: string;
+      feedback: unknown;
+    };
+    expect(secondJson.requestId).toBe("revision-route-live-request-2");
+    expect(secondJson.feedback).toEqual(LIVE_FEEDBACK.feedback);
+    expect(requests).toHaveLength(1);
+    expect(rateLimitStore.globals.get("live-revision")?.count).toBe(1);
+  });
+
+  it("deduplicates an exact token replay even when each request mints a cookie", async () => {
+    const requests: RevisionParseRequest[] = [];
+    const rateLimitStore = createRateLimitStore();
+    const dependencies = {
+      gateway: liveGateway(requests),
+      now: NOW,
+      rateLimitStore,
+      replayCoordinator: createEphemeralRevisionReplayCoordinator(),
+    };
+    const body = liveBody();
+    const first = await handleRevisionRequest(request(body), dependencies);
+    const second = await handleRevisionRequest(
+      request({
+        ...body,
+        requestId: "revision-route-live-request-2",
+        idempotencyKey: "revision-route-live-idempotency-2",
+      }),
+      dependencies,
     );
+
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+    expect(first.headers.has("set-cookie")).toBe(true);
+    expect(second.headers.has("set-cookie")).toBe(true);
+    expect(requests).toHaveLength(1);
+    expect(rateLimitStore.globals.get("live-revision")?.count).toBe(1);
+  });
+
+  it("never starts a second gateway call for a concurrent exact replay", async () => {
+    const requests: RevisionParseRequest[] = [];
+    let releaseGateway!: () => void;
+    let markStarted!: () => void;
+    const gatewayGate = new Promise<void>((resolve) => {
+      releaseGateway = resolve;
+    });
+    const gatewayStarted = new Promise<void>((resolve) => {
+      markStarted = resolve;
+    });
+    const baseGateway = liveGateway(requests);
+    const gateway: ModelDuelGateway = {
+      ...baseGateway,
+      async parseRevisionFeedback(input) {
+        requests.push(input);
+        markStarted();
+        await gatewayGate;
+        return {
+          status: "completed",
+          hasError: false,
+          hasRefusal: false,
+          parsed: LIVE_FEEDBACK,
+          outputText: "",
+        };
+      },
+    };
+    const rateLimitStore = createRateLimitStore();
+    const dependencies = {
+      gateway,
+      now: NOW,
+      rateLimitStore,
+      replayCoordinator: createEphemeralRevisionReplayCoordinator(),
+    };
+    const body = liveBody();
+    const cookie = `__Host-modelduel-safety-v1=mds1_${"a".repeat(32)}`;
+    const leader = handleRevisionRequest(
+      request(body, "application/json", cookie),
+      dependencies,
+    );
+    await gatewayStarted;
+
+    const follower = await handleRevisionRequest(
+      request(
+        {
+          ...body,
+          requestId: "revision-route-live-request-2",
+          idempotencyKey: "revision-route-live-idempotency-2",
+        },
+        "application/json",
+        cookie,
+      ),
+      dependencies,
+    );
+    expect(follower.status).toBe(409);
+    expect(await follower.json()).toMatchObject({
+      error: { code: "REVISION_IN_PROGRESS", retryable: true },
+    });
+    expect(requests).toHaveLength(1);
+    expect(rateLimitStore.globals.get("live-revision")?.count).toBe(1);
+
+    releaseGateway();
+    await expect(leader.then((response) => response.status)).resolves.toBe(200);
+    const cached = await handleRevisionRequest(
+      request(
+        {
+          ...body,
+          requestId: "revision-route-live-request-3",
+          idempotencyKey: "revision-route-live-idempotency-3",
+        },
+        "application/json",
+        cookie,
+      ),
+      dependencies,
+    );
+    expect(cached.status).toBe(200);
+    expect(requests).toHaveLength(1);
+    expect(rateLimitStore.globals.get("live-revision")?.count).toBe(1);
+  });
+
+  it("fails a changed-input replay closed without another paid attempt", async () => {
+    const requests: RevisionParseRequest[] = [];
+    const rateLimitStore = createRateLimitStore();
+    const dependencies = {
+      gateway: liveGateway(requests),
+      now: NOW,
+      rateLimitStore,
+      replayCoordinator: createEphemeralRevisionReplayCoordinator(),
+    };
+    const body = liveBody();
+    const cookie = `__Host-modelduel-safety-v1=mds1_${"b".repeat(32)}`;
+    expect(
+      (
+        await handleRevisionRequest(
+          request(body, "application/json", cookie),
+          dependencies,
+        )
+      ).status,
+    ).toBe(200);
+
+    const replay = await handleRevisionRequest(
+      request(
+        {
+          ...body,
+          requestId: "revision-route-live-request-2",
+          idempotencyKey: "revision-route-live-idempotency-2",
+          revisionText: "A different revision must not reuse the capability.",
+        },
+        "application/json",
+        cookie,
+      ),
+      dependencies,
+    );
+    expect(replay.status).toBe(400);
+    expect(await replay.json()).toMatchObject({
+      error: { code: "INVALID_EVALUATION", retryable: false },
+    });
+    expect(requests).toHaveLength(1);
+    expect(rateLimitStore.globals.get("live-revision")?.count).toBe(1);
+  });
+
+  it("caches a post-commit failure without retrying the gateway", async () => {
+    let calls = 0;
+    const gateway: ModelDuelGateway = {
+      ...liveGateway([]),
+      async parseRevisionFeedback() {
+        calls += 1;
+        throw new ModelDuelUpstreamError("UPSTREAM_TIMEOUT");
+      },
+    };
+    const rateLimitStore = createRateLimitStore();
+    const dependencies = {
+      gateway,
+      now: NOW,
+      rateLimitStore,
+      replayCoordinator: createEphemeralRevisionReplayCoordinator(),
+    };
+    const body = liveBody();
+    const cookie = `__Host-modelduel-safety-v1=mds1_${"c".repeat(32)}`;
+    const first = await handleRevisionRequest(
+      request(body, "application/json", cookie),
+      dependencies,
+    );
+    expect(first.status).toBe(504);
+
+    const replay = await handleRevisionRequest(
+      request(
+        {
+          ...body,
+          requestId: "revision-route-live-request-2",
+          idempotencyKey: "revision-route-live-idempotency-2",
+        },
+        "application/json",
+        cookie,
+      ),
+      dependencies,
+    );
+    expect(replay.status).toBe(504);
+    expect(await replay.json()).toMatchObject({
+      error: { code: "UPSTREAM_TIMEOUT", retryable: true },
+    });
+    expect(calls).toBe(1);
+    expect(rateLimitStore.globals.get("live-revision")?.count).toBe(1);
   });
 
   it("keeps unusable live tokens cookie-free and stops before the gateway", async () => {
