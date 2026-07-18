@@ -93,14 +93,16 @@ const REPRESENTATIVE_COMMITS = Object.freeze([
   "2708191",
   "fe91da0",
   "e5e7b03",
+  "983776a",
+  "1649c4b",
 ]);
 const BUILD_EVIDENCE = Object.freeze({
-  nodeTests: 356,
+  nodeTests: 360,
   workerdTests: 7,
   chromiumTests: 38,
   securityReviewedSources: 96,
   reportableSecurityFindings: 0,
-  productionMerge: "e5e7b03",
+  productionMerge: "1649c4b",
 });
 
 const SELECTORS = Object.freeze({
