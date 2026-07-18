@@ -109,11 +109,13 @@ The bullets below are retained as the conditions that motivated this plan, not a
 
 ## Release Gates
 
-### Public-release blocker — open as of 2026-07-17
+### Replay-control blocker — closed locally on 2026-07-18
 
 The pre-publication security scan `d9e79820-7d63-4836-84f1-6125601f1825` reviewed 38/38 selected surfaces on immutable commit `34f45b2` and reported one Medium/P2 finding (CWE-294). A live-revision token mints a `jti` but does not atomically consume it, so the same valid token can reach repeated gateway attempts when presented with fresh caller keys while its TTL and rate-limit capacity remain. TTL, output caps, zero SDK retries, and per-POP rate limits constrain this behavior but do not close it.
 
-No hardening option is selected or implemented. This blocks the final public repository/Devpost release and any claim that the live production path is release-ready; it does not establish that the issue is fixed, that a repository or video is published, or that production has been redeployed. The next gate is to select a replay-control design, implement it on a dedicated branch, prove that the same valid token plus fresh caller keys produces no second upstream request, rerun the full quality suite and a security delta scan, then deploy and verify the changed live boundary before release.
+Option 2 is implemented on the dedicated replay-hardening branch: each signed-token `jti` maps through an HMAC-derived name to one SQLite-backed Durable Object. Its atomic `claim`/`commit`/`complete` state machine returns completed results for an identical request, rejects a changed fingerprint, and prevents a second upstream request while work is in progress. Production fails closed if the binding is missing; local development uses an explicitly selected, short-lived memory coordinator. Cleanup is alarm-driven and attempts to re-arm after storage failure without storing raw token IDs or raw learner explanations; a failed re-arm throws so Cloudflare's finite alarm retries can run.
+
+The immutable 25-file delta scan `62747eff-3ba1-4245-b2b5-a3c53a55cca6` completed with **0 reportable findings**. An independent final release audit then identified an alarm-arm availability edge and an imprecise retention sentence; the claim now rolls back before returning if its first cleanup alarm cannot be armed, and the copy names the authorization window instead of a fixed minute count. The final candidate gate passed ESLint, TypeScript, **344/344 Node tests across 34 files**, **7/7 workerd tests**, the submission-video contract, Next.js/OpenNext builds, generated Worker types, Wrangler dry run (**8,849.96 KiB raw / 1,704.45 KiB gzip**), Chromium **36/36**, and a production dependency audit with no known vulnerabilities. A prior same-host WebKit run passed **35 tests with 1 intentional non-Chromium axe skip**; the pinned Firefox build remains the documented host-graphics exception rather than a claimed pass. Production deployment and free post-deploy boundary verification remain the next gates; no repository or video publication is implied.
 
 All gates must pass on the quality branch before merge:
 

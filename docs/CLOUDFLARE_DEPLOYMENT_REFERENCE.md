@@ -6,17 +6,17 @@ This file records the Cloudflare runtime contract for ModelDuel before deploymen
 
 ## Supported deployment path
 
-- Build Next.js with `@opennextjs/cloudflare@1.20.1` and deploy with `wrangler@4.111.0`.
+- Build Next.js with `@opennextjs/cloudflare@1.20.1` and deploy with `wrangler@4.112.0`.
 - Next.js 16 App Router, route handlers, static assets, and server rendering are supported by the OpenNext adapter. ModelDuel does not depend on the unsupported Node.js middleware path.
 - Commit an explicit `wrangler.jsonc` and `open-next.config.ts` so builds are reproducible even though Wrangler can now detect supported Next.js projects automatically.
-- Use the latest runtime-supported compatibility date and `nodejs_compat`. On 2026-07-17 JST, local workerd still evaluated the calendar in UTC and rejected `2026-07-17` as future-dated, so the verified deployment date is `2026-07-16`. The worker entry point is `.open-next/worker.js`, and `.open-next/assets` is served through the `ASSETS` binding.
+- Use the latest runtime-supported compatibility date and `nodejs_compat`. On 2026-07-17 JST, local workerd still evaluated the calendar in UTC and rejected `2026-07-17` as future-dated, so the verified deployment date is `2026-07-16`. Wrangler enters through `custom-worker.ts`, which forwards OpenNext's generated `.open-next/worker.js` fetch handler and exports the replay Durable Object; `.open-next/assets` is served through the `ASSETS` binding.
 - Run `opennextjs-cloudflare build` and a Wrangler dry run before production deployment. `next dev` and `next build` do not prove compatibility with the Workers `workerd` runtime.
 
 This differs from older Pages-oriented examples and from the locally bundled reference snapshot: the current first-party Next.js guide recommends Workers plus OpenNext, current Wrangler supports automatic framework detection, and current OpenNext supports the installed Next.js 16 minor release.
 
 ## Runtime bindings and generated types
 
-Server route handlers access Workers bindings with OpenNext's `getCloudflareContext({ async: true })`. `pnpm cf:typegen` first builds the OpenNext entrypoint, then runs `wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts` to generate binding and Workers runtime declarations; do not maintain hand-written substitutes for `RateLimit`, `Fetcher`, or the environment. Wrangler 4.111 derives `Cloudflare.GlobalProps.mainModule` from the built entrypoint, so the checked-in `typeof import("./.open-next/worker")` declaration is intentional and generation must always be build-backed.
+Server route handlers access Workers bindings with OpenNext's `getCloudflareContext({ async: true })`. `pnpm cf:typegen` first builds the OpenNext entrypoint, then runs `wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts` to generate binding and Workers runtime declarations; do not maintain hand-written substitutes for `RateLimit`, `Fetcher`, the Durable Object namespace, or the environment. Wrangler derives `Cloudflare.GlobalProps.mainModule` from `custom-worker.ts`, so generation must always be build-backed and its output must include `REVISION_REPLAY_LEDGER` plus the custom-worker main module.
 
 ModelDuel uses four Workers Rate Limiting bindings:
 
@@ -31,9 +31,9 @@ Each binding receives an independent integer-string namespace ID. The hashed-cli
 
 Workers Rate Limiting counters are per-POP and intentionally eventually consistent. They are a soft production abuse and spend guard, not an exact global OpenAI budget or billing ledger. ModelDuel therefore also keeps OpenAI request caps, zero SDK retries, and low output ceilings. Binding absence, API failure, or malformed binding results fail closed in production.
 
-## Durable Object planning delta
+## Durable Object replay boundary
 
-If the live-token replay hardening is selected, the current [Durable Objects guidance](https://developers.cloudflare.com/durable-objects/) supports a globally unique, single-threaded per-token coordinator. Create a new namespace with SQLite storage, use normal request storage transactions and input/output-gate semantics for the local claim, and never hold `blockConcurrencyWhile()` across an OpenAI fetch or other external I/O. For a new Worker configuration, prefer declarative [top-level `exports`](https://developers.cloudflare.com/workers/wrangler/configuration/#exports) over legacy Durable Object migrations; the two forms are mutually exclusive. ModelDuel does not currently define a Durable Object, so this is a design constraint only and changes neither the deployed Worker nor its configuration.
+ModelDuel defines `RevisionReplayLedger` as a declarative top-level SQLite `export` and binds it as `REVISION_REPLAY_LEDGER`; legacy migrations are not mixed with this configuration. Each signed token's random `jti` is HMAC-derived into a deterministic name that selects one unique object without exposing the raw identifier. Its synchronous SQLite transitions atomically claim and commit the first paid execution, cache only normalized feedback or a safe terminal error, and reject concurrent or changed replays. The object performs no OpenAI fetch and never holds `blockConcurrencyWhile()` across external I/O. Production and explicit durable-object mode fail closed when OpenNext cannot resolve the binding; only `next dev` may use the timed process-local coordinator. Cleanup runs after the full authorization window and one-minute grace. If `deleteAll()` fails, the handler attempts to schedule a new alarm because Cloudflare's exception-driven alarm retries are limited; a failed re-arm throws so those finite retries can run.
 
 ## Secrets and environment
 

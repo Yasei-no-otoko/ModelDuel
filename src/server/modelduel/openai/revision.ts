@@ -47,6 +47,7 @@ export async function evaluateLiveRevision(
   gateway: ModelDuelGateway,
   input: LiveRevisionServiceInput,
   signal: AbortSignal,
+  options: Readonly<{ beforeFirstModelCall?: () => void | Promise<void> }> = {},
 ) {
   const plan = resolveRegistryIdentity({
     scenarioId: input.scenarioId,
@@ -65,6 +66,7 @@ export async function evaluateLiveRevision(
       scientificWorldId: plan.scientificWorldId,
     }),
   );
+  await options.beforeFirstModelCall?.();
   const first = await gateway.parseRevisionFeedback({
     scenarioId: input.scenarioId,
     initialSummary: `Server-classified misconception: ${input.misconceptionType}`,

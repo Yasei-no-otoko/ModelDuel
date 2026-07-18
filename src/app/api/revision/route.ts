@@ -18,6 +18,8 @@ import {
   resolveSafetyIdentifier,
 } from "../../../server/modelduel/safety-identifier";
 import type { SafetyIdentifierResolution } from "../../../server/modelduel/safety-identifier";
+import { resolveRevisionReplayCoordinator } from "../../../server/modelduel/revision-replay-cloudflare";
+import type { RevisionReplayCoordinator } from "../../../server/modelduel/revision-replay-contract";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -30,6 +32,7 @@ export async function handleRevisionRequest(
     now?: number;
     rateLimitStore?: RateLimitStore;
     cloudflareRateLimitBindings?: CloudflareRateLimitBindings;
+    replayCoordinator?: RevisionReplayCoordinator;
   }> = {},
 ): Promise<Response> {
   let safety: SafetyIdentifierResolution | undefined;
@@ -55,6 +58,9 @@ export async function handleRevisionRequest(
           return resolution.safetyIdentifier;
         },
         gateway: dependencies.gateway,
+        resolveReplayCoordinator: async () =>
+          dependencies.replayCoordinator ??
+          resolveRevisionReplayCoordinator(),
         beforeLiveGateway: () =>
           enforcePaidApiRateLimit("live-revision", request, {
             now: dependencies.now,

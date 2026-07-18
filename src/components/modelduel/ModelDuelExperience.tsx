@@ -75,13 +75,13 @@ const VERIFIED_EMPTY_INPUT_TRACE =
   "No learner explanation was submitted; the verified sample was selected explicitly.";
 
 const LIVE_USE_DISCLOSURE =
-  "Live GPT is only for people 18 or older, or learners using it with teacher or guardian authorization. Do not enter a student’s name or any personal or identifying information. The verified sample is open to everyone, sends no learner input to GPT, and requires no confirmation.";
+  "Live GPT is only for people 18 or older, or learners using it with teacher or guardian authorization. Do not enter a student’s name or any personal or identifying information. For replay safety, ModelDuel schedules normalized live revision feedback for deletion after the authorization window and a one-minute grace. It attempts to re-arm cleanup after storage failures; its replay ledger does not store the raw revised explanation. The verified sample is open to everyone, sends no learner input to GPT, and requires no confirmation.";
 
 const LIVE_USE_CONFIRMATION =
   "I am 18 or older, or I have teacher or guardian authorization, and I will not include personal or identifying student information anywhere in this live attempt, including my revised explanation.";
 
 const LIVE_REVISION_GUIDANCE =
-  "Your live-use confirmation covers this entire attempt, including this revised explanation. Do not include names or personal or identifying student information. GPT feedback may be wrong; verify it with a teacher.";
+  "Your live-use confirmation covers this entire attempt, including this revised explanation. Do not include names or personal or identifying student information. To prevent duplicate API charges, normalized feedback is scheduled for deletion after the authorization window and a one-minute grace. ModelDuel attempts to re-arm cleanup after storage failures. GPT feedback may be wrong; verify it with a teacher.";
 
 function sessionReducer(
   state: SessionContainer,

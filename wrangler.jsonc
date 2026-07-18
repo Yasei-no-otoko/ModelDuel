@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "modelduel",
-  "main": ".open-next/worker.js",
+  "main": "custom-worker.ts",
   "compatibility_date": "2026-07-16",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "workers_dev": true,
@@ -12,6 +12,7 @@
   "vars": {
     "MODELDUEL_TRUSTED_PROXY": "cloudflare",
     "MODELDUEL_CLOUDFLARE_RATE_LIMITS": "enabled",
+    "MODELDUEL_REVISION_REPLAY": "durable-object",
     "MODELDUEL_ANALYSIS_MODEL": "gpt-5.6-terra",
     "MODELDUEL_REVISION_MODEL": "gpt-5.6-luna"
   },
@@ -40,6 +41,20 @@
       "simple": { "limit": 4, "period": 60 }
     }
   ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "REVISION_REPLAY_LEDGER",
+        "class_name": "RevisionReplayLedger"
+      }
+    ]
+  },
+  "exports": {
+    "RevisionReplayLedger": {
+      "type": "durable-object",
+      "storage": "sqlite"
+    }
+  },
   "observability": {
     "enabled": true,
     "head_sampling_rate": 0.05,

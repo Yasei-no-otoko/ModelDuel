@@ -743,7 +743,7 @@ test("carries the live-use attestation through analysis and revision", async ({ 
   await page.getByRole("button", { name: "Revise my explanation" }).click();
   await expect(
     page.getByText(
-      "Your live-use confirmation covers this entire attempt, including this revised explanation. Do not include names or personal or identifying student information. GPT feedback may be wrong; verify it with a teacher.",
+      "Your live-use confirmation covers this entire attempt, including this revised explanation. Do not include names or personal or identifying student information. To prevent duplicate API charges, normalized feedback is scheduled for deletion after the authorization window and a one-minute grace. ModelDuel attempts to re-arm cleanup after storage failures. GPT feedback may be wrong; verify it with a teacher.",
       { exact: true },
     ),
   ).toBeVisible();

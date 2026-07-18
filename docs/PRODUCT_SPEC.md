@@ -51,6 +51,7 @@ Recoverable validation and network errors remain in the current state with the l
 - Creating the handoff performs no API request and ModelDuel does not create a server-side record, email, or share link for it. The trace remains in the active page until reset, reload, or page close; a system clipboard, browser, or device may retain or sync a copy.
 - The editable handoff is not signed, tamper-proof, or teacher-authenticated. It documents one attempt as a conversation aid; it is not a grade, a longitudinal record, or proof of durable learning.
 - Failure states do not erase completed steps, fabricate a score, or expose raw model reasoning.
+- Live revision uses one short-lived replay ledger per signed token; an HMAC of its random `jti` selects the unique Durable Object name. The ledger stores an HMAC-derived fingerprint, execution state, and normalized feedback/model result. Cleanup is scheduled after the authorization window plus a one-minute grace. Storage failures attempt to re-arm cleanup once per minute, while a failed re-arm throws so Cloudflare's finite retries can run. It does not store the raw token, raw `jti`, session/request IDs, or revised explanation; normalized feedback may still reflect the explanation until cleanup succeeds.
 
 ### Scenario isolation
 

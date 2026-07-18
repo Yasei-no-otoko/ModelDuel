@@ -7,6 +7,7 @@ import {
 import { createCaseFingerprint } from "../../../lib/modelduel/simulation";
 import { evaluateRevisionRequest } from "../revision";
 import { issueEvaluationToken } from "../evaluation-core";
+import { createEphemeralRevisionReplayCoordinator } from "../revision-replay-memory";
 import type {
   ModelDuelGateway,
   RevisionParseRequest,
@@ -105,6 +106,11 @@ function seasonsLiveRequest() {
 
 const SAFETY_IDENTIFIER = `mds1_${"A".repeat(43)}`;
 
+function resolveReplayCoordinator() {
+  const coordinator = createEphemeralRevisionReplayCoordinator();
+  return async () => coordinator;
+}
+
 function gatewayWithRevisionAttempts(
   attempts: Array<{
     status: string;
@@ -149,6 +155,7 @@ describe("live revision service", () => {
     const request = seasonsLiveRequest();
     const response = await evaluateRevisionRequest(request, NOW, {
       resolveSafetyIdentifier: () => SAFETY_IDENTIFIER,
+      resolveReplayCoordinator: resolveReplayCoordinator(),
       gateway: gatewayWithRevisionAttempts(
         [
           {
@@ -186,6 +193,7 @@ describe("live revision service", () => {
     const request = liveRequest();
     const response = await evaluateRevisionRequest(request, NOW, {
       resolveSafetyIdentifier: () => SAFETY_IDENTIFIER,
+      resolveReplayCoordinator: resolveReplayCoordinator(),
       gateway: gatewayWithRevisionAttempts(
         [
           {
@@ -222,6 +230,7 @@ describe("live revision service", () => {
     const requests: RevisionParseRequest[] = [];
     const response = await evaluateRevisionRequest(liveRequest(), NOW, {
       resolveSafetyIdentifier: () => SAFETY_IDENTIFIER,
+      resolveReplayCoordinator: resolveReplayCoordinator(),
       gateway: gatewayWithRevisionAttempts(
         [
           {
@@ -256,6 +265,7 @@ describe("live revision service", () => {
     await expect(
       evaluateRevisionRequest(liveRequest(), NOW, {
         resolveSafetyIdentifier: () => SAFETY_IDENTIFIER,
+        resolveReplayCoordinator: resolveReplayCoordinator(),
         gateway: gatewayWithRevisionAttempts(
           [
             {

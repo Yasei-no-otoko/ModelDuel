@@ -26,6 +26,7 @@ const ENCRYPTION_INFO = Buffer.from(
   "utf8",
 );
 const RECEIPT_INFO = Buffer.from("modelduel/evaluation/receipt", "utf8");
+const REPLAY_INFO = Buffer.from("modelduel/evaluation/replay", "utf8");
 const NONCE_BYTES = 12;
 const AUTH_TAG_BYTES = 16;
 const DERIVED_KEY_BYTES = 32;
@@ -367,7 +368,10 @@ const VerifyRevisionContextInputSchema = z.strictObject({
 export function verifyRevisionContextToken(
   secret: string,
   input: z.input<typeof VerifyRevisionContextInputSchema>,
-): z.output<typeof RevisionContextSchema> {
+): z.output<typeof RevisionContextSchema> & {
+  replayKey: string;
+  replayExpiresAt: number;
+} {
   const parsed = VerifyRevisionContextInputSchema.safeParse(input);
   if (!parsed.success) {
     throw new EvaluationCoreError("INVALID_REQUEST");
@@ -387,7 +391,13 @@ export function verifyRevisionContextToken(
   ) {
     invalidToken();
   }
-  return RevisionContextSchema.parse(payload.revisionContext);
+  return {
+    ...RevisionContextSchema.parse(payload.revisionContext),
+    replayKey: createHmac("sha256", deriveKey(secret, REPLAY_INFO))
+      .update(payload.jti, "utf8")
+      .digest("hex"),
+    replayExpiresAt: payload.expiresAt + DEFAULT_CLOCK_SKEW_MS,
+  };
 }
 
 export function evaluateEvaluationToken(

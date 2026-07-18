@@ -64,7 +64,7 @@ The local candidate passed Chromium and WebKit with 69 tests and one intentional
 ## Remaining external gates
 
 - Publish or authorize a judge-accessible repository and replace `{{REPOSITORY_URL}}`.
-- Upload this exact MP4 to a public/embed-enabled host and replace `{{VIDEO_URL}}`.
+- User-owned manual gate: upload this exact MP4 to a public/embed-enabled host and replace `{{VIDEO_URL}}`. Codex does not publish it.
 - Run `/feedback` in the primary Codex build thread and replace `{{CODEX_FEEDBACK_SESSION_ID}}`.
 - Verify repository, video, and production links while logged out.
 - Complete the current official rules/form review and submit before the deadline.

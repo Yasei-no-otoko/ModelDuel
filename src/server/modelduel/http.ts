@@ -12,6 +12,7 @@ type SafeErrorCode =
   | "UNSUPPORTED_MEDIA_TYPE"
   | "INVALID_EVALUATION"
   | "MODEL_REFUSAL"
+  | "REVISION_IN_PROGRESS"
   | "RATE_LIMITED"
   | "MODEL_OUTPUT_INVALID"
   | "UPSTREAM_INCOMPLETE"
@@ -53,6 +54,11 @@ const SAFE_ERRORS: Record<
     status: 422,
     message: "The model declined to process this request.",
     retryable: false,
+  },
+  REVISION_IN_PROGRESS: {
+    status: 409,
+    message: "Revision feedback is still being generated.",
+    retryable: true,
   },
   RATE_LIMITED: {
     status: 429,
