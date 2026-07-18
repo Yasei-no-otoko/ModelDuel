@@ -45,10 +45,10 @@ All three API responses succeeded. Analyze attempts, live-revision attempts, ext
 
 Narration uses disclosed OpenAI `tts-1` / `nova`. All 10 approved segments were cache hits and `speechApiCallsThisRun` is **0**. Paid generation opt-in was absent, so this recording made no new Speech, Terra, or Luna call. The earlier dated Terra/Luna production canary remains integration evidence; it was not repeated for this presentation-only release.
 
-## Remaining external gates
+## Publication status and remaining gates
 
-- Public judge-accessible repository: https://github.com/Yasei-no-otoko/ModelDuel
+- Public judge-accessible repository verified: https://github.com/Yasei-no-otoko/ModelDuel
+- Ubuntu Chromium/Firefox/WebKit CI verified on main merge `c53a453`: [run `29653782459`](https://github.com/Yasei-no-otoko/ModelDuel/actions/runs/29653782459) completed successfully with **112 passed / 2 intentional skips**.
+- Codex Feedback Session ID recorded: `019f648c-0eb8-7b60-ad84-28ce35bbac4b` (official feedback upload for the primary build task).
 - User-owned manual gate: upload this exact MP4, choose public/embed visibility, verify playback while logged out, and replace `{{VIDEO_URL}}`.
-- Codex Feedback Session ID: `019f648c-0eb8-7b60-ad84-28ce35bbac4b` (official feedback upload for the primary build task).
-- Complete Ubuntu three-engine CI or retain the documented local Firefox host-graphics exception without claiming a pass.
 - Complete the final Devpost form review and submit before **July 21, 2026 at 5:00 PM PDT / July 22, 2026 at 9:00 AM JST**.
