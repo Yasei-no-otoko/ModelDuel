@@ -89,7 +89,7 @@ describe("Seasons programmatic tool registry", () => {
         expect.fail("expected cross-scenario registry rejection");
       } catch (error) {
         expect(error).toBeInstanceOf(ModelDuelUpstreamError);
-        expect(error).toMatchObject({ code: "MODEL_OUTPUT_INVALID" });
+        expect(error).toMatchObject({ code: "UNSUPPORTED_MISCONCEPTION" });
       }
     };
 
@@ -101,6 +101,27 @@ describe("Seasons programmatic tool registry", () => {
       scenarioId: "moon-phases",
       learnerModel: SEASONS_SAMPLE.learnerModel,
     });
+  });
+
+  it.each([
+    ["moon-phases", MOON_HERO_SAMPLE.learnerModel],
+    ["seasons", SEASONS_SAMPLE.learnerModel],
+  ] as const)("rejects a valid unsupported %s learner model explicitly", (scenarioId, learnerModel) => {
+    expect(() =>
+      resolveRegistryPlan({
+        scenarioId,
+        learnerModel: { ...learnerModel, misconceptionType: "other" },
+      }),
+    ).toThrow(expect.objectContaining({ code: "UNSUPPORTED_MISCONCEPTION" }));
+  });
+
+  it("keeps malformed learner output distinct from a valid unsupported claim", () => {
+    expect(() =>
+      resolveRegistryPlan({
+        scenarioId: "moon-phases",
+        learnerModel: {} as typeof MOON_HERO_SAMPLE.learnerModel,
+      }),
+    ).toThrow(expect.objectContaining({ code: "MODEL_OUTPUT_INVALID" }));
   });
 });
 

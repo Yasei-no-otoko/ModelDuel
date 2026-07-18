@@ -279,6 +279,27 @@ describe("live analysis adapter", () => {
     });
   });
 
+  it("preserves a non-retryable unsupported misconception envelope", async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      jsonResponse(
+        {
+          error: {
+            code: "UNSUPPORTED_MISCONCEPTION",
+            message:
+              "This pilot could not map the explanation to the selected validated misconception contrast.",
+            retryable: false,
+          },
+        },
+        422,
+      ),
+    );
+
+    await expect(analyzeSubmission(request, fetchMock)).rejects.toMatchObject({
+      code: "UNSUPPORTED_MISCONCEPTION",
+      retryable: false,
+    });
+  });
+
   it("propagates transport abort without synthesizing an analysis result", async () => {
     const controller = new AbortController();
     const fetchMock = vi.fn<typeof fetch>().mockImplementation(
@@ -304,6 +325,7 @@ describe("live analysis adapter", () => {
     "MODEL_REFUSAL",
     "REVISION_IN_PROGRESS",
     "RATE_LIMITED",
+    "UNSUPPORTED_MISCONCEPTION",
     "MODEL_OUTPUT_INVALID",
     "UPSTREAM_INCOMPLETE",
     "ORCHESTRATION_INVALID",

@@ -266,6 +266,59 @@ describe("live analysis service", () => {
     expect(modelCalls).toBe(0);
   });
 
+  it("stops a schema-valid unsupported misconception after one extraction and before orchestration", async () => {
+    vi.stubEnv(
+      "MODELDUEL_EVALUATION_SECRET",
+      "analysis-test-evaluation-secret-long-enough",
+    );
+    const baseGateway = successfulGateway();
+    const parseLearnerModel = vi.fn(async () => ({
+      status: "completed" as const,
+      hasError: false,
+      hasRefusal: false,
+      parsed: {
+        schemaVersion: "1.0" as const,
+        learnerModel: {
+          ...MOON_HERO_SAMPLE.learnerModel,
+          misconceptionType: "other" as const,
+        },
+      },
+      outputText: "",
+    }));
+    const runProgramTurn = vi.fn(baseGateway.runProgramTurn);
+    const beforeModelCall = vi.fn();
+    const gateway: ModelDuelGateway = {
+      ...baseGateway,
+      parseLearnerModel,
+      runProgramTurn,
+    };
+
+    await expect(
+      analyzeSubmission(
+        {
+          schemaVersion: "1.0",
+          requestId: "analysis-unsupported-request",
+          sessionId: "analysis-unsupported-session",
+          requestedAt: 1_800_000_000_000,
+          scenarioId: "moon-phases",
+          liveUseAttestation: true,
+          explanation: "The phases come from a cause outside this pilot.",
+          sketch: null,
+        },
+        {
+          safetyIdentifier: SAFETY_IDENTIFIER,
+          gateway,
+          signal: AbortSignal.timeout(10_000),
+          now: 1_800_000_000_000,
+          beforeModelCall,
+        },
+      ),
+    ).rejects.toMatchObject({ code: "UNSUPPORTED_MISCONCEPTION" });
+    expect(beforeModelCall).toHaveBeenCalledTimes(1);
+    expect(parseLearnerModel).toHaveBeenCalledTimes(1);
+    expect(runProgramTurn).not.toHaveBeenCalled();
+  });
+
   it("returns the exact Seasons registry plan and four-tool live ledger", async () => {
     vi.stubEnv(
       "MODELDUEL_EVALUATION_SECRET",

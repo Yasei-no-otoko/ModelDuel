@@ -82,5 +82,8 @@ test("keeps the capture, evidence, and trace states free of automatic WCAG A/AA 
   await page.getByLabel(/The Moon is in the Sun's direction/).check();
   await page.getByRole("button", { name: "Lock and check answer" }).click();
   await expect(page.getByTestId("revision-trace")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Keep the discussion on the evidence." }),
+  ).toBeVisible();
   await expectNoAutomaticWcagViolations(page, "trace");
 });

@@ -3,7 +3,8 @@ import { Buffer } from "node:buffer";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
-import { HttpInputError, readStrictJson } from "./http";
+import { ModelDuelUpstreamError } from "./openai/errors";
+import { HttpInputError, readStrictJson, safeErrorResponse } from "./http";
 
 const Schema = z.strictObject({ value: z.string() });
 
@@ -73,5 +74,24 @@ describe("readStrictJson streaming byte limit", () => {
         signal: controller.signal,
       }),
     ).rejects.toMatchObject({ code: "REQUEST_TIMEOUT" });
+  });
+});
+
+describe("safe API error boundary", () => {
+  it("returns a generic non-retryable 422 for a valid unsupported misconception", async () => {
+    const response = safeErrorResponse(
+      new ModelDuelUpstreamError("UNSUPPORTED_MISCONCEPTION"),
+    );
+
+    expect(response.status).toBe(422);
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "UNSUPPORTED_MISCONCEPTION",
+        message:
+          "This pilot could not map the explanation to the selected validated misconception contrast.",
+        retryable: false,
+      },
+    });
   });
 });

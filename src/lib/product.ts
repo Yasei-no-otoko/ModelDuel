@@ -43,6 +43,7 @@ export type ScenarioContent = Readonly<{
   sampleMisconception: string;
   heroSummary: string;
   capturePrompt: string;
+  livePilotScope: string;
   interpretSummary: string;
   scientificTitle: string;
   scientificBullets: readonly string[];
@@ -51,6 +52,9 @@ export type ScenarioContent = Readonly<{
   revisionPlaceholder: string;
   transferEyebrow: string;
   traceObservationLabel: string;
+  teacherNextQuestion: string;
+  teacherListenForCorrect: string;
+  teacherListenForNeedsSupport: string;
 }>;
 
 export const SCENARIO_CONTENT = {
@@ -63,6 +67,8 @@ export const SCENARIO_CONTENT = {
     heroSummary:
       "Pit the common claim that Earth's shadow causes Moon phases against the sunlight-and-viewing-angle model, then run both worlds under one sealed test.",
     capturePrompt: "What causes the Moon's phases?",
+    livePilotScope:
+      "This pilot compares the Earth-shadow claim with the sunlight-and-viewing-angle model. GPT maps your explanation to that validated contrast; it does not generate a new physics world.",
     interpretSummary:
       "We turned the explanation into a learner world and paired it with the scientific model under the same test.",
     scientificTitle: "Sunlight and viewing angle",
@@ -79,6 +85,12 @@ export const SCENARIO_CONTENT = {
       "Explain how sunlight, the Moon's orbit, and the viewing angle account for the observed phase.",
     transferEyebrow: "Transfer test · Moon phases",
     traceObservationLabel: "Verified observation · lunar evidence",
+    teacherNextQuestion:
+      "What would you expect to observe if Earth's shadow caused every phase, and how does that differ from the sunlight-and-viewing-angle model?",
+    teacherListenForCorrect:
+      "Listen for the learner to distinguish regular phases from eclipses and connect the illuminated fraction to Moon–Sun–Earth geometry.",
+    teacherListenForNeedsSupport:
+      "Listen for the learner to identify which half of the Moon sunlight illuminates and which half faces Earth at new moon before selecting an arrangement.",
   },
   seasons: {
     label: "Seasons",
@@ -89,6 +101,8 @@ export const SCENARIO_CONTENT = {
     heroSummary:
       "Pit the distance-only explanation for summer against Earth's tilted-axis model, then test both hemispheres under one sealed June case.",
     capturePrompt: "What causes Earth's seasons?",
+    livePilotScope:
+      "This pilot compares the distance-only claim with the axial-tilt model. GPT maps your explanation to that validated contrast; it does not generate a new physics world.",
     interpretSummary:
       "We turned the distance explanation into a learner world and paired it with the axial-tilt model under the same June test.",
     scientificTitle: "Axial tilt and sunlight angle",
@@ -105,5 +119,11 @@ export const SCENARIO_CONTENT = {
       "Explain how axial tilt changes sunlight angle and produces opposite seasons in the two hemispheres.",
     transferEyebrow: "Transfer test · Seasons",
     traceObservationLabel: "Verified observation · seasonal evidence",
+    teacherNextQuestion:
+      "If Earth–Sun distance caused seasons, how could the two hemispheres have opposite seasons at the same time?",
+    teacherListenForCorrect:
+      "Listen for axial tilt changing sunlight angle and relative incoming energy in opposite ways while both hemispheres share one Earth–Sun distance.",
+    teacherListenForNeedsSupport:
+      "Listen for the learner to compare the June sunlight angle in both hemispheres before deciding whether one shared Earth–Sun distance can explain opposite seasons.",
   },
 } as const satisfies Record<ScenarioId, ScenarioContent>;

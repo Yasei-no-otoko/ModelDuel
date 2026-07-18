@@ -228,11 +228,21 @@ test("completes the verified Seasons journey with sealed evidence and a transfer
   await expect(
     detailedTrace.getByRole("heading", { name: "Correct · 1/1", exact: true }),
   ).toBeVisible();
+  const seasonsDebrief = page.getByTestId("teacher-debrief");
+  await expect(seasonsDebrief).toContainText(
+    "If Earth–Sun distance caused seasons, how could the two hemispheres have opposite seasons at the same time?",
+  );
+  await expect(seasonsDebrief).toContainText(
+    "Listen for axial tilt changing sunlight angle and relative incoming energy in opposite ways while both hemispheres share one Earth–Sun distance.",
+  );
   const seasonsHandoff = page.getByLabel("Teacher handoff preview");
   await expect(seasonsHandoff).toContainText("Scenario\n  Seasons");
   await expect(seasonsHandoff).toContainText("Verified authored sample");
   await expect(seasonsHandoff).toContainText(
     "Northern summer; Southern winter; relative incident energy",
+  );
+  await expect(seasonsHandoff).toContainText(
+    "If Earth–Sun distance caused seasons, how could the two hemispheres have opposite seasons at the same time?",
   );
   await expect(seasonsHandoff).not.toContainText("deterministic-question-bank");
   expect(verifiedLedger.api).toEqual(EXPECTED_VERIFIED_API_LEDGER);
@@ -490,12 +500,69 @@ test("offers an explicit verified path when the GPT-5.6 API key is not configure
   await expect(
     page.getByRole("heading", { name: "API key is not configured" }),
   ).toBeVisible();
-  await expect(page.getByRole("button", { name: "Retry GPT-5.6 analysis" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Retry GPT-5.6 analysis" })).toHaveCount(0);
   await page.getByRole("button", { name: "Run verified sample instead" }).click();
   await expect(
     page.getByRole("heading", { name: "Turn one disagreement into a fair test." }),
   ).toBeVisible();
   await expect(page.getByText("Verified authored sample", { exact: true })).toBeVisible();
+});
+
+test("stops an unsupported live claim without a paid retry and offers the verified contrast", async ({
+  page,
+}) => {
+  let analyzeRequests = 0;
+  let demoRequests = 0;
+  page.on("request", (request) => {
+    const path = new URL(request.url()).pathname;
+    if (path === "/api/analyze") analyzeRequests += 1;
+    if (path === "/api/demo") demoRequests += 1;
+  });
+  await page.route("**/api/analyze", async (route) => {
+    await route.fulfill({
+      status: 422,
+      contentType: "application/json",
+      headers: { "Cache-Control": "no-store" },
+      body: JSON.stringify({
+        error: {
+          code: "UNSUPPORTED_MISCONCEPTION",
+          message:
+            "This pilot could not map the explanation to the selected validated misconception contrast.",
+          retryable: false,
+        },
+      }),
+    });
+  });
+
+  const uniqueExplanation =
+    "I think reflected light from another planet changes the Moon's phases.";
+  await page.goto("/");
+  await page.getByLabel("Your current explanation").fill(uniqueExplanation);
+  await confirmLiveUse(page);
+  await page.getByRole("button", { name: "Analyze with GPT-5.6" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "This pilot cannot compare that claim yet" }),
+  ).toBeVisible();
+  await expect(page.getByText(/No second model request was started/)).toBeVisible();
+  await expect(page.getByText(/confirmed live request already sent it once/)).toBeVisible();
+  const submittedReview = page.getByTestId("submitted-input-review");
+  await expect(submittedReview).toContainText(uniqueExplanation);
+  await expect(submittedReview).toContainText("Sketch: none");
+  await expect(page.getByRole("button", { name: "Retry GPT-5.6 analysis" })).toHaveCount(0);
+  expect(analyzeRequests).toBe(1);
+
+  await page.getByRole("button", { name: "Run verified sample instead" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Turn one disagreement into a fair test." }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("This is a deterministic verified sample, not a live GPT response.", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  expect(analyzeRequests).toBe(1);
+  expect(demoRequests).toBe(1);
 });
 
 test("cancels and ignores a stale analysis response after New attempt", async ({
@@ -833,6 +900,13 @@ test("completes the Moon path with server-authenticated transfer evidence", asyn
   await expect(trace).toContainText("Before");
   await expect(trace).toContainText("Evidence → revision");
   await expect(trace).toContainText("Unseen transfer");
+  const moonDebrief = page.getByTestId("teacher-debrief");
+  await expect(moonDebrief).toContainText(
+    "What would you expect to observe if Earth's shadow caused every phase, and how does that differ from the sunlight-and-viewing-angle model?",
+  );
+  await expect(moonDebrief).toContainText(
+    "Listen for the learner to distinguish regular phases from eclipses and connect the illuminated fraction to Moon–Sun–Earth geometry.",
+  );
   await expect(trace).toContainText(
     "This documents one completed attempt—not a grade, a longitudinal record, or proof of durable learning.",
   );
@@ -932,6 +1006,20 @@ test("completes the Moon path with server-authenticated transfer evidence", asyn
   await page.getByRole("button", { name: "Start a new attempt" }).click();
   await expect(trace).toHaveCount(0);
   await expect(exportConfirmation).toHaveCount(0);
+});
+
+test("shows the authored support cue after an incorrect Moon transfer", async ({ page }) => {
+  await advanceToTransfer(page);
+  await page.getByLabel("The Moon is opposite the Sun").check();
+  await page.getByRole("button", { name: "Lock and check answer" }).click();
+
+  const debrief = page.getByTestId("teacher-debrief");
+  await expect(debrief).toContainText(
+    "Listen for the learner to identify which half of the Moon sunlight illuminates and which half faces Earth at new moon before selecting an arrangement.",
+  );
+  await expect(debrief).not.toContainText(
+    "Listen for the learner to distinguish regular phases from eclipses",
+  );
 });
 
 test("never fabricates a local score when the transfer API fails", async ({ page }) => {

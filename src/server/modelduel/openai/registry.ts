@@ -62,7 +62,7 @@ export function resolveRegistryPlan(input: {
   ) {
     return SEASONS_PLAN;
   }
-  throw new ModelDuelUpstreamError("MODEL_OUTPUT_INVALID");
+  throw new ModelDuelUpstreamError("UNSUPPORTED_MISCONCEPTION");
 }
 
 export function resolveRegistryIdentity(input: {
