@@ -86,13 +86,20 @@ const ALLOWED_CONSOLE_PATTERNS = Object.freeze([
   /^\[\.WebGL-0x[0-9a-f]+\]GL Driver Message \(OpenGL, Performance, GL_CLOSE_PATH_NV, High\): GPU stall due to ReadPixels(?: \(this message will no longer repeat\))?$/i,
 ]);
 const REPRESENTATIVE_COMMITS = Object.freeze([
-  "ee89b76",
-  "2f219fb",
-  "7c9f82b",
   "682c206",
   "e04443f",
-  "0fc276b",
+  "6186358",
+  "8f9895d",
+  "3d65845",
 ]);
+const BUILD_EVIDENCE = Object.freeze({
+  nodeTests: 344,
+  workerdTests: 7,
+  chromiumTests: 36,
+  securityDeltaFiles: 25,
+  reportableSecurityFindings: 0,
+  productionMerge: "3d65845",
+});
 
 const SELECTORS = Object.freeze({
   heroHeading: Object.freeze({
@@ -1150,9 +1157,9 @@ const CODEX_OVERLAY = Object.freeze({
     "Plan → implement → test → review → harden → deploy",
     "State machine → routes → deterministic simulations → 3D and 2D evidence → encrypted transfer boundary",
     `Representative commits: ${REPRESENTATIVE_COMMITS.join(" · ")}`,
-    "Final main gate: 332 Vitest tests · 34 Chromium E2E",
-    "Next.js · OpenNext · Wrangler: pass",
-    "Production dependency audit: no known vulnerabilities",
+    `Final main gate: ${BUILD_EVIDENCE.nodeTests} Node · ${BUILD_EVIDENCE.workerdTests} workerd · ${BUILD_EVIDENCE.chromiumTests} Chromium`,
+    `Codex Security: ${BUILD_EVIDENCE.securityDeltaFiles}-file delta · ${BUILD_EVIDENCE.reportableSecurityFindings} reportable findings`,
+    "Next.js · OpenNext · Wrangler: pass · dependency audit: clean",
   ]),
 });
 
@@ -1785,6 +1792,7 @@ async function main() {
           },
           selectors: Object.keys(SELECTORS),
           expectedApiLedger: EXPECTED_API_LEDGER,
+          buildEvidence: BUILD_EVIDENCE,
           narration: {
             model: TTS_MODEL,
             voice: TTS_VOICE,
@@ -1922,6 +1930,7 @@ async function main() {
         durationSeconds: TOTAL_DURATION_SECONDS,
         timecodes: timeline.rows.map((row) => row.timecode),
       },
+      buildEvidence: BUILD_EVIDENCE,
       narration: {
         model: TTS_MODEL,
         voice: TTS_VOICE,
