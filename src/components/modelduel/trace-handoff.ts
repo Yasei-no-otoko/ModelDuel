@@ -12,6 +12,8 @@ export type TraceHandoffContent = Readonly<{
   revisionFeedback: string;
   transferResult: string;
   transferRationale: string;
+  teacherNextQuestion: string;
+  teacherListenFor: string;
 }>;
 
 function safeLineBlock(value: string) {
@@ -56,6 +58,10 @@ export function buildTraceHandoffText(content: TraceHandoffContent) {
     "",
     section(5, "Transfer result", content.transferResult),
     `Transfer rationale\n${safeLineBlock(content.transferRationale)}`,
+    "",
+    "Teacher debrief",
+    `  Next question\n${safeLineBlock(content.teacherNextQuestion)}`,
+    `  Listen for\n${safeLineBlock(content.teacherListenFor)}`,
     "",
     "Sharing boundary",
     "  This learner-controlled handoff was created from the active browser session. ModelDuel did not send it or create a server-side record.",

@@ -14,6 +14,7 @@ type SafeErrorCode =
   | "MODEL_REFUSAL"
   | "REVISION_IN_PROGRESS"
   | "RATE_LIMITED"
+  | "UNSUPPORTED_MISCONCEPTION"
   | "MODEL_OUTPUT_INVALID"
   | "UPSTREAM_INCOMPLETE"
   | "ORCHESTRATION_INVALID"
@@ -64,6 +65,12 @@ const SAFE_ERRORS: Record<
     status: 429,
     message: "The model service is temporarily rate limited.",
     retryable: true,
+  },
+  UNSUPPORTED_MISCONCEPTION: {
+    status: 422,
+    message:
+      "This pilot could not map the explanation to the selected validated misconception contrast.",
+    retryable: false,
   },
   MODEL_OUTPUT_INVALID: {
     status: 502,

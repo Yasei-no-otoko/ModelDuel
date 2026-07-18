@@ -161,7 +161,7 @@ function SourceNotice({
       <p>{load.notice}</p>
       <p>
         {isLive
-          ? `GPT-5.6 analyzed ${analyzedInput} for this attempt.`
+          ? `GPT-5.6 analyzed ${analyzedInput} and mapped it to this pilot's validated contrast. ModelDuel did not generate arbitrary physics or grading.`
           : "The verified sample did not analyze your typed explanation or sketch; they remain part of your local learning trace."}
       </p>
     </aside>
@@ -223,6 +223,9 @@ export function ModelDuelExperience() {
     useState<ScenarioId>("moon-phases");
   const activeScenarioId = session.scenarioId ?? selectedScenarioId;
   const scenarioContent = SCENARIO_CONTENT[activeScenarioId];
+  const teacherListenFor = session.trace?.transfer.result.isCorrect
+    ? scenarioContent.teacherListenForCorrect
+    : scenarioContent.teacherListenForNeedsSupport;
   const [explanation, setExplanation] = useState<string>(
     SCENARIO_CONTENT["moon-phases"].sampleMisconception,
   );
@@ -233,6 +236,8 @@ export function ModelDuelExperience() {
   const [analysisPending, setAnalysisPending] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [analysisErrorCode, setAnalysisErrorCode] = useState<ApiErrorCode | null>(null);
+  const [analysisErrorRetryable, setAnalysisErrorRetryable] =
+    useState<boolean | null>(null);
   const [analysisAttempt, setAnalysisAttempt] = useState<
     "live" | "verified-sample" | null
   >(null);
@@ -369,6 +374,7 @@ export function ModelDuelExperience() {
     setAnalysisPending(true);
     setAnalysisError(null);
     setAnalysisErrorCode(null);
+    setAnalysisErrorRetryable(null);
 
     try {
       const loaded = await loadVerifiedDemo(
@@ -395,6 +401,9 @@ export function ModelDuelExperience() {
           ? error.code
           : null,
       );
+      setAnalysisErrorRetryable(
+        error instanceof ModelDuelApiError ? error.retryable : true,
+      );
       setAnalysisError(
         humanError(error, "The validated authored challenge could not be loaded."),
       );
@@ -418,6 +427,7 @@ export function ModelDuelExperience() {
     setAnalysisPending(true);
     setAnalysisError(null);
     setAnalysisErrorCode(null);
+    setAnalysisErrorRetryable(null);
 
     try {
       const loaded = await analyzeSubmission(
@@ -443,12 +453,21 @@ export function ModelDuelExperience() {
           : null;
       setAnalysisLoad(null);
       setAnalysisErrorCode(code);
+      setAnalysisErrorRetryable(
+        error instanceof ModelDuelApiError ? error.retryable : true,
+      );
       setAnalysisError(
         code === "CONFIGURATION_REQUIRED"
           ? "API key is not configured for live GPT-5.6 analysis. You can explicitly run the verified sample instead."
+          : code === "UNSUPPORTED_MISCONCEPTION"
+            ? `Your explanation is outside the ${SCENARIO_CONTENT[request.scenarioId].label} contrast this pilot can simulate. The confirmed live request already sent it once for GPT extraction with store: false; this page retains the review copy below, and no additional model call will run automatically.`
           : humanError(error, "The GPT-5.6 analysis could not be completed."),
       );
-      setStatus("Live analysis unavailable. No evidence or score was shown.");
+      setStatus(
+        code === "UNSUPPORTED_MISCONCEPTION"
+          ? "Explanation outside this pilot's validated scope. No evidence, score, or automatic retry was produced."
+          : "Live analysis unavailable. No evidence or score was shown.",
+      );
     } finally {
       const isCurrent = isTransportCurrent(transport);
       finishTransport(transport);
@@ -805,6 +824,7 @@ export function ModelDuelExperience() {
     setAnalysisPending(false);
     setAnalysisError(null);
     setAnalysisErrorCode(null);
+    setAnalysisErrorRetryable(null);
     setAnalysisAttempt(null);
     setLiveUseConfirmed(false);
     setLiveAnalysisRequest(null);
@@ -854,6 +874,8 @@ export function ModelDuelExperience() {
       revisionFeedback: `${feedbackSource} · ${session.trace.revision.feedback.conceptualChange}`,
       transferResult: `${session.trace.transfer.result.isCorrect ? "Correct · 1/1" : "Not yet · 0/1"} · server-verified`,
       transferRationale: session.trace.transfer.result.rationale,
+      teacherNextQuestion: scenarioContent.teacherNextQuestion,
+      teacherListenFor,
     };
   }
 
@@ -1110,6 +1132,15 @@ export function ModelDuelExperience() {
                 </div>
               ) : null}
 
+              <aside className="pilot-scope" aria-label="Live pilot scope">
+                <strong>Validated comparison scope</strong>
+                <p>{scenarioContent.livePilotScope}</p>
+                <p>
+                  If the explanation does not match this contrast, ModelDuel stops after
+                  extraction, does not auto-retry, and offers the API-free verified sample.
+                </p>
+              </aside>
+
               <div className="live-use-boundary">
                 <p id="live-use-disclosure">{LIVE_USE_DISCLOSURE}</p>
                 <label>
@@ -1171,13 +1202,17 @@ export function ModelDuelExperience() {
               <div className="challenge-error-panel" role="alert">
                 <span className="error-orbit" aria-hidden="true">!</span>
                 <p className="eyebrow">
-                  {analysisAttempt === "live"
+                  {analysisErrorCode === "UNSUPPORTED_MISCONCEPTION"
+                    ? "Outside this pilot's validated scope"
+                    : analysisAttempt === "live"
                     ? "Live analysis unavailable"
                     : "Validated source required"}
                 </p>
                 <h1 id="interpret-title">
                   {analysisErrorCode === "CONFIGURATION_REQUIRED"
                     ? "API key is not configured"
+                    : analysisErrorCode === "UNSUPPORTED_MISCONCEPTION"
+                      ? "This pilot cannot compare that claim yet"
                     : analysisAttempt === "live"
                       ? "GPT-5.6 analysis unavailable"
                       : "Authored challenge unavailable"}
@@ -1186,39 +1221,73 @@ export function ModelDuelExperience() {
                   {analysisError ??
                     "The challenge response could not be accepted by the protected session."}
                 </p>
-                <p>
-                  No local sample was substituted. Evidence, revision feedback, transfer
-                  scoring, and the final trace remain unavailable.
-                </p>
+                {analysisErrorCode === "UNSUPPORTED_MISCONCEPTION" ? (
+                  <>
+                    <p>
+                      No second model request was started. Review the page-local copy below;
+                      choosing the validated sample does not send it to GPT again.
+                    </p>
+                    {session.input ? (
+                      <aside
+                        className="submitted-input-review"
+                        aria-labelledby="submitted-input-review-title"
+                        data-testid="submitted-input-review"
+                      >
+                        <h2 id="submitted-input-review-title">Input sent for the initial extraction</h2>
+                        {session.input.explanation ? (
+                          <blockquote>{session.input.explanation}</blockquote>
+                        ) : (
+                          <p>Text: none (sketch-only submission)</p>
+                        )}
+                        {sketch ? (
+                          <div className="submitted-sketch-review">
+                            {/* eslint-disable-next-line @next/next/no-img-element -- local object URL preview */}
+                            <img src={sketch.previewUrl} alt="Submitted learner sketch review" />
+                            <span>{sketch.file.name}</span>
+                          </div>
+                        ) : (
+                          <p>Sketch: none</p>
+                        )}
+                      </aside>
+                    ) : null}
+                  </>
+                ) : (
+                  <p>
+                    No local sample was substituted. Evidence, revision feedback, transfer
+                    scoring, and the final trace remain unavailable.
+                  </p>
+                )}
                 <div className="error-actions">
                   {analysisAttempt === "live" ? (
                     <>
+                      {analysisErrorRetryable ? (
+                        <button
+                          className="primary-button"
+                          type="button"
+                          disabled={analysisPending || !liveAnalysisRequest}
+                          onClick={() => {
+                            if (liveAnalysisRequest) void requestLiveAnalysis(liveAnalysisRequest);
+                          }}
+                        >
+                          Retry GPT-5.6 analysis
+                        </button>
+                      ) : null}
                       <button
-                        className="primary-button"
+                        className={analysisErrorRetryable ? "secondary-button" : "primary-button"}
                         type="button"
-                        disabled={analysisPending || !liveAnalysisRequest}
+                        disabled={
+                          analysisPending ||
+                          !session.analysisRequestId ||
+                          !session.scenarioId
+                        }
                         onClick={() => {
-                          if (liveAnalysisRequest) void requestLiveAnalysis(liveAnalysisRequest);
-                        }}
-                      >
-                        Retry GPT-5.6 analysis
-                      </button>
-                      <button
-                        className="secondary-button"
-                        type="button"
-                  disabled={
-                    analysisPending ||
-                    !session.analysisRequestId ||
-                    !session.scenarioId
-                  }
-                        onClick={() => {
-                    if (session.analysisRequestId && session.scenarioId) {
+                          if (session.analysisRequestId && session.scenarioId) {
                             setLiveAnalysisRequest(null);
-                      void requestValidatedChallenge(
-                        session.analysisRequestId,
-                        session.sessionId,
-                        session.scenarioId,
-                      );
+                            void requestValidatedChallenge(
+                              session.analysisRequestId,
+                              session.sessionId,
+                              session.scenarioId,
+                            );
                           }
                         }}
                       >
@@ -1229,18 +1298,18 @@ export function ModelDuelExperience() {
                     <button
                       className="primary-button"
                       type="button"
-                disabled={
-                  analysisPending ||
-                  !session.analysisRequestId ||
-                  !session.scenarioId
-                }
+                      disabled={
+                        analysisPending ||
+                        !session.analysisRequestId ||
+                        !session.scenarioId
+                      }
                       onClick={() => {
-                  if (session.analysisRequestId && session.scenarioId) {
-                    void requestValidatedChallenge(
-                      session.analysisRequestId,
-                      session.sessionId,
-                      session.scenarioId,
-                    );
+                        if (session.analysisRequestId && session.scenarioId) {
+                          void requestValidatedChallenge(
+                            session.analysisRequestId,
+                            session.sessionId,
+                            session.scenarioId,
+                          );
                         }
                       }}
                     >
@@ -1670,6 +1739,24 @@ export function ModelDuelExperience() {
                   <p>{session.trace.transfer.result.rationale}</p>
                 </article>
               </div>
+              <section
+                className="teacher-debrief"
+                aria-labelledby="teacher-debrief-title"
+                data-testid="teacher-debrief"
+              >
+                <p className="micro-label">Teacher discussion cue · authored</p>
+                <h2 id="teacher-debrief-title">Keep the discussion on the evidence.</h2>
+                <div className="teacher-debrief-grid">
+                  <article>
+                    <h3>Teacher&apos;s next question</h3>
+                    <p>{scenarioContent.teacherNextQuestion}</p>
+                  </article>
+                  <article>
+                    <h3>Listen for</h3>
+                    <p>{teacherListenFor}</p>
+                  </article>
+                </div>
+              </section>
               <p className="trace-review-limit">
                 This documents one completed attempt—not a grade, a longitudinal record, or proof
                 of durable learning.

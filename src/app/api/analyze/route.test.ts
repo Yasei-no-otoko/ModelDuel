@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { MAX_ANALYZE_JSON_BYTES } from "../../../lib/modelduel/input";
+import { MOON_HERO_SAMPLE } from "../../../lib/modelduel/samples";
 import { createRateLimitStore } from "@/server/modelduel/rate-limit";
 import { handleAnalyzeRequest } from "./route";
 
@@ -122,5 +123,49 @@ describe("POST /api/analyze safe boundary", () => {
     });
     expect(response.status).toBe(503);
     expect(rateLimitStore.globals.size).toBe(0);
+  });
+
+  it("returns a non-retryable 422 and never starts orchestration for an unsupported claim", async () => {
+    vi.stubEnv("MODELDUEL_EVALUATION_SECRET", "a".repeat(32));
+    const parseLearnerModel = vi.fn(async () => ({
+      status: "completed" as const,
+      hasError: false,
+      hasRefusal: false,
+      parsed: {
+        schemaVersion: "1.0" as const,
+        learnerModel: {
+          ...MOON_HERO_SAMPLE.learnerModel,
+          misconceptionType: "other" as const,
+        },
+      },
+      outputText: "",
+    }));
+    const runProgramTurn = vi.fn();
+    const gateway = {
+      analysisModel: "gpt-5.6-terra" as const,
+      revisionModel: "gpt-5.6-luna" as const,
+      parseLearnerModel,
+      runProgramTurn,
+      parseRevisionFeedback: vi.fn(),
+    };
+
+    const response = await handleAnalyzeRequest(request(BODY), {
+      gateway,
+      now: 1_800_000_000_000,
+      rateLimitStore: createRateLimitStore(),
+    });
+
+    expect(response.status).toBe(422);
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "UNSUPPORTED_MISCONCEPTION",
+        message:
+          "This pilot could not map the explanation to the selected validated misconception contrast.",
+        retryable: false,
+      },
+    });
+    expect(parseLearnerModel).toHaveBeenCalledTimes(1);
+    expect(runProgramTurn).not.toHaveBeenCalled();
   });
 });

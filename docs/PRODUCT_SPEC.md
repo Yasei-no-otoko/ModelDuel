@@ -30,6 +30,7 @@ Recoverable validation and network errors remain in the current state with the l
 - In live mode, a learner can submit a non-empty explanation, one validated sketch, or both. An explicitly selected verified sample may start from an empty capture.
 - The server uses the Responses API with `store: false`; secrets never reach browser code.
 - Text/image output parses into a strict, versioned learner-model schema.
+- Live GPT extraction maps only to the selected authored contrast. A schema-valid but unsupported claim stops before tool orchestration, is not retried automatically, and can move only through an explicit API-free verified-sample choice.
 - The learner reviews and confirms the plain-language interpretation; P0 does not provide free-form editing at this step.
 - Authored verified data is explicitly selected, labeled, and never presented as a live response or automatic fallback.
 
@@ -50,6 +51,7 @@ Recoverable validation and network errors remain in the current state with the l
 - A learner-controlled teacher handoff exposes only allow-listed trace text. Copy and fixed-name plain-text download remain disabled until the learner-text boundary is explicitly confirmed.
 - Creating the handoff performs no API request and ModelDuel does not create a server-side record, email, or share link for it. The trace remains in the active page until reset, reload, or page close; a system clipboard, browser, or device may retain or sync a copy.
 - The editable handoff is not signed, tamper-proof, or teacher-authenticated. It documents one attempt as a conversation aid; it is not a grade, a longitudinal record, or proof of durable learning.
+- Scenario-authored teacher discussion cues branch only on that same-session transfer result; they trigger no additional AI evaluation, storage, or sharing and are not a claim of mastery.
 - Failure states do not erase completed steps, fabricate a score, or expose raw model reasoning.
 - Live revision uses one short-lived replay ledger per signed token; an HMAC of its random `jti` selects the unique Durable Object name. The ledger stores an HMAC-derived fingerprint, execution state, and normalized feedback/model result. Cleanup is scheduled after the authorization window plus a one-minute grace. Storage failures attempt to re-arm cleanup once per minute, while a failed re-arm throws so Cloudflare's finite retries can run. It does not store the raw token, raw `jti`, session/request IDs, or revised explanation; normalized feedback may still reflect the explanation until cleanup succeeds.
 

@@ -18,6 +18,10 @@ const CONTENT: TraceHandoffContent = {
   revisionFeedback: "Authored deterministic rubric · revised",
   transferResult: "Correct · 1/1 · server-verified",
   transferRationale: "The viewing geometry predicts a new Moon in the Sun's direction.",
+  teacherNextQuestion:
+    "What would the shadow model predict, and how does that differ from the evidence?",
+  teacherListenFor:
+    "Distinguish regular phases from eclipses and use viewing geometry.",
 };
 
 describe("trace handoff", () => {
@@ -31,6 +35,13 @@ describe("trace handoff", () => {
     expect(text).toContain("ModelDuel — Learner-controlled Revision Trace");
     expect(text).toContain("1. Initial belief\n  Earth's shadow causes phases.");
     expect(text).toContain("5. Transfer result\n  Correct · 1/1 · server-verified");
+    expect(text).toContain("Teacher debrief");
+    expect(text).toContain(
+      "Next question\n  What would the shadow model predict, and how does that differ from the evidence?",
+    );
+    expect(text).toContain(
+      "Listen for\n  Distinguish regular phases from eclipses and use viewing geometry.",
+    );
     expect(text).toContain("ModelDuel did not send it or create a server-side record.");
     expect(text).toContain("until reset, reload, or page close");
     expect(text).toContain("Review it before sharing with a teacher or anyone else.");
@@ -47,11 +58,15 @@ describe("trace handoff", () => {
       ...CONTENT,
       initialBelief:
         "First line\r\nSecond\u0000 line\twith detail\n=HYPERLINK(\"https://example.test\")\n  @SUM(A1)\n\u202Ehidden",
+      teacherNextQuestion: "=SUM(A1)\r\nWhat changed?",
+      teacherListenFor: "@IMPORTXML(\"https://example.test\")\u0000",
     });
 
     expect(text).toContain("  First line\n  Second line with detail");
     expect(text).toContain("  '=HYPERLINK");
     expect(text).toContain("  '  @SUM(A1)");
+    expect(text).toContain("  '=SUM(A1)\n  What changed?");
+    expect(text).toContain("  '@IMPORTXML");
     expect(text).not.toContain("\u0000");
     expect(text).not.toContain("\u202E");
     expect(text).not.toContain("\t");
