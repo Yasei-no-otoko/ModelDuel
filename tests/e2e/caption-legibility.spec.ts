@@ -116,9 +116,9 @@ test("keeps learner-facing captions legible through the Moon evidence flow", asy
   const inactiveColor = await inactiveProgress.evaluate(
     (element) => getComputedStyle(element).color,
   );
-  expect(inactiveColor).toBe("rgb(113, 128, 171)");
-  const foreground = relativeLuminance(113, 128, 171);
-  const background = relativeLuminance(4, 7, 19);
+  expect(inactiveColor).toBe("rgb(127, 141, 162)");
+  const foreground = relativeLuminance(127, 141, 162);
+  const background = relativeLuminance(6, 10, 18);
   const contrast =
     (Math.max(foreground, background) + 0.05) /
     (Math.min(foreground, background) + 0.05);

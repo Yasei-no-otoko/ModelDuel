@@ -73,7 +73,7 @@ for (const width of [320, 375, 768, 1280] as const) {
     expect(loadingBox).not.toBeNull();
     const expectedReservedHeight =
       width <= 520
-        ? 104 * 16 - width * 0.62
+        ? 93.5 * 16 - width * 0.62
         : width <= 780
           ? 82 * 16
           : Math.min(42 * 16, Math.max(32 * 16, width * 0.62));
