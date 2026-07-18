@@ -68,7 +68,7 @@ The useful boundary is not “AI versus deterministic code.” It is deciding wh
 
 ### What's next
 
-Historical main merge `6186358`, its teacher-handoff gates and deployment, its free verified public canary, and the exact 2:45 local video candidate are complete. The Option 2 replay-hardening candidate has passed local gates and awaits main integration and production verification. Before submission, the user will decide repository and YouTube publication, then replace the remaining repository, video, and feedback placeholders; Codex does not publish the video. The dated 2026-07-17 Terra/Luna paid canary from earlier merge `e04443f` remains useful inherited integration evidence; the replay-hardening candidate deliberately makes no additional paid model call before free gates pass. After the hackathon, the same constrained-world pattern could expand to additional science misconceptions, classroom administration, and separately evaluated longitudinal learning records. Any impact or learning-gain claim would require a separate classroom evaluation.
+Historical main merge `6186358`, its teacher-handoff gates and deployment, its free verified public canary, and the exact 2:45 local video candidate are complete. Option 2 is integrated at main merge `3d65845` and deployed as Cloudflare version `cc6bc7c5-13e6-463d-a8d6-533267a2d468`; the free production judge ledger and security headers passed without a new paid model call. Before submission, the user will decide repository and YouTube publication, then replace the remaining repository, video, and feedback placeholders; Codex does not publish the video. The dated 2026-07-17 Terra/Luna paid canary from earlier merge `e04443f` remains useful inherited integration evidence; the replay-hardening release deliberately made no additional paid model call. After the hackathon, the same constrained-world pattern could expand to additional science misconceptions, classroom administration, and separately evaluated longitudinal learning records. Any impact or learning-gain claim would require a separate classroom evaluation.
 
 ### Production verification
 
@@ -270,7 +270,7 @@ Paid live canary inherited from earlier main merge `e04443f`: one analysis retur
 - [x] Historical deployment for main merge `6186358`: [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev), Cloudflare version `e400d0d7-3fb1-47be-8872-ef9caeefb5d9`, build ID `nkFYXp8co99asrn8bVd1U`.
 - [x] Verify HTTP 200, CSP/HSTS/nosniff, the exact free three-request verified ledger, teacher summary/handoff visibility, confirmation-disabled controls, boundary text, internal-metadata exclusion, and zero failed requests or console errors.
 - [x] Clear the Medium/P2 live-revision token replay blocker locally with per-`jti` atomic Durable Object control, prove a reused valid token with fresh caller keys cannot make a second upstream request, and complete the 25-file security delta scan with zero reportable findings.
-- [ ] Deploy the Option 2 main merge and verify the replay boundary plus the free production judge path without a paid model call.
+- [x] Deploy Option 2 main merge `3d65845` as Cloudflare version `cc6bc7c5-13e6-463d-a8d6-533267a2d468`; verify the created `RevisionReplayLedger`, Terra/Luna and Rate Limit bindings, root/security headers, and exact free production judge ledger without a paid model call.
 - [ ] Publish the intended repository and verify judge access.
 - [ ] Replace the repository, video, and Codex Feedback placeholders.
 
