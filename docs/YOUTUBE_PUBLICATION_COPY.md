@@ -17,8 +17,9 @@ ModelDuel turns a learnerâ€™s explanation or sketch into two runnable 3D worldsâ
 Education entry for OpenAI Build Week 2026. Built with Codex and GPT-5.6 Terra/Luna, Structured Outputs, validated tool orchestration, deterministic Three.js simulations, and Cloudflare Workers.
 
 Live demo: https://modelduel.yasei.workers.dev
+Source code: https://github.com/Yasei-no-otoko/ModelDuel
 
-This video demonstrates the free verified-sample path. AI-generated narration: OpenAI TTS (nova). No copyrighted music.
+This 2:45 video demonstrates the deterministic verified-sample path. It records no learner data and makes no live Terra or Luna request. AI-generated narration: OpenAI TTS (nova). No copyrighted music.
 
 #OpenAI #Codex #Education #ThreeJS
 ```
