@@ -70,7 +70,7 @@ The useful boundary is not “AI versus deterministic code.” It is deciding wh
 
 ### What's next
 
-Final implementation merge `e5e7b03` is deployed as Cloudflare version `37596678-0018-4415-b9bd-5671d67068bb`; the free production judge ledger, bindings, required-secret inventory, and security headers passed. The current exact 2:45 local candidate is run `20260718T123124345Z-7df28d60-4670-4e1b-acd7-b04f2c41d9c2` from generator commit `42647ed`. Before submission, the user will decide repository and YouTube publication, then replace the remaining repository, video, and feedback placeholders; Codex does not publish the video. After the hackathon, the constrained-world pattern could expand to additional science misconceptions and a separately evaluated classroom pilot. Any impact or learning-gain claim would require that evaluation rather than being inferred from this prototype.
+Evidence Lens runtime merge `1649c4b` is deployed as Cloudflare version `857b32b6-7ae0-4eec-8be2-75421eaf77ba`; the free production judge path, bindings, security headers, and zero-paid-call presentation capture passed. The current exact 2:45 local candidate is run `20260718T163348650Z-65f5ae63-ff52-4b7c-bae7-f02f2b0c44a2` from generator commit `462fb97`. Before submission, the user will decide repository and YouTube publication, then replace the remaining repository, video, and feedback placeholders; Codex does not publish the video. After the hackathon, the constrained-world pattern could expand to additional science misconceptions and a separately evaluated classroom pilot. Any impact or learning-gain claim would require that evaluation rather than being inferred from this prototype.
 
 ### Production verification
 
@@ -249,7 +249,7 @@ Production visual QA completed Moon at 1280px and 375px through the trace, and S
 
 Pre-merge local gate at HEAD `682c206`: Vitest **332/332** across **31 files**; Chromium E2E **34/34**; Next.js, OpenNext, and Wrangler **Pass**; Worker **8,277.49 KiB raw / 1,619.89 KiB gzip**; dependency audit **no known vulnerabilities**. Wrangler reported **18 deployable asset entries** backed by **14 physical assets**; the largest dynamic 3D chunk was **896,059 bytes**. The rendered design audit scored **B+ / 3.37**, AI Slop **B-**, goodwill **93**, with Critical/High/Medium findings **0/0/0**. The performance audit recorded **229,931 encoded bytes** of initial JS before the outer recovery addition and **231,708 encoded bytes** for the final recovery build at HEAD `682c206`; under 4× CPU throttling, the primary CTA became ready in **363 ms**.
 
-Current post-merge `main` runtime gate: **Complete for Evidence Lens merge `1649c4b`**. The existing video candidate remains an explicitly historical artifact generated from `42647ed` against deployment `e5e7b03`; it is not misrepresented as footage of the Evidence Lens release.
+Current post-merge `main` runtime gate: **Complete for Evidence Lens merge `1649c4b`**. The current video candidate was generated from `462fb97` against that deployment and presents the same Evidence Lens UI.
 
 Submission-quality candidate gate on 2026-07-17 JST: `pnpm check` passed with Vitest **335/335** across **32 files** and a successful Next.js production build; Chromium plus WebKit E2E completed with **69 passed / 1 intentional non-Chromium axe skip**; the Chromium axe scan passed capture, evidence, and trace for WCAG 2.0/2.1/2.2 A/AA tags. OpenNext/Workers typecheck, Wrangler dry run (**8,286.05 KiB raw / 1,621.89 KiB gzip**), and production dependency audit all passed. The local Playwright Firefox build could not launch even for an empty page because of a host graphics failure (`RenderCompositorSWGL failed mapping default framebuffer, no dt`), so the Ubuntu CI three-engine job remains a required external gate rather than being misreported as passed.
 
@@ -295,9 +295,9 @@ Final paid canary for merge `e5e7b03`: only after all local, dry-run, deployed-b
 - [x] Select `docs/media/modelduel-cover.png` as the Devpost cover/thumbnail and README hero.
 - [x] Confirm the deterministic authored-source label is visible and no live submit occurs in the production screenshot journeys.
 - [x] Complete the rights audit for the five first-party production screenshots and cover.
-- [x] Record the exact 2:45 shot list with audible English narration; current run `20260718T123124345Z-7df28d60-4670-4e1b-acd7-b04f2c41d9c2` records final merge `e5e7b03` and 356/7/38 plus Security 96/96/0 evidence from generator commit `42647ed`.
+- [x] Record the exact 2:45 shot list with audible English narration; current run `20260718T163348650Z-65f5ae63-ff52-4b7c-bae7-f02f2b0c44a2` records Evidence Lens merge `1649c4b` and 360/7/38 plus Security 96/96/0 evidence from generator commit `462fb97`.
 - [x] Verify the exact three-request authored ledger, zero live model calls, zero external HTTP, and no cookies or request/response payloads in the recording manifest.
-- [x] Audit the current video media: first-party browser capture, OpenAI TTS `nova` with persistent disclosure and 10/10 cache hits, no music, H.264/AAC/mov_text, full decode pass, matching hashes, and checked contact-sheet plus 123-second handoff frame. See [current evidence](VIDEO_EVIDENCE_2026-07-18.md).
+- [x] Audit the current video media: first-party browser capture, OpenAI TTS `nova` with persistent disclosure and 10/10 cache hits, no music, H.264/AAC/mov_text, full decode pass, matching hashes, and checked 10-frame contact sheet. See [current evidence](VIDEO_EVIDENCE_2026-07-19.md).
 - [ ] User-owned manual gate: upload the final video to YouTube, choose public/embed visibility, verify it while logged out, and replace `{{VIDEO_URL}}`. Codex only maintains [the title and description copy](YOUTUBE_PUBLICATION_COPY.md) and does not publish.
 
 ### Devpost form

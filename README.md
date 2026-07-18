@@ -150,7 +150,7 @@ The server routes are:
 - [OpenAI SDK integration reference](docs/OPENAI_SDK_REFERENCE.md)
 - [Cloudflare Workers deployment reference](docs/CLOUDFLARE_DEPLOYMENT_REFERENCE.md)
 - [Submission media, narration rights, browser, and accessibility reference](docs/SUBMISSION_MEDIA_REFERENCE.md)
-- [Current local submission-video evidence](docs/VIDEO_EVIDENCE_2026-07-18.md)
+- [Current local Evidence Lens submission-video evidence](docs/VIDEO_EVIDENCE_2026-07-19.md)
 - [Historical narration and media QA evidence](docs/VIDEO_EVIDENCE_2026-07-17.md)
 - [Product specification](docs/PRODUCT_SPEC.md)
 
@@ -238,7 +238,7 @@ The dated production integration sequence made one Terra HTTP request and one Lu
 
 After earlier main merge `e04443f`, the paid runtime canary made exactly one live analysis request and one live revision request with zero retries. Analysis returned HTTP 200 in **17.642 seconds**, source `live`, model `gpt-5.6-terra`, with the exact tool order `validate_world_spec` → `simulate_world` → `compare_predictions` → `select_discriminating_case`. Revision returned HTTP 200 in **1.404 seconds**, source `gpt-5.6`, model `gpt-5.6-luna`; the same session and signed evaluation were accepted, conceptual change was `revised` with score `1`, and `liveUseAttestation: true` was carried by both requests. The server-minted cookie was reused with `Path=/`, `HttpOnly`, `Secure`, and `SameSite=Strict`; its value was not recorded. The strict responses did not expose token usage or cost, so neither is guessed. This is inherited integration evidence, not a paid canary of merge `6186358`; the handoff release intentionally used only the free verified path.
 
-The current exact 165-second video candidate is run `20260718T123124345Z-7df28d60-4670-4e1b-acd7-b04f2c41d9c2` from generator commit `42647ed` against final production merge `e5e7b03`. It includes the supported-pilot boundary, learner-controlled teacher handoff, 356/7/38 and Security 96/96/0 evidence, and 10/10 cached narration segments with zero Speech API calls. See [the current video evidence](docs/VIDEO_EVIDENCE_2026-07-18.md). Public video upload and visibility are user-owned manual actions that Codex does not perform. Repository access, `/feedback` Session ID, placeholder replacement, logged-out link checks, Ubuntu three-engine CI, and final form submission remain external gates. Track the canonical handoff in [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md).
+The current exact 165-second Evidence Lens video candidate is run `20260718T163348650Z-65f5ae63-ff52-4b7c-bae7-f02f2b0c44a2` from generator commit `462fb97` against production merge `1649c4b`. It includes the supported-pilot boundary, learner-controlled teacher handoff, 360/7/38 and Security 96/96/0 evidence, and 10/10 cached narration segments with zero Speech API calls. See [the current video evidence](docs/VIDEO_EVIDENCE_2026-07-19.md). Public video upload and visibility are user-owned manual actions that Codex does not perform. Repository access, `/feedback` Session ID, placeholder replacement, logged-out link checks, Ubuntu three-engine CI, and final form submission remain external gates. Track the canonical handoff in [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md).
 
 ## License
 
