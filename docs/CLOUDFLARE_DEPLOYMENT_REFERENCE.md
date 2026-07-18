@@ -80,6 +80,12 @@ The paid smoke used no HTTP retry. One text-only Terra analysis returned HTTP 20
 
 The live tail format did not expose exact Worker CPU time, so CPU duration and the account-plan-specific limit remain unverified operational metadata. The successful `Ok` outcomes show that these requests completed on the deployed Worker, but they are not a substitute for exact CPU telemetry. Per-POP Rate Limiting also remains an eventually consistent abuse guard rather than a global billing cap.
 
+## Final production verification — 2026-07-18 JST
+
+Final implementation merge `e5e7b03` was deployed as Cloudflare version `37596678-0018-4415-b9bd-5671d67068bb`, with Wrangler reporting 65 ms startup time and 100% traffic. The deployed inventory contained both required secrets by name, `RevisionReplayLedger`, four Rate Limiting bindings, the assets binding, trusted Cloudflare proxy mode, and the pinned Terra/Luna model variables. Root HTTP 200, HSTS, CSP, nosniff, the latest supported-pilot copy, and the exact free verified three-request ledger passed.
+
+Only after those gates passed, one final live Terra analysis returned HTTP 200 in 18.363 seconds with the exact four-tool ledger. One same-session Luna revision then returned HTTP 200 in 3.477 seconds with conceptual change `revised` and score `1`. HTTP and SDK retries were zero; no further paid canary was run. A sampled live tail confirmed successful Durable Object claim, commit, and complete calls on the same deployed version without retaining raw learner data, cookies, capabilities, secrets, or identifiers. Exact Worker CPU p95 remains an external operational metric rather than a claimed result.
+
 ## First-party references
 
 - [Next.js on Cloudflare Workers](https://developers.cloudflare.com/workers/framework-guides/web-apps/nextjs/)

@@ -88,18 +88,19 @@ const ALLOWED_CONSOLE_PATTERNS = Object.freeze([
 ]);
 const REPRESENTATIVE_COMMITS = Object.freeze([
   "682c206",
-  "e04443f",
   "6186358",
   "8f9895d",
-  "3d65845",
+  "2708191",
+  "fe91da0",
+  "e5e7b03",
 ]);
 const BUILD_EVIDENCE = Object.freeze({
-  nodeTests: 344,
+  nodeTests: 356,
   workerdTests: 7,
-  chromiumTests: 36,
-  securityDeltaFiles: 25,
+  chromiumTests: 38,
+  securityReviewedSources: 96,
   reportableSecurityFindings: 0,
-  productionMerge: "3d65845",
+  productionMerge: "e5e7b03",
 });
 
 const SELECTORS = Object.freeze({
@@ -1164,7 +1165,7 @@ const CODEX_OVERLAY = Object.freeze({
     "State machine → routes → deterministic simulations → 3D and 2D evidence → encrypted transfer boundary",
     `Representative commits: ${REPRESENTATIVE_COMMITS.join(" · ")}`,
     `Final main gate: ${BUILD_EVIDENCE.nodeTests} Node · ${BUILD_EVIDENCE.workerdTests} workerd · ${BUILD_EVIDENCE.chromiumTests} Chromium`,
-    `Codex Security: ${BUILD_EVIDENCE.securityDeltaFiles}-file delta · ${BUILD_EVIDENCE.reportableSecurityFindings} reportable findings`,
+    `Codex Security: ${BUILD_EVIDENCE.securityReviewedSources}/96 sources reviewed · ${BUILD_EVIDENCE.reportableSecurityFindings} reportable findings`,
     "Next.js · OpenNext · Wrangler: pass · dependency audit: clean",
   ]),
 });
