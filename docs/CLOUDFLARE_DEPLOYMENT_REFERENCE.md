@@ -93,6 +93,12 @@ Final implementation merge `e5e7b03` was deployed as Cloudflare version `3759667
 
 Only after those gates passed, one final live Terra analysis returned HTTP 200 in 18.363 seconds with the exact four-tool ledger. One same-session Luna revision then returned HTTP 200 in 3.477 seconds with conceptual change `revised` and score `1`. HTTP and SDK retries were zero; no further paid canary was run. A sampled live tail confirmed successful Durable Object claim, commit, and complete calls on the same deployed version without retaining raw learner data, cookies, capabilities, secrets, or identifiers. Exact Worker CPU p95 remains an external operational metric rather than a claimed result.
 
+## Evidence Lens production verification — 2026-07-19 JST
+
+Evidence Lens runtime merge `1649c4b` was deployed through the standard `pnpm cf:deploy` path as Cloudflare version `857b32b6-7ae0-4eec-8be2-75421eaf77ba`. Wrangler uploaded two changed assets, reused 36 unchanged assets, and reported a 47 ms startup time. The build-backed asset-preparation step normalized the exact empty Next.js client-middleware manifest form before upload; no manual mutation of `.open-next` was required.
+
+The public root returned HTTP 200 with HSTS and CSP. A newly generated UUID used with the free Moon `GET /api/demo` route returned HTTP 200, `source: verified-sample`, and `cache-control: no-store`. Five production submission screenshots were then captured through the verified path while `/api/analyze` was explicitly blocked; the observed paid-analysis call count was zero. No additional Terra or Luna canary was run because the earlier production integration evidence remains sufficient and the UI release did not change the model gateway.
+
 ## First-party references
 
 - [Next.js on Cloudflare Workers](https://developers.cloudflare.com/workers/framework-guides/web-apps/nextjs/)
