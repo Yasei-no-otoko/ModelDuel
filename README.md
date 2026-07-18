@@ -198,7 +198,7 @@ This repository was initialized from an empty root during the build week. The en
 
 ## Media and licensing
 
-The runtime ships no third-party image, audio, video, or 3D media. Astronomy visuals are rendered from application code, package dependencies are declared in the repository, and the source is MIT-licensed. The five production captures below are first-party screenshots of deployed Cloudflare version 3, build `La258MjHHcPyAMa5k13Uz`.
+The runtime ships no third-party image, audio, video, or 3D media. One first-party GPT-Image-2 observatory-instrument plate provides decorative Capture-stage orientation; its visible caption keeps evidence sealed, and it triggers no runtime generation call. The testable astronomy worlds and verified observations remain rendered from deterministic application code. Package dependencies are declared in the repository, and the source is MIT-licensed. The five production captures below are historical first-party screenshots of deployed Cloudflare version 3, build `La258MjHHcPyAMa5k13Uz`; they must be refreshed after the Evidence Lens release is deployed.
 
 | Production media | Dimensions | Size | Submission role |
 | --- | ---: | ---: | --- |

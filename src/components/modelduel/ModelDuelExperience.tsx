@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import {
   useEffect,
   useReducer,
@@ -51,6 +52,7 @@ import {
 } from "./trace-handoff";
 import { formatCausalRelation } from "./learner-copy";
 import { useHydrationReady } from "./browser";
+import { ModelDuelLogo } from "./ModelDuelLogo";
 import {
   loadWorldComparison,
   ResilientWorldComparison,
@@ -946,8 +948,10 @@ export function ModelDuelExperience() {
     <>
       <header className="app-header">
         <a className="brand" href="#main-content" aria-label="ModelDuel challenge home">
-          <span className="brand-mark" aria-hidden="true">M</span>
-          <span>{PRODUCT.name}</span>
+          <span className="brand-mark" aria-hidden="true">
+            <ModelDuelLogo className="brand-logo" />
+          </span>
+          <span className="brand-wordmark">{PRODUCT.name}</span>
         </a>
         <div className="header-meta">
         <span>Education · {scenarioContent.label}</span>
@@ -987,7 +991,7 @@ export function ModelDuelExperience() {
               <p className="eyebrow"><span aria-hidden="true" /> Evidence-led science learning</p>
               <h1 id="capture-title" aria-label={PRODUCT.tagline}>
                 <span>Two models predict.</span>
-                <span className="gradient-text">Evidence decides.</span>
+                <span className="evidence-text">Evidence decides.</span>
               </h1>
             <p className="hero-summary">{scenarioContent.heroSummary}</p>
               <button
@@ -1007,6 +1011,19 @@ export function ModelDuelExperience() {
                 <li>Physical observation stays separate from model claims.</li>
                 <li>Your final transfer result is checked only by the server.</li>
               </ul>
+              <figure className="scenario-illustration">
+                <Image
+                  src="/illustrations/modelduel-observatory-instrument.png"
+                  width={1200}
+                  height={800}
+                  sizes="(max-width: 960px) 100vw, 520px"
+                  priority
+                  alt="Vintage observatory instrument with brass optics and a mint glass indicator"
+                />
+                <figcaption>
+                  Orientation plate · observation instrument · evidence remains sealed
+                </figcaption>
+              </figure>
             </div>
 
             <form
@@ -1043,7 +1060,7 @@ export function ModelDuelExperience() {
             </fieldset>
               <div className="card-heading">
                 <div>
-                  <p className="micro-label">Capture · step 1 of 7</p>
+                  <p className="micro-label">Verified experiment · step 1 of 7</p>
                 <h2>{scenarioContent.capturePrompt}</h2>
                 </div>
                 <span className="sample-pill">Editable sample</span>
@@ -1066,6 +1083,9 @@ export function ModelDuelExperience() {
                           </>
                         )}
                 </button>
+              </div>
+              <div className="live-analysis-divider" aria-hidden="true">
+                <span>Optional live analysis</span>
               </div>
               <label htmlFor="learner-explanation">Your current explanation</label>
               <textarea
@@ -1351,7 +1371,9 @@ export function ModelDuelExperience() {
                       ))}
                     </ul>
                   </article>
-                  <div className="versus-chip" aria-hidden="true">VS</div>
+                  <div className="versus-chip" aria-hidden="true">
+                    <span>Same test</span>
+                  </div>
                   <article className="science-card">
                     <span className="world-letter">B</span>
                     <p className="micro-label">Scientific challenger</p>
