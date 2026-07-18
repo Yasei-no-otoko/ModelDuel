@@ -36,6 +36,8 @@ ModelDuel guides a learner through one protected sequence: capture → interpret
 
 Two complete challenges share this loop. The Moon challenge confronts the belief that Earth's shadow causes regular phases. The Seasons challenge tests the belief that Earth-Sun distance causes summer and winter. Verified samples are visibly labeled, require no account or API key, and never masquerade as live output. The production configuration routes analysis and PTC to GPT-5.6 Terra and live revision feedback to GPT-5.6 Luna. A dated 2026-07-17 production integration smoke completed one paid Terra analysis/PTC request and one paid Luna revision request with no HTTP retry; it is not proof of the final build.
 
+The first intended pilot is one middle-school astronomy lesson in which a teacher asks learners to complete one duel independently, then uses the same-session trace and authored discussion cue for a short follow-up conversation. Feasibility will be measured by completion without teacher rescue, correct handling of prediction-before-evidence, and performance on the unseen transfer item. Those descriptive pilot measures would test the workflow and inform iteration; they are not a causal learning-gain claim.
+
 ### How we built it
 
 The browser experience uses Next.js, React, and TypeScript. Zod schemas constrain learner models and server contracts. GPT output is validated before it can cross into the application domain. The application—not the model—owns the allowed cases, WorldSpecs, simulation constants, evidence, transfer answer keys, and grading. Deterministic simulation code produces the astronomy state, and Three.js renders the resulting scenes; GPT never generates or executes arbitrary Three.js code.
@@ -82,7 +84,7 @@ At the dated integration-smoke point, the runtime at [modelduel.yasei.workers.de
 | --- | --- |
 | Technological Implementation | GPT-5.6 Terra/Luna routing, image and text capture, schema-constrained Responses, validated tool orchestration, private deterministic registries, authenticated evaluation tokens, fail-closed routes, Cloudflare distributed rate bindings, deterministic simulations, and Three.js renderers. |
 | Design | One legible sequence protects prediction before evidence, separates live and verified sources, supports keyboard/touch/mobile use, and ends with a compact review plus an explicit learner-controlled local handoff. |
-| Potential Impact | By explicit learner choice, one conceptual-revision attempt becomes editable plain text for teacher discussion rather than another generated answer. ModelDuel does not send the handoff, create its server-side record, or authenticate it; grades, durable learning, and measured learning gains are not claimed. |
+| Potential Impact | In a proposed one-lesson middle-school astronomy pilot, one conceptual-revision attempt becomes editable plain text for teacher discussion. Completion, prediction-before-evidence integrity, and unseen-transfer performance provide concrete feasibility signals; ModelDuel does not claim grades, durable learning, or causal learning gains. |
 | Quality of the Idea | The learner's own misconception becomes a runnable, falsifiable world that competes with a scientific model under the same evidence. |
 
 ## How to verify ModelDuel locally
