@@ -75,6 +75,7 @@ const EXPECTED_API_LEDGER = Object.freeze([
 ]);
 const TTS_MODEL = "tts-1";
 const TTS_VOICE = "nova";
+const OPENAI_API_BASE_URL = "https://api.openai.com/v1";
 const TTS_DISCLOSURE = "AI-generated narration · OpenAI TTS";
 const FULL_SCORE_REVISION =
   "The Moon's phases change because sunlight illuminates half of the Moon while its orbit changes our viewing angle, so we see different fractions of the sunlit half. Earth's shadow does not cause the regular phases; it causes a lunar eclipse.";
@@ -677,7 +678,12 @@ async function cachedNarrationSource(row, outputRoot, clientState) {
     if (!apiKey) {
       throw new Error("OPENAI_API_KEY is required to populate the approved narration cache.");
     }
-    clientState.client ??= new OpenAI({ apiKey, maxRetries: 0, timeout: 60_000 });
+    clientState.client ??= new OpenAI({
+      apiKey,
+      baseURL: OPENAI_API_BASE_URL,
+      maxRetries: 0,
+      timeout: 60_000,
+    });
     const response = await clientState.client.audio.speech.create({
       model: TTS_MODEL,
       voice: TTS_VOICE,
