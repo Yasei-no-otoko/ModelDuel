@@ -103,12 +103,12 @@ All learner-data Responses requests use `store: false`. Live analysis and revisi
 | `pnpm check` | Run lint, typecheck, Node and `workerd` Vitest suites, portable video-contract validation, and the production build. |
 | `pnpm cf:typegen` | Build the OpenNext entrypoint, then regenerate checked-in Workers binding and runtime types. |
 | `pnpm cf:typecheck` | Rebuild the OpenNext entrypoint and verify checked-in Workers types have no drift. |
-| `pnpm cf:build` | Build the OpenNext Worker and static assets. |
+| `pnpm cf:build` | Build the OpenNext Worker and normalize its deterministic client-middleware asset for Cloudflare upload. |
 | `pnpm cf:preview` | Build and run locally in the Workers `workerd` runtime. |
 | `pnpm cf:upload` | Build and upload an undeployed Worker version. This is a remote mutation and requires release authorization; it is not a dry-run preflight. |
 | `pnpm cf:deploy` | Build and deploy the production Worker. |
 
-Cloudflare deployment requires both server secrets already configured for the Worker. Never place them in `vars` or command-line history. Before deployment, run the normal checks, `pnpm cf:typegen`, `pnpm cf:typecheck`, and `wrangler deploy --dry-run`; both type commands rebuild the OpenNext entrypoint before asking Wrangler to generate or compare types. `cf:upload` and `cf:deploy` both mutate remote Cloudflare state and require release authorization. Verify the compressed Worker is below the account-plan-specific limit. The production endpoint is [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev); dated integration evidence and the final main deployment/canary are recorded below without secrets, cookie values, or learner data.
+Cloudflare deployment requires both server secrets already configured for the Worker. Never place them in `vars` or command-line history. Before deployment, run the normal checks, `pnpm cf:typegen`, `pnpm cf:typecheck`, and `wrangler deploy --dry-run`; both type commands rebuild the OpenNext entrypoint before asking Wrangler to generate or compare types. Every `cf:*` build path also applies the fail-closed, idempotent `_clientMiddlewareManifest.js` normalization documented in the Cloudflare deployment reference; bypassing `pnpm cf:build` can reproduce the rejected static-asset hash. `cf:upload` and `cf:deploy` both mutate remote Cloudflare state and require release authorization. Verify the compressed Worker is below the account-plan-specific limit. The production endpoint is [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev); dated integration evidence and the final main deployment/canary are recorded below without secrets, cookie values, or learner data.
 
 ### Reproducible submission video
 
