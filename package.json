@@ -24,12 +24,14 @@
     "test:e2e": "playwright test",
     "test:e2e:chromium": "playwright test --project=chromium",
     "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm test:workers && pnpm video:validate:contracts && pnpm build",
-    "cf:build": "opennextjs-cloudflare build",
-    "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "cf:upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
-    "cf:typegen": "opennextjs-cloudflare build && wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
-    "cf:typecheck": "opennextjs-cloudflare build && wrangler types cloudflare-env.d.ts --env-interface CloudflareEnv --check"
+    "cf:build:raw": "opennextjs-cloudflare build",
+    "cf:prepare-assets": "node scripts/prepare-cloudflare-assets.mjs",
+    "cf:build": "pnpm cf:build:raw && pnpm cf:prepare-assets",
+    "cf:preview": "pnpm cf:build && opennextjs-cloudflare preview",
+    "cf:deploy": "pnpm cf:build && opennextjs-cloudflare deploy",
+    "cf:upload": "pnpm cf:build && opennextjs-cloudflare upload",
+    "cf:typegen": "pnpm cf:build && wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "cf:typecheck": "pnpm cf:build && wrangler types cloudflare-env.d.ts --env-interface CloudflareEnv --check"
   },
   "dependencies": {
     "@react-three/fiber": "9.6.1",

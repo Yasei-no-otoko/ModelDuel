@@ -1,6 +1,6 @@
 # Cloudflare Workers deployment reference
 
-Last verified against first-party documentation: **2026-07-17**
+Last verified against first-party documentation: **2026-07-19**
 
 This file records the Cloudflare runtime contract for ModelDuel before deployment. The production target is a Cloudflare Worker built with OpenNext, not Cloudflare Pages.
 
@@ -11,6 +11,13 @@ This file records the Cloudflare runtime contract for ModelDuel before deploymen
 - Commit an explicit `wrangler.jsonc` and `open-next.config.ts` so builds are reproducible even though Wrangler can now detect supported Next.js projects automatically.
 - Use the latest runtime-supported compatibility date and `nodejs_compat`. On 2026-07-17 JST, local workerd still evaluated the calendar in UTC and rejected `2026-07-17` as future-dated, so the verified deployment date is `2026-07-16`. Wrangler enters through `custom-worker.ts`, which forwards OpenNext's generated `.open-next/worker.js` fetch handler and exports the replay Durable Object; `.open-next/assets` is served through the `ASSETS` binding.
 - Run `opennextjs-cloudflare build` and a Wrangler dry run before production deployment. `next dev` and `next build` do not prove compatibility with the Workers `workerd` runtime.
+- Use `pnpm cf:build` rather than calling the raw adapter in release automation. It
+  runs the adapter and then normalizes Next's deterministic empty
+  `_clientMiddlewareManifest.js` program with a semantically equivalent terminal
+  semicolon. On 2026-07-19, Cloudflare rejected the original BLAKE3 asset hash with
+  API `10304` (reported by Wrangler as HTTP 500/code `10013`), while accepting the
+  normalized hash and the complete 44-entry asset inventory. The helper is
+  idempotent and fails closed if Next changes the generated source contract.
 
 This differs from older Pages-oriented examples and from the locally bundled reference snapshot: the current first-party Next.js guide recommends Workers plus OpenNext, current Wrangler supports automatic framework detection, and current OpenNext supports the installed Next.js 16 minor release.
 
