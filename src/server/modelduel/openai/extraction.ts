@@ -1,10 +1,13 @@
-import type { LearnerModel } from "../../../lib/modelduel/schemas";
+import type {
+  LearnerModel,
+  ScenarioId,
+} from "../../../lib/modelduel/schemas";
 import { LearnerModelExtractionSchema } from "./contracts";
 import { ModelDuelUpstreamError } from "./errors";
 import type { ModelDuelGateway } from "./gateway";
 
 export type ExtractLearnerModelInput = Readonly<{
-  scenarioId: string;
+  scenarioId: ScenarioId;
   explanation: string;
   imageDataUrl?: string;
   requestId: string;

@@ -47,7 +47,7 @@ function fakeGateway(
 const SAFETY_IDENTIFIER = `mds1_${"A".repeat(43)}`;
 
 const INPUT = {
-  scenarioId: "moon-phases",
+  scenarioId: "moon-phases" as const,
   explanation: "Earth's shadow causes the phases.",
   requestId: "extraction-test-request",
   safetyIdentifier: SAFETY_IDENTIFIER,

@@ -29,7 +29,7 @@ ModelDuel uses four Workers Rate Limiting bindings:
 
 Each binding receives an independent integer-string namespace ID. The hashed-client limiter is evaluated first, so a rejected or broken client bucket does not consume aggregate capacity. Accepted clients then pass the aggregate ceiling; rotating addresses cannot bypass that later check. Client keys are SHA-256 hashes of `CF-Connecting-IP`; requests without a usable address share an `unknown` bucket. Raw addresses never enter logs.
 
-Workers Rate Limiting counters are per-POP and intentionally eventually consistent. They are a soft production abuse and spend guard, not an exact global OpenAI budget or billing ledger. ModelDuel therefore also keeps OpenAI request caps, zero SDK retries, and low output ceilings. Binding absence, API failure, or malformed binding results fail closed in production.
+Workers Rate Limiting counters are per-POP and intentionally eventually consistent. They are a soft production abuse and spend guard, not an exact global OpenAI budget or billing ledger. ModelDuel therefore also keeps OpenAI request caps, zero SDK retries, and low output ceilings. Binding absence, API failure, malformed binding results, or a missing enable flag fail closed whenever `NODE_ENV=production`; only local development may bypass Cloudflare bindings.
 
 ## Durable Object replay boundary
 

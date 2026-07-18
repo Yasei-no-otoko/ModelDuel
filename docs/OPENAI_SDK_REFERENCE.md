@@ -1,6 +1,6 @@
 # OpenAI SDK implementation reference
 
-Last verified against first-party documentation and the installed SDK: **2026-07-17**
+Last verified against first-party documentation and the installed SDK: **2026-07-18**
 
 This file is the implementation contract for ModelDuel's OpenAI integration. Keep API calls on the server, pin the SDK version, and prefer the Responses API examples below over older Chat Completions snippets.
 
@@ -13,6 +13,7 @@ The repository currently pins `openai@6.47.0`; the installed package and its exp
 - Use `gpt-5.6-luna` for live revision feedback.
 - Resolve model IDs at request time so imports and production builds do not instantiate an OpenAI client.
 - Validate configured model IDs before sending a request.
+- Pin paid clients to `https://api.openai.com/v1`; environment-level base-URL overrides are not part of the production trust boundary.
 
 These choices supersede the original concept note's Sol/Terra routing. ModelDuel uses Terra for the judged analysis and validated PTC path, then Luna for bounded revision feedback. The exact routing order is:
 
@@ -32,11 +33,11 @@ GPT-5.6 defaults to medium reasoning when `reasoning.effort` is omitted. ModelDu
 | PTC first round | Terra | `low` | `low` | 900 |
 | PTC continuation | Terra | `low` | `low` | 600 |
 
-All requests use the standard service tier, zero SDK retries, and `store: false`. Structured extraction and revision requests select explicit 30-minute cache mode but intentionally define neither a cache key nor a breakpoint, so unique learner content does not cause an explicit cache write. PTC alone uses implicit 30-minute caching with a scenario-scoped key (`modelduel:ptc:v1:<scenario>`), so stable instructions and tool schemas can be reused without mixing scenario semantics. Learner sketches use low-detail vision because the task requires a coarse causal diagram, not fine text or photographic inspection.
+All requests use the standard service tier, zero SDK retries, and `store: false`. Structured extraction and revision use implicit 30-minute prompt caching with scenario-scoped keys (`modelduel:extract:v1:<scenario>` and `modelduel:revision:v1:<scenario>`). PTC uses the same strategy with `modelduel:ptc:v1:<scenario>`. The keys contain no learner data; they keep Moon and Seasons semantics separate while allowing the service to reuse eligible stable instruction and schema prefixes. No explicit breakpoint is inserted into learner content. Learner sketches use low-detail vision because the task requires a coarse causal diagram, not fine text or photographic inspection.
 
-### 2026-07-17 current-documentation delta
+### 2026-07-18 current-documentation delta
 
-OpenAI's current [Structured Outputs guide](https://developers.openai.com/api/docs/guides/structured-outputs) continues to favor the Responses API and its TypeScript `responses.parse` / `zodTextFormat` example. A refusal can fall outside the requested schema, so ModelDuel must retain an explicit refusal branch rather than assuming every response parses. [Prompt Caching](https://developers.openai.com/api/docs/guides/prompt-caching) describes automatic GPT-5.6 reuse for eligible prompts; explicit cache keys or breakpoints belong only after measuring a stable prefix and must never turn unique learner text into a reusable prefix. Current [GPT-5.6 model guidance](https://developers.openai.com/api/docs/guides/model-guidance?model=gpt-5.6-terra) favors lean prompts and bounded PTC. This is a documentation delta only: no SDK or model change is approved, and `openai@6.47.0` remains pinned.
+OpenAI's current [Structured Outputs guide](https://developers.openai.com/api/docs/guides/structured-outputs) continues to favor the Responses API and its TypeScript `responses.parse` / `zodTextFormat` example. A refusal can fall outside the requested schema, so ModelDuel retains an explicit refusal branch rather than assuming every response parses. [Prompt Caching](https://developers.openai.com/api/docs/guides/prompt-caching) documents automatic implicit breakpoints for eligible GPT-5.6 prompts; explicit mode disables that implicit breakpoint. ModelDuel therefore uses implicit mode and privacy-safe scenario keys, while leaving breakpoint placement to the service and measuring cached/cache-write counters in existing usage telemetry. Current [GPT-5.6 model guidance](https://developers.openai.com/api/docs/guides/model-guidance?model=gpt-5.6-terra) favors lean prompts and bounded PTC. No SDK or model change is approved, and `openai@6.47.0` remains pinned.
 
 The production orchestrator is capped at six rounds and four tool calls. Six rounds cover the conservative sequential shape of one required function per turn, a separate `program_output` turn, and a final-message turn; grouped tool calls still complete earlier. `parallel_tool_calls` is disabled so the model cannot spend the four-call budget concurrently. Success requires the exact ledger `validate_world_spec` → `simulate_world` → `compare_predictions` → `select_discriminating_case` plus a final assistant message; tool completion alone is not a successful response. Continuations remain enabled because the final message can arrive after the last tool output. The first production smoke returned HTTP 502 with `ORCHESTRATION_INVALID` under the previous three-round cap. That outcome was consistent with round exhaustion, but no per-turn diagnostics existed to prove the cause; the six-round fix addresses that failure mode and adds bounded diagnostics. The failed smoke is not evidence of a successful live analysis.
 
@@ -55,6 +56,7 @@ import OpenAI from "openai";
 
 export const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+  baseURL: "https://api.openai.com/v1",
 });
 ```
 

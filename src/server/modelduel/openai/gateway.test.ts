@@ -7,6 +7,9 @@ import {
   createProductionModelDuelGateway,
   isLocalStructuredParseFailure,
   LEARNER_REQUEST_POLICY,
+  openAIClientOptions,
+  OPENAI_API_BASE_URL,
+  promptCacheKey,
   REVISION_REQUEST_POLICY,
   tolerantStructuredParse,
 } from "./gateway";
@@ -34,27 +37,39 @@ describe("OpenAI gateway safe failure classification", () => {
       expect.objectContaining({ code: "CONFIGURATION_REQUIRED" }),
     );
   });
-  it("pins low-cost structured request bodies without cache keys or breakpoints", () => {
+  it("pins low-cost structured request bodies with implicit cache reuse", () => {
     expect(LEARNER_REQUEST_POLICY).toEqual({
       reasoning: { effort: "none" },
       service_tier: "default",
-      prompt_cache_options: { mode: "explicit", ttl: "30m" },
+      prompt_cache_options: { mode: "implicit", ttl: "30m" },
       text: { verbosity: "low" },
       max_output_tokens: 650,
     });
     expect(REVISION_REQUEST_POLICY).toEqual({
       reasoning: { effort: "none" },
       service_tier: "default",
-      prompt_cache_options: { mode: "explicit", ttl: "30m" },
+      prompt_cache_options: { mode: "implicit", ttl: "30m" },
       text: { verbosity: "low" },
       max_output_tokens: 450,
     });
-    expect(JSON.stringify(LEARNER_REQUEST_POLICY)).not.toContain(
-      "prompt_cache_key",
+    expect(promptCacheKey("extract", "moon-phases")).toBe(
+      "modelduel:extract:v1:moon-phases",
+    );
+    expect(promptCacheKey("revision", "seasons")).toBe(
+      "modelduel:revision:v1:seasons",
     );
     expect(JSON.stringify(REVISION_REQUEST_POLICY)).not.toContain(
       "prompt_cache_breakpoint",
     );
+  });
+
+  it("pins paid SDK traffic to the official OpenAI API origin", () => {
+    vi.stubEnv("OPENAI_BASE_URL", "https://attacker.invalid/v1");
+    expect(OPENAI_API_BASE_URL).toBe("https://api.openai.com/v1");
+    expect(openAIClientOptions("test-only-key")).toEqual({
+      apiKey: "test-only-key",
+      baseURL: "https://api.openai.com/v1",
+    });
   });
 
   it("uses low-detail image input for the coarse learner sketch", () => {

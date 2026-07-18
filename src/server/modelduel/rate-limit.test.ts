@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   createRateLimitStore,
@@ -9,6 +9,10 @@ import {
 import type { CloudflareRateLimitBindings } from "./rate-limit";
 
 const CLOUDFLARE = { trustedProxy: "cloudflare" as const };
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 function cloudflareRequest(ip: string): Request {
   return request({ "CF-Connecting-IP": ip });
@@ -229,6 +233,24 @@ function cloudflareBindings(
 }
 
 describe("Cloudflare paid-API rate limiter", () => {
+  it("fails closed in production when the enable flag drifts", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("MODELDUEL_CLOUDFLARE_RATE_LIMITS", "");
+
+    await expect(
+      enforcePaidApiRateLimit("analysis", cloudflareRequest("192.0.2.40")),
+    ).rejects.toMatchObject({ code: "RATE_LIMITED" });
+  });
+
+  it("keeps the no-binding bypass limited to local development", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("MODELDUEL_CLOUDFLARE_RATE_LIMITS", "");
+
+    await expect(
+      enforcePaidApiRateLimit("analysis", cloudflareRequest("192.0.2.41")),
+    ).resolves.toBeUndefined();
+  });
+
   it("awaits the SHA-256 client bucket before the aggregate ceiling", async () => {
     const events: string[] = [];
     const request = cloudflareRequest("192.0.2.44");

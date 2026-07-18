@@ -206,6 +206,9 @@ export async function enforcePaidApiRateLimit(
     !options.cloudflareBindings &&
     process.env.MODELDUEL_CLOUDFLARE_RATE_LIMITS !== "enabled"
   ) {
+    if (process.env.NODE_ENV === "production") {
+      throw new ModelDuelUpstreamError("RATE_LIMITED");
+    }
     return;
   }
 

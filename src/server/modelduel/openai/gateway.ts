@@ -10,6 +10,7 @@ import {
   AnalysisModelIdSchema,
   RevisionModelIdSchema,
 } from "../../../lib/modelduel/schemas";
+import type { ScenarioId } from "../../../lib/modelduel/schemas";
 import type {
   LearnerModelExtraction,
   RevisionFeedbackExtraction,
@@ -23,11 +24,16 @@ import { ModelDuelUpstreamError } from "./errors";
 import { logOpenAIUsage } from "./usage";
 
 const SDK_TIMEOUT_MS = 20_000;
+export const OPENAI_API_BASE_URL = "https://api.openai.com/v1";
+
+export function openAIClientOptions(apiKey: string) {
+  return { apiKey, baseURL: OPENAI_API_BASE_URL } as const;
+}
 
 export const LEARNER_REQUEST_POLICY = {
   reasoning: { effort: "none" },
   service_tier: "default",
-  prompt_cache_options: { mode: "explicit", ttl: "30m" },
+  prompt_cache_options: { mode: "implicit", ttl: "30m" },
   text: { verbosity: "low" },
   max_output_tokens: 650,
 } as const;
@@ -35,13 +41,13 @@ export const LEARNER_REQUEST_POLICY = {
 export const REVISION_REQUEST_POLICY = {
   reasoning: { effort: "none" },
   service_tier: "default",
-  prompt_cache_options: { mode: "explicit", ttl: "30m" },
+  prompt_cache_options: { mode: "implicit", ttl: "30m" },
   text: { verbosity: "low" },
   max_output_tokens: 450,
 } as const;
 
 export type LearnerParseRequest = Readonly<{
-  scenarioId: string;
+  scenarioId: ScenarioId;
   explanation: string;
   imageDataUrl?: string;
   previousOutputText?: string;
@@ -52,7 +58,7 @@ export type LearnerParseRequest = Readonly<{
 }>;
 
 export type RevisionParseRequest = Readonly<{
-  scenarioId: string;
+  scenarioId: ScenarioId;
   initialSummary: string;
   misconceptionType: string;
   observations: string;
@@ -78,6 +84,13 @@ export type ProgramTurnResponse = Readonly<{
   output: readonly Responses.ResponseOutputItem[];
   responseBytes: number;
 }>;
+
+export function promptCacheKey(
+  kind: "extract" | "revision",
+  scenarioId: ScenarioId,
+): string {
+  return `modelduel:${kind}:v1:${scenarioId}`;
+}
 
 export interface ModelDuelGateway {
   readonly analysisModel: string;
@@ -264,7 +277,7 @@ class ProductionModelDuelGateway implements ModelDuelGateway {
 
   #getClient(): Promise<OpenAIClient> {
     this.#client ??= import("openai").then(
-      ({ default: OpenAI }) => new OpenAI({ apiKey: this.#apiKey }),
+      ({ default: OpenAI }) => new OpenAI(openAIClientOptions(this.#apiKey)),
     );
     return this.#client;
   }
@@ -293,6 +306,7 @@ class ProductionModelDuelGateway implements ModelDuelGateway {
         model: this.analysisModel,
         store: false,
         safety_identifier: request.safetyIdentifier,
+        prompt_cache_key: promptCacheKey("extract", request.scenarioId),
         input: buildLearnerResponseInput(request),
         ...LEARNER_REQUEST_POLICY,
         text: {
@@ -384,6 +398,7 @@ class ProductionModelDuelGateway implements ModelDuelGateway {
         model: this.revisionModel,
         store: false,
         safety_identifier: request.safetyIdentifier,
+        prompt_cache_key: promptCacheKey("revision", request.scenarioId),
         input: buildRevisionResponseInput(request),
         ...REVISION_REQUEST_POLICY,
         text: {
