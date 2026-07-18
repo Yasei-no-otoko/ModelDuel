@@ -11,11 +11,11 @@ The two complete challenges focus on common astronomy misconceptions: that Earth
 ## Submission links
 
 - Live demo: [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev)
-- Repository: `{{REPOSITORY_URL}}`
+- Repository: [github.com/Yasei-no-otoko/ModelDuel](https://github.com/Yasei-no-otoko/ModelDuel)
 - Demo video: `{{VIDEO_URL}}`
-- Codex Feedback Session ID: `{{CODEX_FEEDBACK_SESSION_ID}}`
+- Codex Feedback Session ID: `019f648c-0eb8-7b60-ad84-28ce35bbac4b`
 
-Replace the remaining three placeholders before submission. The Codex Feedback Session ID must come from `/feedback` in the primary build task; never substitute an invented value.
+Replace the remaining video placeholder before submission. The public MIT-licensed repository is judge-accessible, and the primary build task was uploaded through Codex's official feedback workflow.
 
 ## Current scope
 
@@ -176,7 +176,7 @@ Codex performed these implementation roles under human direction:
 
 Human-owned decisions include the Education category, target learners and misconceptions, pedagogical sequence, Moon and Seasons scope, privacy stance, trust boundary, experience priorities, and final release acceptance. GPT-5.6 Terra is configured for strict learner-model analysis and PTC, and GPT-5.6 Luna is configured for bounded revision feedback. The deterministic application owns cases, WorldSpecs, simulation, evidence, transfer keys, and grading. Learner-data Responses calls use `store: false`.
 
-The dated 2026-07-17 production integration smoke proved the live Terra analysis/PTC and Luna revision routes for that deployed integration baseline; it is not final-build proof. Codex Feedback Session ID: `{{CODEX_FEEDBACK_SESSION_ID}}` — replace it with the value returned by `/feedback` in the primary build task.
+The dated 2026-07-17 production integration smoke proved the live Terra analysis/PTC and Luna revision routes for that deployed integration baseline; it is not final-build proof. Codex Feedback Session ID: `019f648c-0eb8-7b60-ad84-28ce35bbac4b`, returned by the official feedback upload for the primary build task.
 
 ## Build Week provenance
 

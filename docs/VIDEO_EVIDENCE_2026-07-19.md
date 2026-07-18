@@ -47,8 +47,8 @@ Narration uses disclosed OpenAI `tts-1` / `nova`. All 10 approved segments were 
 
 ## Remaining external gates
 
-- Publish or authorize a judge-accessible repository and replace `{{REPOSITORY_URL}}`.
+- Public judge-accessible repository: https://github.com/Yasei-no-otoko/ModelDuel
 - User-owned manual gate: upload this exact MP4, choose public/embed visibility, verify playback while logged out, and replace `{{VIDEO_URL}}`.
-- Run `/feedback` in the primary Codex build task and replace `{{CODEX_FEEDBACK_SESSION_ID}}`.
+- Codex Feedback Session ID: `019f648c-0eb8-7b60-ad84-28ce35bbac4b` (official feedback upload for the primary build task).
 - Complete Ubuntu three-engine CI or retain the documented local Firefox host-graphics exception without claiming a pass.
 - Complete the final Devpost form review and submit before **July 21, 2026 at 5:00 PM PDT / July 22, 2026 at 9:00 AM JST**.
