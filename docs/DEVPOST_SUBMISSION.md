@@ -1,15 +1,17 @@
 # Devpost Submission — ModelDuel
 
-> **Submission warning:** Replace every placeholder below before submitting. Do not publish placeholder text. Copy the Codex Feedback Session ID from `/feedback` in the primary build task.
+> **Submission warning:** Replace the video placeholder below before submitting. Do not publish placeholder text. The public repository and primary build task's Codex Feedback Session ID are recorded.
 
 - Live demo: [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev)
-- Repository: `{{REPOSITORY_URL}}`
+- Repository: [github.com/Yasei-no-otoko/ModelDuel](https://github.com/Yasei-no-otoko/ModelDuel)
 - Demo video: `{{VIDEO_URL}}`
-- Codex Feedback Session ID: `{{CODEX_FEEDBACK_SESSION_ID}}`
+- Codex Feedback Session ID: `019f648c-0eb8-7b60-ad84-28ce35bbac4b`
 
 ## Deadline
 
 **July 21, 2026 at 5:00 PM PDT / July 22, 2026 at 9:00 AM JST.**
+
+Re-verified on 2026-07-19 JST against the official rules and FAQ. The current package satisfies the documented repository, license, README, working-demo, sub-three-minute narrated-video, Codex/GPT-5.6 explanation, and primary-thread Feedback Session ID requirements. The only unresolved submission placeholder is the user-owned public YouTube URL.
 
 ## Paste-ready submission fields
 
@@ -279,13 +281,13 @@ Final paid canary for merge `e5e7b03`: only after all local, dry-run, deployed-b
 - [x] Deploy Option 2 main merge `3d65845` as Cloudflare version `cc6bc7c5-13e6-463d-a8d6-533267a2d468`; verify the created `RevisionReplayLedger`, Terra/Luna and Rate Limit bindings, root/security headers, and exact free production judge ledger without a paid model call.
 - [x] Deploy final implementation merge `e5e7b03` as Cloudflare version `37596678-0018-4415-b9bd-5671d67068bb`; verify 100% traffic, both required secrets by name, the Durable Object, all four Rate Limit bindings, Terra/Luna routing, latest scope copy, HSTS/CSP/nosniff, and the exact free production judge ledger.
 - [x] Deploy Evidence Lens runtime merge `1649c4b` as Cloudflare version `857b32b6-7ae0-4eec-8be2-75421eaf77ba`; verify root HTTP 200, HSTS/CSP, the free Moon verified sample, Terra/Luna and all Worker bindings, and zero paid calls during production visual capture.
-- [ ] Publish the intended repository and verify judge access.
-- [ ] Replace the repository, video, and Codex Feedback placeholders.
+- [x] Publish the MIT-licensed repository and verify anonymous README access; initial publication SHA `e7ed952ef9616744c6eeea09f6ec4b0434c83972`.
+- [ ] Replace the remaining video placeholder after the user-owned YouTube upload.
 
 ### Codex evidence
 
-- [ ] Run `/feedback` in the primary build task.
-- [ ] Replace the Codex Feedback Session ID placeholder.
+- [x] Upload the primary build task through Codex's official feedback workflow; returned Session ID `019f648c-0eb8-7b60-ad84-28ce35bbac4b`.
+- [x] Replace the Codex Feedback Session ID placeholder.
 - [ ] Capture the primary Codex task and representative scoped commits.
 - [ ] Confirm the evidence reflects the final merged implementation.
 
@@ -305,7 +307,7 @@ Final paid canary for merge `e5e7b03`: only after all local, dry-run, deployed-b
 - [ ] Paste the project name, tagline, Education category, built-with list, outline, and long description.
 - [ ] Confirm the live demo, then add the repository, video, and Codex Feedback Session ID values.
 - [ ] Verify all links in a logged-out browser.
-- [ ] Review the official rules, FAQ, required fields, and video guidance.
+- [x] Review the current official rules, FAQ, repository requirements, Feedback Session ID guidance, and public YouTube video requirements on 2026-07-19 JST.
 - [ ] Submit before the deadline and retain confirmation.
 
 ## Official sources
