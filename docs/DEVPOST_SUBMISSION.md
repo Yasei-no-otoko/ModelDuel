@@ -72,7 +72,7 @@ The useful boundary is not “AI versus deterministic code.” It is deciding wh
 
 ### What's next
 
-Evidence Lens runtime merge `1649c4b` is deployed as Cloudflare version `857b32b6-7ae0-4eec-8be2-75421eaf77ba`; the free production judge path, bindings, security headers, and zero-paid-call presentation capture passed. The current exact 2:45 local candidate is run `20260718T163348650Z-65f5ae63-ff52-4b7c-bae7-f02f2b0c44a2` from generator commit `462fb97`. Before submission, the user will decide repository and YouTube publication, then replace the remaining repository, video, and feedback placeholders; Codex does not publish the video. After the hackathon, the constrained-world pattern could expand to additional science misconceptions and a separately evaluated classroom pilot. Any impact or learning-gain claim would require that evaluation rather than being inferred from this prototype.
+Evidence Lens runtime merge `1649c4b` is deployed as Cloudflare version `857b32b6-7ae0-4eec-8be2-75421eaf77ba`; the free production judge path, bindings, security headers, and zero-paid-call presentation capture passed. The current exact 2:45 local candidate is run `20260718T163348650Z-65f5ae63-ff52-4b7c-bae7-f02f2b0c44a2` from generator commit `462fb97`. The repository is public and the primary Codex Feedback Session ID is recorded. Before submission, the user will publish the video, replace the sole remaining `{{VIDEO_URL}}` placeholder, verify playback while logged out, and submit the Devpost form; Codex does not publish the video. After the hackathon, the constrained-world pattern could expand to additional science misconceptions and a separately evaluated classroom pilot. Any impact or learning-gain claim would require that evaluation rather than being inferred from this prototype.
 
 ### Production verification
 
@@ -253,7 +253,9 @@ Pre-merge local gate at HEAD `682c206`: Vitest **332/332** across **31 files**; 
 
 Current post-merge `main` runtime gate: **Complete for Evidence Lens merge `1649c4b`**. The current video candidate was generated from `462fb97` against that deployment and presents the same Evidence Lens UI.
 
-Submission-quality candidate gate on 2026-07-17 JST: `pnpm check` passed with Vitest **335/335** across **32 files** and a successful Next.js production build; Chromium plus WebKit E2E completed with **69 passed / 1 intentional non-Chromium axe skip**; the Chromium axe scan passed capture, evidence, and trace for WCAG 2.0/2.1/2.2 A/AA tags. OpenNext/Workers typecheck, Wrangler dry run (**8,286.05 KiB raw / 1,621.89 KiB gzip**), and production dependency audit all passed. The local Playwright Firefox build could not launch even for an empty page because of a host graphics failure (`RenderCompositorSWGL failed mapping default framebuffer, no dt`), so the Ubuntu CI three-engine job remains a required external gate rather than being misreported as passed.
+Submission-quality candidate gate on 2026-07-17 JST: `pnpm check` passed with Vitest **335/335** across **32 files** and a successful Next.js production build; Chromium plus WebKit E2E completed with **69 passed / 1 intentional non-Chromium axe skip**; the Chromium axe scan passed capture, evidence, and trace for WCAG 2.0/2.1/2.2 A/AA tags. OpenNext/Workers typecheck, Wrangler dry run (**8,286.05 KiB raw / 1,621.89 KiB gzip**), and production dependency audit all passed. At that dated gate, the local Playwright Firefox build could not launch even for an empty page because of a host graphics failure (`RenderCompositorSWGL failed mapping default framebuffer, no dt`), so Ubuntu CI still had to supply the three-engine evidence.
+
+Current public submission gate at main merge `d00cbd3`: [GitHub Actions run `29653512603`](https://github.com/Yasei-no-otoko/ModelDuel/actions/runs/29653512603) passed lint, typecheck, **360/360** unit tests across **36 files**, submission-video contract validation, Next.js production build, Cloudflare Worker build/typecheck, Wrangler bundle validation, and the production dependency audit. Its Ubuntu Chromium/Firefox/WebKit job completed successfully with **111 passed / 2 intentional skips / 1 WebKit retry**. The previously failing Firefox mobile Seasons test passed through the supported static evidence path; the unrelated WebKit retry then passed **10/10** local repetitions. No paid API request was made.
 
 ### GPT-5.6 proof
 
@@ -274,7 +276,7 @@ Final paid canary for merge `e5e7b03`: only after all local, dry-run, deployed-b
 - [x] Configure a production evaluation secret of at least 32 characters.
 - [x] Configure and locally verify four fail-closed Cloudflare Rate Limiting bindings for live endpoints.
 - [x] Verify all four production Rate Limiting bindings through deployed Cloudflare version 3 metadata.
-- [ ] Record exact production CPU p95 and confirm account Workers Paid telemetry. The connector subscription list showed no Workers Paid entry, and exact CPU metrics remain unavailable.
+Operational follow-up, not a submission gate: exact production CPU p95 and account Workers Paid telemetry remain unclaimed because the connector exposed neither an exact CPU metric nor a Workers Paid subscription entry.
 - [x] Historical deployment for main merge `6186358`: [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev), Cloudflare version `e400d0d7-3fb1-47be-8872-ef9caeefb5d9`, build ID `nkFYXp8co99asrn8bVd1U`.
 - [x] Verify HTTP 200, CSP/HSTS/nosniff, the exact free three-request verified ledger, teacher summary/handoff visibility, confirmation-disabled controls, boundary text, internal-metadata exclusion, and zero failed requests or console errors.
 - [x] Clear the Medium/P2 live-revision token replay blocker locally with per-`jti` atomic Durable Object control, prove a reused valid token with fresh caller keys cannot make a second upstream request, and complete the 25-file security delta scan with zero reportable findings.
@@ -288,8 +290,8 @@ Final paid canary for merge `e5e7b03`: only after all local, dry-run, deployed-b
 
 - [x] Upload the primary build task through Codex's official feedback workflow; returned Session ID `019f648c-0eb8-7b60-ad84-28ce35bbac4b`.
 - [x] Replace the Codex Feedback Session ID placeholder.
-- [ ] Capture the primary Codex task and representative scoped commits.
-- [ ] Confirm the evidence reflects the final merged implementation.
+- [x] Capture the primary Codex build objective, representative scoped commits, and final gates in the 2:30–2:42 video segment.
+- [x] Confirm the media reflects the final Evidence Lens product implementation; later repository changes are submission documentation and cross-browser test coverage only.
 
 ### Video and media
 
@@ -305,8 +307,8 @@ Final paid canary for merge `e5e7b03`: only after all local, dry-run, deployed-b
 ### Devpost form
 
 - [ ] Paste the project name, tagline, Education category, built-with list, outline, and long description.
-- [ ] Confirm the live demo, then add the repository, video, and Codex Feedback Session ID values.
-- [ ] Verify all links in a logged-out browser.
+- [x] Confirm the live demo, repository URL, and Codex Feedback Session ID values.
+- [ ] Add the user-owned public video URL, then verify all final links and playback in a logged-out browser.
 - [x] Review the current official rules, FAQ, repository requirements, Feedback Session ID guidance, and public YouTube video requirements on 2026-07-19 JST.
 - [ ] Submit before the deadline and retain confirmation.
 
