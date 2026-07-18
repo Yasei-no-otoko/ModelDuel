@@ -1,5 +1,8 @@
 import { expect, test } from "@playwright/test";
 
+const seasonsObservationPattern =
+  /Observed at -?\d+(?:\.\d+)? degrees north and south, relative energy is -?\d+(?:\.\d+)? and -?\d+(?:\.\d+)?, with solar declination -?\d+(?:\.\d+)? degrees\. This world predicts (?:summer|winter|equinox-like) in the north and (?:summer|winter|equinox-like) in the south\./;
+
 test("keeps both Seasons worlds compact and operable at 375px", async ({
   page,
 }) => {
@@ -56,50 +59,94 @@ test("keeps both Seasons worlds compact and operable at 375px", async ({
     .evaluate((element) => element.getBoundingClientRect().height);
   expect(comparisonHeight).toBeLessThan(1450);
 
-  const controlButtons = page.locator(".view-controls button");
-  await expect(controlButtons).toHaveCount(6);
-  for (const button of await controlButtons.all()) {
-    const height = await button.evaluate(
-      (element) => element.getBoundingClientRect().height,
-    );
-    expect(height).toBeGreaterThanOrEqual(44);
-  }
-
   const learnerWorld = page.locator(".evidence-world.learner");
-  const learnerViewport = learnerWorld.getByRole("img").first();
-  const learnerViewportShell = learnerWorld.locator(".world-viewport[id]");
-  const rotateLearnerRight = learnerWorld.getByRole("button", {
-    name: "Rotate learner seasons model view right to 22.5 degrees",
-  });
-  await expect(learnerViewport).toBeVisible();
-  await expect(learnerViewport).toHaveAttribute(
-    "aria-label",
-    /Learner seasons model 3D view\. Camera orientation 0 degrees/,
+  const controlButtons = page.locator(".view-controls button");
+  const staticDiagrams = page.locator(
+    ".seasons-world-viewport .seasons-html-fallback",
   );
-  const learnerViewportId = await learnerViewportShell.getAttribute("id");
-  expect(learnerViewportId).toBeTruthy();
-  await expect(rotateLearnerRight).toHaveAttribute(
-    "aria-controls",
-    learnerViewportId!,
-  );
-  await rotateLearnerRight.focus();
-  await page.keyboard.press("Enter");
-  await expect(learnerViewport).toHaveAttribute(
-    "aria-label",
-    /Camera orientation 22\.5 degrees/,
-  );
-  await expect(learnerWorld.locator(".camera-view-status")).toHaveText(
-    "Learner seasons model view rotated right. Camera orientation 22.5 degrees.",
-  );
-  const resetLearnerView = learnerWorld.getByRole("button", {
-    name: "Reset learner seasons model view to 0 degrees",
-  });
-  await resetLearnerView.focus();
-  await page.keyboard.press("Enter");
-  await expect(learnerViewport).toHaveAttribute(
-    "aria-label",
-    /Camera orientation 0 degrees/,
-  );
+
+  await expect
+    .poll(async () => {
+      const controlCount = await controlButtons.count();
+      const staticDiagramCount = await staticDiagrams.count();
+      return (
+        (controlCount === 6 && staticDiagramCount === 0) ||
+        (controlCount === 0 && staticDiagramCount === 2)
+      );
+    })
+    .toBe(true);
+
+  const isStaticView = (await staticDiagrams.count()) === 2;
+  if (isStaticView) {
+    await expect(staticDiagrams).toHaveCount(2);
+    await expect(page.locator(".view-controls")).toHaveCount(0);
+    const staticViewNotes = page.locator(".static-view-note");
+    await expect(staticViewNotes).toHaveCount(2);
+    for (const note of await staticViewNotes.all()) {
+      await expect(note).toHaveText(
+        "Static evidence view · camera controls are not needed.",
+      );
+      const height = await note.evaluate(
+        (element) => element.getBoundingClientRect().height,
+      );
+      expect(height).toBeGreaterThanOrEqual(44);
+    }
+
+    for (const diagram of await staticDiagrams.all()) {
+      await expect(diagram).toBeVisible();
+      await expect(diagram).toHaveAttribute("role", "img");
+      await expect(diagram).toHaveAttribute(
+        "aria-label",
+        seasonsObservationPattern,
+      );
+      await expect(diagram).toContainText("June case");
+      await expect(diagram).toContainText("Predicted North:");
+    }
+  } else {
+    await expect(staticDiagrams).toHaveCount(0);
+    await expect(controlButtons).toHaveCount(6);
+    for (const button of await controlButtons.all()) {
+      const height = await button.evaluate(
+        (element) => element.getBoundingClientRect().height,
+      );
+      expect(height).toBeGreaterThanOrEqual(44);
+    }
+
+    const learnerViewport = learnerWorld.getByRole("img").first();
+    const learnerViewportShell = learnerWorld.locator(".world-viewport[id]");
+    const rotateLearnerRight = learnerWorld.getByRole("button", {
+      name: "Rotate learner seasons model view right to 22.5 degrees",
+    });
+    await expect(learnerViewport).toBeVisible();
+    await expect(learnerViewport).toHaveAttribute(
+      "aria-label",
+      /Learner seasons model 3D view\. Camera orientation 0 degrees/,
+    );
+    const learnerViewportId = await learnerViewportShell.getAttribute("id");
+    expect(learnerViewportId).toBeTruthy();
+    await expect(rotateLearnerRight).toHaveAttribute(
+      "aria-controls",
+      learnerViewportId!,
+    );
+    await rotateLearnerRight.focus();
+    await page.keyboard.press("Enter");
+    await expect(learnerViewport).toHaveAttribute(
+      "aria-label",
+      /Camera orientation 22\.5 degrees/,
+    );
+    await expect(learnerWorld.locator(".camera-view-status")).toHaveText(
+      "Learner seasons model view rotated right. Camera orientation 22.5 degrees.",
+    );
+    const resetLearnerView = learnerWorld.getByRole("button", {
+      name: "Reset learner seasons model view to 0 degrees",
+    });
+    await resetLearnerView.focus();
+    await page.keyboard.press("Enter");
+    await expect(learnerViewport).toHaveAttribute(
+      "aria-label",
+      /Camera orientation 0 degrees/,
+    );
+  }
 
   const hasHorizontalOverflow = await page.evaluate(
     () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
