@@ -218,15 +218,15 @@ Use the verified sample for the recorded working journey. Keep its authored-sour
 
 ## Screenshot list
 
-Captured from deployed Cloudflare version 3, build `La258MjHHcPyAMa5k13Uz`. These are production images, not audit “before” images.
+Captured from the current Evidence Lens production deployment, Cloudflare version `857b32b6-7ae0-4eec-8be2-75421eaf77ba`. These are production images, not audit “before” images.
 
 | Production media path | Dimensions | Size | Role |
 | --- | ---: | ---: | --- |
-| `docs/media/modelduel-cover.png` | 1600×900 | 504,815 B | Devpost cover and landing hero |
-| `docs/media/moon-evidence.png` | 1280×900 | 205,850 B | Moon two-world evidence |
-| `docs/media/model-revision-trace.png` | 1280×900 | 306,443 B | Completed revision trace and transfer result |
-| `docs/media/seasons-evidence.png` | 1280×900 | 193,841 B | Seasons two-world evidence |
-| `docs/media/mobile-hero.png` | 375×812 | 194,744 B | Responsive landing and verified CTA |
+| `docs/media/modelduel-cover.png` | 1600×900 | 118,815 B | Devpost cover and landing hero |
+| `docs/media/moon-evidence.png` | 1280×900 | 144,106 B | Moon two-world evidence |
+| `docs/media/model-revision-trace.png` | 1280×900 | 230,353 B | Completed revision trace and transfer result |
+| `docs/media/seasons-evidence.png` | 1280×900 | 144,257 B | Seasons two-world evidence |
+| `docs/media/mobile-hero.png` | 375×812 | 128,843 B | Responsive landing and verified CTA |
 
 Production visual QA completed Moon at 1280px and 375px through the trace, and Seasons at 1280px through evidence. Both evidence views rendered two canvases and no 2D recovery view. Horizontal overflow, page errors, failed requests, and unexpected console messages were all zero. The journeys used no login, made zero analyze calls, used only verified authored revision, kept authored-source labels visible, exposed one primary verified CTA, and kept live analysis disabled before confirmation.
 
@@ -243,12 +243,13 @@ Production visual QA completed Moon at 1280px and 375px through the trace, and S
 - [x] Run the camera-accessibility candidate gate: named camera orientations and polite action announcements for Moon and Seasons; no inert controls in WebGL or renderer fallbacks; Chromium plus WebKit **71 passed / 1 intentional non-Chromium axe skip**; Chromium axe **Pass**; Next.js/OpenNext/Workers types/Wrangler **Pass**; dry run **8,288.12 KiB raw / 1,622.49 KiB gzip**; dependency audit **clean**.
 - [x] Run the Option 2 replay-hardening candidate gate: per-`jti` SQLite Durable Object coordination; Codex Security 25-file delta scan **0 reportable findings**, followed by independent alarm-failure review and rollback hardening; Node **344/344** across **34 files**; workerd **7/7**; Chromium **36/36**; Next.js/OpenNext/Workers types/Wrangler **Pass**; dry run **8,849.96 KiB raw / 1,704.45 KiB gzip**; dependency audit **clean**.
 - [x] Run the final merged `e5e7b03` gate: frozen install; Node **356/356** across **34 files**; workerd **7/7**; Chromium **38/38**; WebKit **37 passed / 1 intentional non-Chromium axe skip**; Next.js/OpenNext/Workers types/Wrangler **Pass**; dry run **8,855.59 KiB raw / 1,705.90 KiB gzip**; production dependency audit **clean**; standard Codex Security scan **96/96 sources** with **0 reportable findings**.
+- [x] Run the Evidence Lens `1649c4b` gate: Node **360/360** across **36 files**; workerd **7/7**; Chromium **38/38**; capture/evidence/trace accessibility **Pass**; Next.js/OpenNext/Workers types/Wrangler **Pass**; dry run **8,852.91 KiB raw / 1,707.73 KiB gzip**.
 - [x] Prove the free Moon and Seasons judge journeys at browser runtime: exact same-origin `GET /api/demo` → verified-sample `POST /api/revision` → `POST /api/transfer`, with zero `/api/analyze` and zero external HTTP requests.
 - [x] Verify production visual journeys: Moon desktop and mobile through trace; Seasons desktop through evidence; zero overflow, page errors, failed requests, or unexpected console messages; no live submit.
 
 Pre-merge local gate at HEAD `682c206`: Vitest **332/332** across **31 files**; Chromium E2E **34/34**; Next.js, OpenNext, and Wrangler **Pass**; Worker **8,277.49 KiB raw / 1,619.89 KiB gzip**; dependency audit **no known vulnerabilities**. Wrangler reported **18 deployable asset entries** backed by **14 physical assets**; the largest dynamic 3D chunk was **896,059 bytes**. The rendered design audit scored **B+ / 3.37**, AI Slop **B-**, goodwill **93**, with Critical/High/Medium findings **0/0/0**. The performance audit recorded **229,931 encoded bytes** of initial JS before the outer recovery addition and **231,708 encoded bytes** for the final recovery build at HEAD `682c206`; under 4× CPU throttling, the primary CTA became ready in **363 ms**.
 
-Final post-merge `main` gate: **Complete for merge `e5e7b03`**. The current video candidate was generated from `42647ed` against that deployment. It includes the explicit supported-pilot boundary, compact teacher review, learner-controlled text handoff, safe text projection, architecture, and final gate evidence.
+Current post-merge `main` runtime gate: **Complete for Evidence Lens merge `1649c4b`**. The existing video candidate remains an explicitly historical artifact generated from `42647ed` against deployment `e5e7b03`; it is not misrepresented as footage of the Evidence Lens release.
 
 Submission-quality candidate gate on 2026-07-17 JST: `pnpm check` passed with Vitest **335/335** across **32 files** and a successful Next.js production build; Chromium plus WebKit E2E completed with **69 passed / 1 intentional non-Chromium axe skip**; the Chromium axe scan passed capture, evidence, and trace for WCAG 2.0/2.1/2.2 A/AA tags. OpenNext/Workers typecheck, Wrangler dry run (**8,286.05 KiB raw / 1,621.89 KiB gzip**), and production dependency audit all passed. The local Playwright Firefox build could not launch even for an empty page because of a host graphics failure (`RenderCompositorSWGL failed mapping default framebuffer, no dt`), so the Ubuntu CI three-engine job remains a required external gate rather than being misreported as passed.
 
@@ -277,6 +278,7 @@ Final paid canary for merge `e5e7b03`: only after all local, dry-run, deployed-b
 - [x] Clear the Medium/P2 live-revision token replay blocker locally with per-`jti` atomic Durable Object control, prove a reused valid token with fresh caller keys cannot make a second upstream request, and complete the 25-file security delta scan with zero reportable findings.
 - [x] Deploy Option 2 main merge `3d65845` as Cloudflare version `cc6bc7c5-13e6-463d-a8d6-533267a2d468`; verify the created `RevisionReplayLedger`, Terra/Luna and Rate Limit bindings, root/security headers, and exact free production judge ledger without a paid model call.
 - [x] Deploy final implementation merge `e5e7b03` as Cloudflare version `37596678-0018-4415-b9bd-5671d67068bb`; verify 100% traffic, both required secrets by name, the Durable Object, all four Rate Limit bindings, Terra/Luna routing, latest scope copy, HSTS/CSP/nosniff, and the exact free production judge ledger.
+- [x] Deploy Evidence Lens runtime merge `1649c4b` as Cloudflare version `857b32b6-7ae0-4eec-8be2-75421eaf77ba`; verify root HTTP 200, HSTS/CSP, the free Moon verified sample, Terra/Luna and all Worker bindings, and zero paid calls during production visual capture.
 - [ ] Publish the intended repository and verify judge access.
 - [ ] Replace the repository, video, and Codex Feedback placeholders.
 
@@ -289,7 +291,7 @@ Final paid canary for merge `e5e7b03`: only after all local, dry-run, deployed-b
 
 ### Video and media
 
-- [x] Capture and inventory the five production screenshots from deployed version 3, build `La258MjHHcPyAMa5k13Uz`.
+- [x] Capture and inventory five current Evidence Lens production screenshots from Cloudflare version `857b32b6-7ae0-4eec-8be2-75421eaf77ba` with `/api/analyze` blocked and observed call count **0**.
 - [x] Select `docs/media/modelduel-cover.png` as the Devpost cover/thumbnail and README hero.
 - [x] Confirm the deterministic authored-source label is visible and no live submit occurs in the production screenshot journeys.
 - [x] Complete the rights audit for the five first-party production screenshots and cover.

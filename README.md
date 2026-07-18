@@ -198,21 +198,21 @@ This repository was initialized from an empty root during the build week. The en
 
 ## Media and licensing
 
-The runtime ships no third-party image, audio, video, or 3D media. One first-party GPT-Image-2 observatory-instrument plate provides decorative Capture-stage orientation; its visible caption keeps evidence sealed, and it triggers no runtime generation call. The testable astronomy worlds and verified observations remain rendered from deterministic application code. Package dependencies are declared in the repository, and the source is MIT-licensed. The five production captures below are historical first-party screenshots of deployed Cloudflare version 3, build `La258MjHHcPyAMa5k13Uz`; they must be refreshed after the Evidence Lens release is deployed.
+The runtime ships no third-party image, audio, video, or 3D media. One first-party GPT-Image-2 observatory-instrument plate provides decorative Capture-stage orientation; its visible caption keeps evidence sealed, and it triggers no runtime generation call. The testable astronomy worlds and verified observations remain rendered from deterministic application code. Package dependencies are declared in the repository, and the source is MIT-licensed. The five first-party production captures below show the Evidence Lens release deployed as Cloudflare version `857b32b6-7ae0-4eec-8be2-75421eaf77ba`.
 
 | Production media | Dimensions | Size | Submission role |
 | --- | ---: | ---: | --- |
-| [`docs/media/modelduel-cover.png`](docs/media/modelduel-cover.png) | 1600×900 | 504,815 B | Devpost cover and landing hero |
-| [`docs/media/moon-evidence.png`](docs/media/moon-evidence.png) | 1280×900 | 205,850 B | Moon two-world evidence |
-| [`docs/media/model-revision-trace.png`](docs/media/model-revision-trace.png) | 1280×900 | 306,443 B | Completed revision trace and transfer result |
-| [`docs/media/seasons-evidence.png`](docs/media/seasons-evidence.png) | 1280×900 | 193,841 B | Seasons two-world evidence |
-| [`docs/media/mobile-hero.png`](docs/media/mobile-hero.png) | 375×812 | 194,744 B | Responsive landing and verified CTA |
+| [`docs/media/modelduel-cover.png`](docs/media/modelduel-cover.png) | 1600×900 | 118,815 B | Devpost cover and landing hero |
+| [`docs/media/moon-evidence.png`](docs/media/moon-evidence.png) | 1280×900 | 144,106 B | Moon two-world evidence |
+| [`docs/media/model-revision-trace.png`](docs/media/model-revision-trace.png) | 1280×900 | 230,353 B | Completed revision trace and transfer result |
+| [`docs/media/seasons-evidence.png`](docs/media/seasons-evidence.png) | 1280×900 | 144,257 B | Seasons two-world evidence |
+| [`docs/media/mobile-hero.png`](docs/media/mobile-hero.png) | 375×812 | 128,843 B | Responsive landing and verified CTA |
 
 Production visual QA completed the Moon journey through trace at 1280px and 375px, and the Seasons journey through evidence at 1280px. Each evidence view rendered two canvases with no 2D recovery view. Horizontal overflow, page errors, failed requests, and unexpected console messages were all zero. The capture used no login and made zero analyze calls: the verified CTA remained primary, revision remained authored, authored-source labels stayed visible, and live analysis stayed disabled before confirmation. The screenshot and cover rights audit is complete. The publishable video must use the disclosed OpenAI TTS narration path above; local macOS System Voice drafts are not cleared for public sharing. Any future music or additional media requires a separate rights review.
 
 ## Historical integration verification and final gates
 
-The dated rows below preserve the 2026-07-17 integration baseline and intermediate releases. Final implementation merge `e5e7b03` is deployed as Cloudflare version `37596678-0018-4415-b9bd-5671d67068bb`.
+The dated rows below preserve the 2026-07-17 integration baseline and intermediate releases. The current Evidence Lens runtime merge `1649c4b` is deployed as Cloudflare version `857b32b6-7ae0-4eec-8be2-75421eaf77ba`.
 
 | Verification | Result |
 | --- | --- |
@@ -231,6 +231,8 @@ The dated rows below preserve the 2026-07-17 integration baseline and intermedia
 | Current Option 2 deployment — merge `3d65845` | Cloudflare version `cc6bc7c5-13e6-463d-a8d6-533267a2d468`; `RevisionReplayLedger` was created and all Terra/Luna, Rate Limit, and Durable Object bindings were present. Root HEAD, HSTS/CSP/nosniff, and the exact free `GET /api/demo` → verified `POST /api/revision` → `POST /api/transfer` ledger returned HTTP 200 with zero failed browser requests. No paid model call was made. |
 | Final merged release gate — `e5e7b03` | Frozen install; Node **356/356** across **34 files**; workerd **7/7**; Chromium **38/38**; WebKit **37 passed / 1 intentional non-Chromium axe skip**; Next.js/OpenNext/Workers types/Wrangler **Pass**; dry run **8,855.59 KiB raw / 1,705.90 KiB gzip**; production dependency audit **clean**; standard Codex Security scan **96/96 sources**, **0 reportable findings**. |
 | Final production deployment — `e5e7b03` | Cloudflare version `37596678-0018-4415-b9bd-5671d67068bb` at 100% traffic; both required secrets, `RevisionReplayLedger`, all four Rate Limit bindings, Terra/Luna routing, HSTS/CSP/nosniff, latest scope copy, and the exact free three-request ledger verified. One final Terra analysis and one same-session Luna revision then returned HTTP 200 with zero retries. |
+| Evidence Lens quality gate — `1649c4b` | Node **360/360** across **36 files**; workerd **7/7**; Chromium **38/38**; Next.js/OpenNext/Workers types/Wrangler **Pass**; dry run **8,852.91 KiB raw / 1,707.73 KiB gzip**. The capture, evidence, and trace accessibility gate passed. |
+| Current Evidence Lens production — `1649c4b` | Cloudflare version `857b32b6-7ae0-4eec-8be2-75421eaf77ba`; startup **47 ms**; root HTTP 200 with HSTS and CSP; free verified Moon demo HTTP 200; production media capture made **zero** `/api/analyze` calls. |
 
 The dated production integration sequence made one Terra HTTP request and one Luna HTTP request with zero HTTP retries. Combined telemetry was 8,074 total tokens and an estimated **$0.014441**; the configured dollar ceilings remain output-only bounds, not an all-in preflight guarantee. That remains historical integration evidence, not final-build cost evidence.
 
