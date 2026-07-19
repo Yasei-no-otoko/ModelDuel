@@ -198,21 +198,21 @@ This repository was initialized from an empty root during the build week. The en
 
 ## Media and licensing
 
-The runtime ships no third-party image, audio, video, or 3D media. The Capture hero, astronomy worlds, and verified observations are rendered from deterministic application geometry with no remote models, textures, or runtime generation call. Every Canvas has a semantic no-WebGL fallback. Package dependencies are declared in the repository, and the source is MIT-licensed. The five first-party production captures below document the submission UI; refresh their deployment reference after the visualizer release is promoted.
+The runtime ships no third-party image, audio, video, or 3D media. The animated Capture hero, astronomy worlds, and verified observations are rendered from deterministic application geometry with no remote models, textures, or runtime generation call. Every Canvas has a semantic no-WebGL fallback. Package dependencies are declared in the repository, and the source is MIT-licensed. The five first-party captures below were refreshed from Cloudflare version `cd38e435-7875-4125-bfbb-c7f5a4d092d0` after the first-view visualizer release.
 
 | Production media | Dimensions | Size | Submission role |
 | --- | ---: | ---: | --- |
-| [`docs/media/modelduel-cover.png`](docs/media/modelduel-cover.png) | 1600×900 | 118,815 B | Devpost cover and landing hero |
-| [`docs/media/moon-evidence.png`](docs/media/moon-evidence.png) | 1280×900 | 144,106 B | Moon two-world evidence |
+| [`docs/media/modelduel-cover.png`](docs/media/modelduel-cover.png) | 1600×900 | 152,499 B | Devpost cover and animated 3D landing hero |
+| [`docs/media/moon-evidence.png`](docs/media/moon-evidence.png) | 1280×900 | 114,198 B | Moon two-world evidence |
 | [`docs/media/model-revision-trace.png`](docs/media/model-revision-trace.png) | 1280×900 | 230,353 B | Completed revision trace and transfer result |
-| [`docs/media/seasons-evidence.png`](docs/media/seasons-evidence.png) | 1280×900 | 144,257 B | Seasons two-world evidence |
-| [`docs/media/mobile-hero.png`](docs/media/mobile-hero.png) | 375×812 | 128,843 B | Responsive landing and verified CTA |
+| [`docs/media/seasons-evidence.png`](docs/media/seasons-evidence.png) | 1280×900 | 127,349 B | Seasons two-world evidence |
+| [`docs/media/mobile-hero.png`](docs/media/mobile-hero.png) | 375×812 | 63,196 B | Responsive landing, verified CTA, and 3D entry |
 
 Production visual QA completed the Moon journey through trace at 1280px and 375px, and the Seasons journey through evidence at 1280px. Each evidence view rendered two canvases with no 2D recovery view. Horizontal overflow, page errors, failed requests, and unexpected console messages were all zero. The capture used no login and made zero analyze calls: the verified CTA remained primary, revision remained authored, authored-source labels stayed visible, and live analysis stayed disabled before confirmation. The screenshot and cover rights audit is complete. The publishable video must use the disclosed OpenAI TTS narration path above; local macOS System Voice drafts are not cleared for public sharing. Any future music or additional media requires a separate rights review.
 
 ## Historical integration verification and final gates
 
-The dated rows below preserve the 2026-07-17 integration baseline and intermediate releases. The current Evidence Lens runtime merge `1649c4b` is deployed as Cloudflare version `857b32b6-7ae0-4eec-8be2-75421eaf77ba`.
+The dated rows below preserve the 2026-07-17 integration baseline and intermediate releases. The current first-view 3D runtime merge `96b93d4` is deployed as Cloudflare version `cd38e435-7875-4125-bfbb-c7f5a4d092d0`.
 
 | Verification | Result |
 | --- | --- |
@@ -233,12 +233,14 @@ The dated rows below preserve the 2026-07-17 integration baseline and intermedia
 | Final production deployment — `e5e7b03` | Cloudflare version `37596678-0018-4415-b9bd-5671d67068bb` at 100% traffic; both required secrets, `RevisionReplayLedger`, all four Rate Limit bindings, Terra/Luna routing, HSTS/CSP/nosniff, latest scope copy, and the exact free three-request ledger verified. One final Terra analysis and one same-session Luna revision then returned HTTP 200 with zero retries. |
 | Evidence Lens quality gate — `1649c4b` | Node **360/360** across **36 files**; workerd **7/7**; Chromium **38/38**; Next.js/OpenNext/Workers types/Wrangler **Pass**; dry run **8,852.91 KiB raw / 1,707.73 KiB gzip**. The capture, evidence, and trace accessibility gate passed. |
 | Current Evidence Lens production — `1649c4b` | Cloudflare version `857b32b6-7ae0-4eec-8be2-75421eaf77ba`; startup **47 ms**; root HTTP 200 with HSTS and CSP; free verified Moon demo HTTP 200; production media capture made **zero** `/api/analyze` calls. |
+| First-view 3D release gate — `96b93d4` | Node **363/363** across **37 files**; workerd **7/7**; local Chromium plus WebKit **85 passed / 1 intentional skip**; Ubuntu Chromium/Firefox/WebKit [CI](https://github.com/Yasei-no-otoko/ModelDuel/actions/runs/29681260428) **127 passed / 2 intentional skips**; Next.js/OpenNext/Workers types/Wrangler **Pass**. |
+| Current first-view 3D production — `96b93d4` | Cloudflare version `cd38e435-7875-4125-bfbb-c7f5a4d092d0`; startup **45 ms**; 1600×900, 1280×720, and 768×1024 production probes show one running hero Canvas with no errors or horizontal overflow; the exact free three-request ledger passed with zero paid calls. |
 
 The dated production integration sequence made one Terra HTTP request and one Luna HTTP request with zero HTTP retries. Combined telemetry was 8,074 total tokens and an estimated **$0.014441**; the configured dollar ceilings remain output-only bounds, not an all-in preflight guarantee. That remains historical integration evidence, not final-build cost evidence.
 
 After earlier main merge `e04443f`, the paid runtime canary made exactly one live analysis request and one live revision request with zero retries. Analysis returned HTTP 200 in **17.642 seconds**, source `live`, model `gpt-5.6-terra`, with the exact tool order `validate_world_spec` → `simulate_world` → `compare_predictions` → `select_discriminating_case`. Revision returned HTTP 200 in **1.404 seconds**, source `gpt-5.6`, model `gpt-5.6-luna`; the same session and signed evaluation were accepted, conceptual change was `revised` with score `1`, and `liveUseAttestation: true` was carried by both requests. The server-minted cookie was reused with `Path=/`, `HttpOnly`, `Secure`, and `SameSite=Strict`; its value was not recorded. The strict responses did not expose token usage or cost, so neither is guessed. This is inherited integration evidence, not a paid canary of merge `6186358`; the handoff release intentionally used only the free verified path.
 
-The current exact 165-second Evidence Lens video candidate is run `20260718T163348650Z-65f5ae63-ff52-4b7c-bae7-f02f2b0c44a2` from generator commit `462fb97` against production merge `1649c4b`. It includes the supported-pilot boundary, learner-controlled teacher handoff, 360/7/38 and Security 96/96/0 evidence, and 10/10 cached narration segments with zero Speech API calls. See [the current video evidence](docs/VIDEO_EVIDENCE_2026-07-19.md). Public video upload and visibility are user-owned manual actions that Codex does not perform. Repository access, the `/feedback` Session ID, and the Ubuntu three-engine CI gate are verified. The public video placeholder, logged-out video/link check, and final Devpost form submission remain user-owned gates. Track the canonical handoff in [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md).
+The current exact 165-second Evidence Lens video candidate is run `20260719T092408557Z-fec2df68-b1ea-4ea6-9b0a-fb97131df4b5` from generator commit `96b93d4` against the same production merge. It opens on the animated 3D comparison, includes the supported-pilot boundary and learner-controlled teacher handoff, records 363/7/43 and Security 96/96/0 evidence, and uses 10/10 cached narration segments with zero Speech API calls. See [the current video evidence](docs/VIDEO_EVIDENCE_2026-07-19.md). Public video upload and visibility are user-owned manual actions that Codex does not perform. Repository access, the `/feedback` Session ID, and the Ubuntu three-engine CI gate are verified. The public video placeholder, logged-out video/link check, and final Devpost form submission remain user-owned gates. Track the canonical handoff in [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md).
 
 ## License
 
