@@ -161,6 +161,47 @@ async function expectFreshCaptureAndVerifiedReuse(page: Page) {
   await expect(page.getByRole("heading", { name: "Turn one disagreement into a fair test." })).toBeVisible();
 }
 
+test("explains the duel through the interactive hero before the challenge starts", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  const visualizer = page.getByTestId("hero-visualizer");
+  await expect(visualizer).toBeVisible();
+  const focusControls = visualizer.getByRole("group", {
+    name: "Focus the 3D comparison",
+  });
+  await expect(focusControls.getByRole("button")).toHaveCount(3);
+
+  const learnerFocus = focusControls.getByRole("button", {
+    name: "Learner claim",
+  });
+  await learnerFocus.click();
+  await expect(learnerFocus).toHaveAttribute("aria-pressed", "true");
+  await expect(
+    visualizer.locator("figcaption").getByText(
+      "Learner claim: Earth’s shadow is proposed as the cause.",
+    ),
+  ).toBeVisible();
+
+  const evidenceFocus = focusControls.getByRole("button", {
+    name: "Shared evidence",
+  });
+  await evidenceFocus.click();
+  await expect(evidenceFocus).toHaveAttribute("aria-pressed", "true");
+  await expect(
+    visualizer.locator("figcaption").getByText(
+      "Shared evidence: the half-lit Moon appears without Earth-shadow intersection.",
+    ),
+  ).toBeVisible();
+
+  const widths = await page.evaluate(() => ({
+    client: document.documentElement.clientWidth,
+    scroll: document.documentElement.scrollWidth,
+  }));
+  expect(widths.scroll).toBeLessThanOrEqual(widths.client);
+});
+
 test("completes the verified Seasons journey with sealed evidence and a transfer trace", async ({ page }) => {
   const verifiedLedger = observeVerifiedRequestLedger(page);
   await startSeasonsChallenge(page);

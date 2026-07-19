@@ -1,0 +1,95 @@
+{
+  "projectName": "modelduel-visualizer",
+  "title": "ModelDuel evidence visualizers",
+  "description": "A lightweight hero comparison and two deterministic scientific 3D views that keep learner claims, scientific models, and verified observations visually distinct.",
+  "useCase": "scientific-spatial",
+  "renderer": "webgl",
+  "modelUrl": null,
+  "environmentUrl": null,
+  "camera": {
+    "type": "perspective",
+    "fov": 38,
+    "near": 0.1,
+    "far": 100,
+    "position": [0, 3.25, 9.8],
+    "target": [0, -0.35, 0],
+    "fitOffset": 1.2
+  },
+  "controls": {
+    "enabled": true,
+    "enableDamping": false,
+    "dampingFactor": 0,
+    "autoRotate": false,
+    "autoRotateSpeed": 0,
+    "minDistance": 6,
+    "maxDistance": 14,
+    "enablePan": false,
+    "enableZoom": false
+  },
+  "render": {
+    "antialias": true,
+    "alpha": false,
+    "shadows": false,
+    "maxDpr": 1.5,
+    "exposure": 1,
+    "powerPreference": "high-performance"
+  },
+  "loading": {
+    "draco": false,
+    "ktx2": false,
+    "meshopt": false,
+    "dracoDecoderPath": "bundled",
+    "ktx2TranscoderPath": "bundled",
+    "workerLimit": 1
+  },
+  "lighting": {
+    "preset": "technical",
+    "environmentIntensity": 0.46,
+    "keyIntensity": 1.25,
+    "fillIntensity": 0.55,
+    "rimIntensity": 0,
+    "showGrid": false
+  },
+  "interaction": {
+    "selection": true,
+    "hover": false,
+    "annotations": false,
+    "measurement": false,
+    "clipping": false
+  },
+  "animation": {
+    "autoplay": false,
+    "clip": null,
+    "loop": false,
+    "timeScale": 0
+  },
+  "accessibility": {
+    "canvasLabel": "Interactive comparison of a learner model, a scientific model, and the evidence that distinguishes them",
+    "instructions": "Use the three named view buttons to focus the learner claim, scientific model, or verified evidence. The adjacent text carries the complete meaning when 3D is unavailable.",
+    "reducedMotion": true,
+    "keyboard": true,
+    "textSummary": "Two proposed models run under one shared test. The learner model uses an Earth-shadow claim, the scientific model uses sunlight and viewing angle, and the verified half-lit Moon observation distinguishes them."
+  },
+  "performance": {
+    "targetFps": 60,
+    "maxDrawCalls": 80,
+    "maxTriangles": 80000,
+    "maxMaterials": 32,
+    "maxTextures": 1,
+    "maxTextureMemoryMb": 1,
+    "maxBundleKb": 900,
+    "pauseWhenHidden": true,
+    "pauseWhenOffscreen": true
+  },
+  "ui": {
+    "background": "#060a12",
+    "showToolbar": true,
+    "showStats": false,
+    "showInstructions": true
+  },
+  "deployment": {
+    "basePath": "/",
+    "crossOriginIsolation": false,
+    "contentSecurityPolicy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+  }
+}

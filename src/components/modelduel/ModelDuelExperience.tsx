@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import {
   useEffect,
   useReducer,
@@ -53,6 +52,7 @@ import {
 import { formatCausalRelation } from "./learner-copy";
 import { useHydrationReady } from "./browser";
 import { ModelDuelLogo } from "./ModelDuelLogo";
+import { DynamicHeroVisualizer } from "./hero-visualizer-loader";
 import {
   loadWorldComparison,
   ResilientWorldComparison,
@@ -988,42 +988,32 @@ export function ModelDuelExperience() {
         {stage === "capture" ? (
           <section className="capture-layout" aria-labelledby="capture-title">
             <div className="capture-copy">
-              <p className="eyebrow"><span aria-hidden="true" /> Evidence-led science learning</p>
-              <h1 id="capture-title" aria-label={PRODUCT.tagline}>
-                <span>Two models predict.</span>
-                <span className="evidence-text">Evidence decides.</span>
-              </h1>
-            <p className="hero-summary">{scenarioContent.heroSummary}</p>
-              <button
-                className="primary-button full-button mobile-verified-cta"
-                type="button"
-                aria-label="Run verified sample"
-                data-testid="mobile-verified-cta"
-                data-hydrated={hydrationReady ? "true" : "false"}
-                disabled={!hydrationReady || analysisPending}
-                onClick={() => void beginAnalysis("verified-sample")}
-              >
-                <span>Run verified sample <span aria-hidden="true">→</span></span>
-                <small>Instant {scenarioContent.label} challenge · no API wait</small>
-              </button>
+              <div className="capture-copy-intro">
+                <p className="eyebrow"><span aria-hidden="true" /> Evidence-led science learning</p>
+                <h1 id="capture-title" aria-label={PRODUCT.tagline}>
+                  <span>Two models predict.</span>
+                  <span className="evidence-text">Evidence decides.</span>
+                </h1>
+                <p className="hero-summary">{scenarioContent.heroSummary}</p>
+                <button
+                  className="primary-button full-button mobile-verified-cta"
+                  type="button"
+                  aria-label="Run verified sample"
+                  data-testid="mobile-verified-cta"
+                  data-hydrated={hydrationReady ? "true" : "false"}
+                  disabled={!hydrationReady || analysisPending}
+                  onClick={() => void beginAnalysis("verified-sample")}
+                >
+                  <span>Run verified sample <span aria-hidden="true">→</span></span>
+                  <small>Instant {scenarioContent.label} challenge · no API wait</small>
+                </button>
+              </div>
+              <DynamicHeroVisualizer />
               <ul className="promise-list">
                 <li>Evidence stays hidden until you commit.</li>
                 <li>Physical observation stays separate from model claims.</li>
                 <li>Your final transfer result is checked only by the server.</li>
               </ul>
-              <figure className="scenario-illustration">
-                <Image
-                  src="/illustrations/modelduel-observatory-instrument.png"
-                  width={1200}
-                  height={800}
-                  sizes="(max-width: 960px) 100vw, 520px"
-                  priority
-                  alt="Vintage observatory instrument with brass optics and a mint glass indicator"
-                />
-                <figcaption>
-                  Orientation plate · observation instrument · evidence remains sealed
-                </figcaption>
-              </figure>
             </div>
 
             <form

@@ -242,7 +242,7 @@ test("requires a fresh live-use confirmation after changing challenge", async ({
   ).toBeEnabled();
 });
 
-test("defers WebGL probing until the evidence comparison mounts", async ({
+test("uses one capture-stage WebGL probe and preserves the evidence fallback", async ({
   page,
 }) => {
   await page.addInitScript(() => {
@@ -276,7 +276,9 @@ test("defers WebGL probing until the evidence comparison mounts", async ({
     );
 
   await page.goto("/");
-  expect(await probeCount()).toBe(0);
+  await expect.poll(probeCount).toBeGreaterThan(0);
+  await expect(page.getByTestId("hero-visualizer-fallback")).toBeVisible();
+  const captureProbeCount = await probeCount();
   await page.getByRole("button", { name: "Run verified sample" }).click();
   await page.getByRole("button", { name: "Make a prediction" }).click();
   await page.getByLabel("Earth's shadow masks half of the Moon").check();
@@ -284,7 +286,7 @@ test("defers WebGL probing until the evidence comparison mounts", async ({
   await expect(
     page.getByRole("heading", { name: "Your prediction is locked." }),
   ).toBeVisible();
-  expect(await probeCount()).toBe(0);
+  expect(await probeCount()).toBe(captureProbeCount);
 
   await page
     .getByRole("button", { name: "Run both worlds and reveal evidence" })

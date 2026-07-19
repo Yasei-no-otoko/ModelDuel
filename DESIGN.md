@@ -110,17 +110,19 @@
 - Maintain keyboard order, semantic headings, visible focus, local error recovery,
   and the complete no-WebGL journey.
 
-## Illustration
+## Scientific visualization
 
-- The Capture stage uses one first-party GPT-Image-2 observatory-instrument plate.
-  It is decorative orientation art, not evidence and not a replacement for the
-  deterministic simulation. Its visible caption states that evidence is sealed.
-- Art direction is a restrained observatory field manual: precision optics,
-  engraved metal, and one mint indicator. Planets, model paths, causal arrows,
-  generated text, people, robots, brains, purple glow, and generic AI-network
-  imagery are prohibited so the plate cannot be mistaken for a science claim.
-- The runtime file is a local optimized PNG under `public/illustrations`; there is no
-  image-generation call, remote image host, or new paid request in the product.
+- The Capture stage uses one lightweight, deterministic Three.js comparison: the
+  learner claim and scientific model converge on a shared half-lit Moon
+  observation. It explains the product method instead of serving as decoration.
+- The hero and evidence scenes share the same warm learner, cyan science, and mint
+  observation vocabulary. Shadow cones and light rays appear only when they
+  encode a model relationship.
+- All geometry and materials are application code. There are no remote models,
+  textures, image hosts, runtime generation calls, or paid requests in the visual
+  layer.
+- Every Canvas uses demand rendering, bounded DPR, reduced-motion handling, native
+  controls, and a semantic HTML fallback that preserves the complete comparison.
 
 ## Safe Choices
 
@@ -145,4 +147,4 @@
 | 2026-07-19 | Replace the `M` tile with opposing model arcs | The old mark identified only the first letter; the new mark explains the product at a glance. |
 | 2026-07-19 | Remove purple gradients | Purple gradients were the strongest remaining AI-slop signal and carried no scientific meaning. |
 | 2026-07-19 | Use self-hosted Atkinson, Barlow, and IBM Plex typography | Improves cross-platform consistency, learner legibility, and data distinction without runtime third-party font requests. |
-| 2026-07-19 | Add one GPT-Image-2 observatory instrument plate | Adds a memorable editorial anchor without depicting a competing science claim or weakening the deterministic evidence boundary. |
+| 2026-07-19 | Replace the observatory plate with a live model comparison | Makes the product method legible in the first viewport while keeping the visual layer deterministic and API-free. |
