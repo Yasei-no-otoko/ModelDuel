@@ -111,6 +111,19 @@ test("keeps the first task and all seven progress steps usable at 375px", async 
     layout.documentClientWidth,
   );
 
+  const heroCanvas = page.getByTestId("hero-visualizer").locator("canvas");
+  if ((await heroCanvas.count()) === 1) {
+    const dpr = await heroCanvas.evaluate((element) => {
+      const canvas = element as HTMLCanvasElement;
+      return {
+        x: canvas.width / canvas.clientWidth,
+        y: canvas.height / canvas.clientHeight,
+      };
+    });
+    expect(dpr.x).toBeLessThanOrEqual(1.01);
+    expect(dpr.y).toBeLessThanOrEqual(1.01);
+  }
+
   const progressWidths = await progress.evaluate((element) => ({
     clientWidth: element.clientWidth,
     scrollWidth: element.scrollWidth,
@@ -145,4 +158,69 @@ test("keeps the first task and all seven progress steps usable at 375px", async 
   await expect(progress.locator(".progress-current")).toHaveText(
     "Step 2 of 7 · Interpret",
   );
+});
+
+test("keeps Moon evidence legends clear of every named camera control at 375px", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Run verified sample" }).click();
+  await page.getByRole("button", { name: "Make a prediction" }).click();
+  await page.getByLabel("Earth's shadow masks half of the Moon").check();
+  await page.getByRole("button", { name: "Lock prediction" }).click();
+  await page
+    .getByRole("button", { name: "Run both worlds and reveal evidence" })
+    .click();
+
+  const shells = page.locator(".moon-world-viewport-shell");
+  await expect(shells).toHaveCount(2);
+  const cameraButtons = page.locator(".moon-world-viewport-shell .view-controls button");
+  const staticNotes = page.locator(".moon-world-viewport-shell .static-view-note");
+  await expect
+    .poll(async () => {
+      const buttonCount = await cameraButtons.count();
+      const noteCount = await staticNotes.count();
+      return (buttonCount === 6 && noteCount === 0) || (buttonCount === 0 && noteCount === 2);
+    })
+    .toBe(true);
+
+  for (const shell of await shells.all()) {
+    const layout = await shell.evaluate((element) => {
+      const viewport = element.querySelector(".world-viewport")!;
+      const legend = element.querySelector(".scene-encoding-legend")!;
+      const controlsOrNote = element.querySelector(".view-controls, .static-view-note")!;
+      const viewportBounds = viewport.getBoundingClientRect();
+      const legendBounds = legend.getBoundingClientRect();
+      const controlsBounds = controlsOrNote.getBoundingClientRect();
+      return {
+        controlsTop: controlsBounds.top,
+        legendBottom: legendBounds.bottom,
+        viewportBottom: viewportBounds.bottom,
+      };
+    });
+    expect(layout.legendBottom).toBeLessThanOrEqual(layout.viewportBottom + 1);
+    expect(layout.controlsTop).toBeGreaterThanOrEqual(layout.viewportBottom - 1);
+  }
+
+  if ((await cameraButtons.count()) === 6) {
+    const viewNames = ["Case overview", "Earth-side view", "Plane view"] as const;
+    for (const world of await shells.all()) {
+      for (const viewName of viewNames) {
+        const button = world.getByRole("button", { name: viewName });
+        const height = await button.evaluate(
+          (element) => element.getBoundingClientRect().height,
+        );
+        expect(height).toBeGreaterThanOrEqual(44);
+        await button.click({ position: { x: 10, y: height / 2 } });
+        await expect(button).toHaveAttribute("aria-pressed", "true");
+      }
+    }
+  }
+
+  const widths = await page.evaluate(() => ({
+    client: document.documentElement.clientWidth,
+    scroll: document.documentElement.scrollWidth,
+  }));
+  expect(widths.scroll).toBeLessThanOrEqual(widths.client);
 });

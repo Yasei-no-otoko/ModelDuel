@@ -1,34 +1,5 @@
 import { BackSide, Quaternion, Vector3, type Vector3Tuple } from "three";
 
-const STAR_POSITIONS = new Float32Array([
-  -6.8, 3.2, -3.4, -5.7, -2.4, -4.8, -4.8, 1.1, -5.2, -3.9, 4.2, -5.6,
-  -2.7, -3.4, -4.1, -1.8, 2.6, -5.8, -0.9, -1.5, -5.2, 0.1, 4.1, -5.5,
-  1.2, -3.2, -4.4, 2.1, 1.9, -5.9, 3.1, -1.1, -5.1, 4.0, 3.7, -4.7,
-  4.9, -2.8, -5.4, 5.8, 1.3, -4.5, 6.7, 3.1, -5.7, -6.2, 0.2, -4.9,
-  -4.4, -0.8, -5.6, -3.3, 2.9, -4.6, -2.2, 0.3, -5.4, -1.1, 3.6, -4.3,
-  0.8, 0.7, -5.7, 1.7, -2.5, -5.0, 2.8, 3.3, -5.3, 3.8, 0.4, -4.2,
-  5.2, 2.6, -5.0, 6.1, -1.8, -5.8,
-]);
-
-export function TechnicalStarField({ opacity = 0.56 }: Readonly<{ opacity?: number }>) {
-  return (
-    <points>
-      <bufferGeometry>
-        <bufferAttribute attach="attributes-position" args={[STAR_POSITIONS, 3]} />
-      </bufferGeometry>
-      <pointsMaterial
-        color="#c9e8f4"
-        size={0.055}
-        sizeAttenuation
-        transparent
-        opacity={opacity}
-        depthWrite={false}
-        toneMapped={false}
-      />
-    </points>
-  );
-}
-
 export function SunBody({
   position,
   radius = 0.55,
@@ -172,6 +143,104 @@ export function LightBeam({
   return (
     <mesh position={midpoint} quaternion={quaternion}>
       <cylinderGeometry args={[radius, radius, length, 8]} />
+      <meshBasicMaterial
+        color={color}
+        transparent
+        opacity={opacity}
+        depthWrite={false}
+        toneMapped={false}
+      />
+    </mesh>
+  );
+}
+
+export function DirectionVector({
+  color,
+  end,
+  opacity = 0.72,
+  radius = 0.014,
+  start,
+}: Readonly<{
+  color: string;
+  end: Vector3Tuple;
+  opacity?: number;
+  radius?: number;
+  start: Vector3Tuple;
+}>) {
+  const origin = new Vector3(...start);
+  const destination = new Vector3(...end);
+  const unit = destination.clone().sub(origin).normalize();
+  const headLength = radius * 8;
+  const headPosition = destination.clone().addScaledVector(unit, -headLength / 2);
+  const quaternion = new Quaternion().setFromUnitVectors(
+    new Vector3(0, 1, 0),
+    unit,
+  );
+
+  return (
+    <group>
+      <LightBeam
+        color={color}
+        start={start}
+        end={end}
+        opacity={opacity}
+        radius={radius}
+      />
+      <mesh position={headPosition} quaternion={quaternion}>
+        <coneGeometry args={[radius * 3.4, headLength, 10]} />
+        <meshBasicMaterial
+          color={color}
+          transparent
+          opacity={opacity}
+          depthWrite={false}
+          toneMapped={false}
+        />
+      </mesh>
+    </group>
+  );
+}
+
+export function AngleArc({
+  color,
+  opacity = 0.72,
+  position = [0, 0, 0],
+  radius = 0.72,
+  rotation = [0, 0, 0],
+}: Readonly<{
+  color: string;
+  opacity?: number;
+  position?: Vector3Tuple;
+  radius?: number;
+  rotation?: Vector3Tuple;
+}>) {
+  return (
+    <mesh position={position} rotation={rotation}>
+      <torusGeometry args={[radius, 0.018, 8, 40, Math.PI / 2]} />
+      <meshBasicMaterial
+        color={color}
+        transparent
+        opacity={opacity}
+        depthWrite={false}
+        toneMapped={false}
+      />
+    </mesh>
+  );
+}
+
+export function ValueHalo({
+  color,
+  opacity,
+  position,
+  radius,
+}: Readonly<{
+  color: string;
+  opacity: number;
+  position: Vector3Tuple;
+  radius: number;
+}>) {
+  return (
+    <mesh position={position}>
+      <ringGeometry args={[radius * 0.74, radius, 48]} />
       <meshBasicMaterial
         color={color}
         transparent

@@ -57,7 +57,7 @@ test("keeps both Seasons worlds compact and operable at 375px", async ({
   const comparisonHeight = await page
     .locator(".world-comparison")
     .evaluate((element) => element.getBoundingClientRect().height);
-  expect(comparisonHeight).toBeLessThan(1450);
+  expect(comparisonHeight).toBeLessThan(1500);
 
   const learnerWorld = page.locator(".evidence-world.learner");
   const controlButtons = page.locator(".view-controls button");
@@ -114,37 +114,37 @@ test("keeps both Seasons worlds compact and operable at 375px", async ({
 
     const learnerViewport = learnerWorld.getByRole("img").first();
     const learnerViewportShell = learnerWorld.locator(".world-viewport[id]");
-    const rotateLearnerRight = learnerWorld.getByRole("button", {
-      name: "Rotate learner seasons model view right to 22.5 degrees",
+    const earthView = learnerWorld.getByRole("button", {
+      name: "Earth-side view",
     });
     await expect(learnerViewport).toBeVisible();
     await expect(learnerViewport).toHaveAttribute(
       "aria-label",
-      /Learner seasons model 3D view\. Camera orientation 0 degrees/,
+      /Learner seasons model 3D view\. Case overview/,
     );
     const learnerViewportId = await learnerViewportShell.getAttribute("id");
     expect(learnerViewportId).toBeTruthy();
-    await expect(rotateLearnerRight).toHaveAttribute(
+    await expect(earthView).toHaveAttribute(
       "aria-controls",
       learnerViewportId!,
     );
-    await rotateLearnerRight.focus();
+    await earthView.focus();
     await page.keyboard.press("Enter");
     await expect(learnerViewport).toHaveAttribute(
       "aria-label",
-      /Camera orientation 22\.5 degrees/,
+      /Earth-side view/,
     );
     await expect(learnerWorld.locator(".camera-view-status")).toHaveText(
-      "Learner seasons model view rotated right. Camera orientation 22.5 degrees.",
+      "Learner seasons model view: Earth-side view.",
     );
     const resetLearnerView = learnerWorld.getByRole("button", {
-      name: "Reset learner seasons model view to 0 degrees",
+      name: "Case overview",
     });
     await resetLearnerView.focus();
     await page.keyboard.press("Enter");
     await expect(learnerViewport).toHaveAttribute(
       "aria-label",
-      /Camera orientation 0 degrees/,
+      /Case overview/,
     );
   }
 

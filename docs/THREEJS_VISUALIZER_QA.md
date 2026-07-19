@@ -4,6 +4,50 @@ Date: 2026-07-19 JST
 Implementation merge: `96b93d4`
 Production version: `cd38e435-7875-4125-bfbb-c7f5a4d092d0`
 
+## Analytical data-visualization refinement
+
+Branch: `codex/modelduel-threejs-data-refinement`
+
+- Replaced the autonomous hero bob/tilt/pulse loop and decorative star field
+  with interaction-only, `frameloop="demand"` rendering.
+- Added explicit sunlight arrows, a learner-claim umbra, the sealed 90 degree
+  Moon angle, Earth-to-Moon viewing vectors, and a verified 50% / no-shadow
+  readout. Every mark has a semantic DOM legend.
+- Derived both hero worlds from the same perpendicular Sun-Earth-Moon layout,
+  so the labelled 90 degree case is also geometrically 90 degrees on screen.
+- Replaced arbitrary degree stepping with the named `Case overview`,
+  `Earth-side view`, and `Plane view` camera states.
+- Kept the physical 23.44 degree axis in both Seasons panels. The learner panel
+  now encodes an equal-response prediction while the science panel maps the
+  validated north/south relative-energy values to unequal halos.
+- Changed the shared capability gate from a WebGL1-or-WebGL2 probe to actual
+  Three.js `WebGLRenderer` construction inside the lazy 3D chunk. Runtime
+  `WEBGL_lose_context` now swaps only the affected Canvas to the complete
+  semantic fallback without corrupting the shared capability snapshot.
+- Compact and reduced-motion viewports use DPR 1; other views remain capped at
+  1.5. Mobile scene legends occupy the lower viewport band instead of extending
+  the page.
+
+Local verification for this refinement:
+
+| Check | Result |
+| --- | --- |
+| `pnpm check` | Pass: lint, typecheck, 363/363 Node, 7/7 workerd, 46-test video contract, production build |
+| Playwright Chromium | Pass: 46/46 |
+| Playwright WebKit | Pass: 44 passed / 2 intentional Chromium-only skips |
+| Renderer-loss and construction-failure probes | Pass: semantic fallback only, zero inert camera controls |
+| Responsive visual inspection | Pass: 1600×900 and 375×812 hero; 1280px Moon; 375px Moon interactive and forced fallback; 375px Seasons |
+| `pnpm cf:typecheck` | Pass: OpenNext build and checked-in Workers bindings |
+| Wrangler dry run | Pass: 44 assets; 10,260.84 KiB raw / 1,987.87 KiB gzip |
+| Paid API usage | None; verified samples only |
+
+The detailed data-to-scene, camera, motion, fallback, and acceptance contract is
+[`THREEJS_DATA_VISUALIZATION_CONTRACT.md`](./THREEJS_DATA_VISUALIZATION_CONTRACT.md).
+
+The sections below preserve the earlier `96b93d4` release record. Where motion,
+test totals, bundle totals, or production state differ, the analytical
+refinement section above is authoritative for the current branch.
+
 ## Architecture and scope
 
 - Preserved the existing React Three Fiber architecture instead of introducing a second vanilla Three.js runtime.

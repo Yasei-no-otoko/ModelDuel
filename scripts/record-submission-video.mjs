@@ -100,7 +100,7 @@ const REPRESENTATIVE_COMMITS = Object.freeze([
 const BUILD_EVIDENCE = Object.freeze({
   nodeTests: 363,
   workerdTests: 7,
-  chromiumTests: 43,
+  chromiumTests: 46,
   securityReviewedSources: 96,
   reportableSecurityFindings: 0,
   productionMerge: "resolved-at-recording",

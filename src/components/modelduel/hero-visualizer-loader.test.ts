@@ -21,6 +21,10 @@ const experienceSource = readFileSync(
   fileURLToPath(new URL("./ModelDuelExperience.tsx", import.meta.url)),
   "utf8",
 );
+const sharedBrowserSource = readFileSync(
+  fileURLToPath(new URL("./browser.ts", import.meta.url)),
+  "utf8",
+);
 
 describe("hero visualizer boundary", () => {
   it("keeps the Three.js scene behind a client-only dynamic loader", () => {
@@ -29,15 +33,22 @@ describe("hero visualizer boundary", () => {
     expect(loaderSource).toContain("ssr: false");
     expect(loaderSource).not.toContain('from "./HeroVisualizer"');
     expect(experienceSource).toContain("<DynamicHeroVisualizer");
+    expect(sharedBrowserSource).not.toContain('from "three"');
+    expect(visualizerSource).toContain("useThreeRendererAvailability");
   });
 
-  it("animates only when motion is allowed and keeps bounded DPR and native controls", () => {
+  it("renders on demand with bounded DPR, named camera states, and native controls", () => {
+    expect(visualizerSource).toContain('frameloop="demand"');
     expect(visualizerSource).toContain(
-      'frameloop={reducedMotion ? "demand" : "always"}',
+      "dpr={reducedMotion || compactViewport ? 1 : [1, 1.5]}",
     );
-    expect(visualizerSource).toContain("dpr={reducedMotion ? 1 : [1, 1.5]}");
-    expect(visualizerSource).toContain("useFrame((_state, delta)");
-    expect(visualizerSource).toContain('data-motion={reducedMotion ? "paused" : "running"}');
+    expect(visualizerSource).toContain("function RenderReadySignal");
+    expect(visualizerSource).not.toContain("Math.sin(");
+    expect(visualizerSource).not.toContain("TechnicalStarField");
+    expect(visualizerSource).toContain(
+      'data-motion={reducedMotion ? "paused" : "interaction-only"}',
+    );
+    expect(visualizerSource).toContain("data-camera-state={focus}");
     expect(visualizerSource).toContain('role="group"');
     expect(visualizerSource).toContain('aria-pressed={focus === value}');
   });

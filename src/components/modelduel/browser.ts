@@ -6,6 +6,7 @@ const CLIENT_READY = true;
 const SERVER_NOT_READY = false;
 const SERVER_REDUCED_MOTION = true;
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+const COMPACT_VIEWPORT_QUERY = "(max-width: 520px)";
 
 function subscribeNoop() {
   return () => undefined;
@@ -24,57 +25,6 @@ export function useHydrationReady() {
     subscribeNoop,
     getClientReadySnapshot,
     getServerNotReadySnapshot,
-  );
-}
-
-let cachedWebGlAvailability: boolean | null = null;
-
-function detectWebGlAvailability() {
-  if (cachedWebGlAvailability !== null) return cachedWebGlAvailability;
-  if (typeof document === "undefined") return false;
-
-  const canvas = document.createElement("canvas");
-  let context: WebGLRenderingContext | WebGL2RenderingContext | null = null;
-  try {
-    context =
-      (canvas.getContext("webgl2") as WebGL2RenderingContext | null) ??
-      (canvas.getContext("webgl") as WebGLRenderingContext | null);
-    cachedWebGlAvailability = context !== null;
-  } catch {
-    cachedWebGlAvailability = false;
-  } finally {
-    if (context) {
-      try {
-        context.getExtension("WEBGL_lose_context")?.loseContext();
-      } catch {
-        // Availability is already known; context cleanup is best-effort.
-      }
-    }
-  }
-  return cachedWebGlAvailability;
-}
-
-function subscribeWebGl(onStoreChange: () => void) {
-  if (cachedWebGlAvailability === null) {
-    cachedWebGlAvailability = detectWebGlAvailability();
-    onStoreChange();
-  }
-  return () => undefined;
-}
-
-function getWebGlSnapshot() {
-  return cachedWebGlAvailability;
-}
-
-function getServerWebGlSnapshot() {
-  return null;
-}
-
-export function useWebGlAvailability(): boolean | null {
-  return useSyncExternalStore(
-    subscribeWebGl,
-    getWebGlSnapshot,
-    getServerWebGlSnapshot,
   );
 }
 
@@ -97,5 +47,23 @@ export function usePrefersReducedMotion() {
     subscribeReducedMotion,
     getReducedMotionSnapshot,
     getServerReducedMotionSnapshot,
+  );
+}
+
+function subscribeCompactViewport(onStoreChange: () => void) {
+  const query = window.matchMedia(COMPACT_VIEWPORT_QUERY);
+  query.addEventListener("change", onStoreChange);
+  return () => query.removeEventListener("change", onStoreChange);
+}
+
+function getCompactViewportSnapshot() {
+  return window.matchMedia(COMPACT_VIEWPORT_QUERY).matches;
+}
+
+export function useCompactViewport() {
+  return useSyncExternalStore(
+    subscribeCompactViewport,
+    getCompactViewportSnapshot,
+    getServerNotReadySnapshot,
   );
 }
