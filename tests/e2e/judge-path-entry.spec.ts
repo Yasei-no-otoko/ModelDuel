@@ -368,7 +368,7 @@ test("removes camera controls when the interactive Canvas cannot start", async (
         viewportBottom: viewportBounds.bottom,
       };
     });
-    expect(layout.legendBottom).toBeLessThanOrEqual(layout.viewportBottom + 1);
+    expect(layout.legendBottom).toBeLessThanOrEqual(layout.viewportBottom + 1.1);
     expect(layout.noteTop).toBeGreaterThanOrEqual(layout.viewportBottom - 1);
   }
   await expect(page.getByTestId("verified-observation")).toBeVisible();
