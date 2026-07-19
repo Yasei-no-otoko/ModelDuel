@@ -1,7 +1,7 @@
 "use client";
 
-import { Canvas, useThree } from "@react-three/fiber";
-import { WebGLRenderer } from "three";
+import { Canvas } from "@react-three/fiber";
+import { WebGLRenderer, type PerspectiveCamera } from "three";
 import {
   Component,
   useEffect,
@@ -25,6 +25,14 @@ import {
   usePrefersReducedMotion,
   useWebGlAvailability,
 } from "./browser";
+import {
+  EarthBody,
+  LightBeam,
+  MoonBody,
+  OrbitRing,
+  SunBody,
+  TechnicalStarField,
+} from "./ScenePrimitives";
 import {
   MoonEvidenceDiagram,
   SeasonsEvidenceDiagram,
@@ -59,26 +67,26 @@ class CanvasBoundary extends Component<
   }
 }
 
-function CameraRig({ angle }: Readonly<{ angle: number }>) {
-  const { camera, invalidate } = useThree();
-
-  useEffect(() => {
-    const radius = 8.8;
-    camera.position.set(
-      Math.sin(angle) * radius,
-      4.8,
-      Math.cos(angle) * radius,
-    );
-    camera.lookAt(0, 0, 0);
-    camera.updateProjectionMatrix();
-    invalidate();
-  }, [angle, camera, invalidate]);
-
-  return null;
-}
-
 const CAMERA_ORBIT_STEP = Math.PI / 8;
 let cachedThreeRendererAvailability: boolean | null = null;
+
+type CameraControlHandle = Readonly<{
+  camera: PerspectiveCamera;
+  invalidate: () => void;
+}>;
+
+function applyCameraAngle(handle: CameraControlHandle | null, angle: number) {
+  if (!handle) return;
+  const radius = 8.8;
+  handle.camera.position.set(
+    Math.sin(angle) * radius,
+    4.8,
+    Math.cos(angle) * radius,
+  );
+  handle.camera.lookAt(0, 0, 0);
+  handle.camera.updateProjectionMatrix();
+  handle.invalidate();
+}
 
 function canCreateThreeRenderer() {
   if (cachedThreeRendererAvailability !== null) {
@@ -187,15 +195,6 @@ function CameraViewControls({
   );
 }
 
-function LightRay({ y }: Readonly<{ y: number }>) {
-  return (
-    <mesh position={[2.35, y, -0.35]} rotation={[0, 0, Math.PI / 2]}>
-      <cylinderGeometry args={[0.012, 0.012, 4.5, 8]} />
-      <meshBasicMaterial color="#ffd76a" transparent opacity={0.42} />
-    </mesh>
-  );
-}
-
 function WorldScene({
   kind,
   caseSpec,
@@ -209,54 +208,64 @@ function WorldScene({
 
   return (
     <>
-      <color attach="background" args={["#060b1d"]} />
-      <ambientLight intensity={0.18} />
-      <directionalLight color="#fff0bb" intensity={2.8} position={[5, 0, 1]} />
-
-      <mesh position={[5, 0, 0]}>
-        <sphereGeometry args={[0.55, 32, 20]} />
-        <meshBasicMaterial color="#ffd76a" />
-      </mesh>
-      <pointLight color="#ffd76a" intensity={30} distance={12} position={[5, 0, 0]} />
-
-      <mesh position={[0, 0, 0]}>
-        <sphereGeometry args={[0.56, 32, 20]} />
-        <meshStandardMaterial color="#337bd4" roughness={0.72} />
-      </mesh>
-      <mesh position={[0, 0, 0]} scale={1.03}>
-        <sphereGeometry args={[0.56, 20, 12]} />
-        <meshBasicMaterial color="#57e2f2" wireframe transparent opacity={0.12} />
-      </mesh>
-
-      <mesh position={moonPosition}>
-        <sphereGeometry args={[0.34, 32, 20]} />
-        <meshStandardMaterial color="#e5e9f3" roughness={0.82} />
-      </mesh>
-
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[3, 0.012, 8, 96]} />
-        <meshBasicMaterial color="#7785b5" transparent opacity={0.35} />
+      <color attach="background" args={["#060a12"]} />
+      <fog attach="fog" args={["#060a12", 9, 18]} />
+      <TechnicalStarField opacity={0.52} />
+      <SunBody position={[5, 0, 0]} radius={0.55} />
+      <EarthBody accent={kind === "learner" ? "#f2b765" : "#55dceb"} />
+      <MoonBody position={moonPosition} />
+      <OrbitRing
+        color={kind === "learner" ? "#f2b765" : "#55dceb"}
+        radius={3}
+        opacity={0.42}
+      />
+      <mesh position={moonPosition} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.46, 0.018, 8, 48]} />
+        <meshBasicMaterial
+          color={kind === "learner" ? "#f2b765" : "#68e4b2"}
+          transparent
+          opacity={0.64}
+          depthWrite={false}
+          toneMapped={false}
+        />
       </mesh>
 
       {kind === "learner" ? (
         <mesh position={[-2.05, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>
-          <coneGeometry args={[0.72, 3.2, 32, 1, true]} />
+          <coneGeometry args={[0.82, 3.35, 32, 1, true]} />
           <meshBasicMaterial
-            color="#6e61b8"
+            color="#9c78d4"
             side={2}
             transparent
-            opacity={0.2}
+            opacity={0.28}
+            depthWrite={false}
+            toneMapped={false}
           />
         </mesh>
       ) : (
         <>
-          <LightRay y={-0.52} />
-          <LightRay y={0} />
-          <LightRay y={0.52} />
-          <mesh position={[moonPosition[0] / 2, moonPosition[1] / 2, 0]}>
-            <cylinderGeometry args={[0.015, 0.015, 3, 8]} />
-            <meshBasicMaterial color="#57e2f2" transparent opacity={0.42} />
-          </mesh>
+          <LightBeam color="#f6c97d" start={[4.45, -0.5, -0.28]} end={[-2.8, -0.5, -0.28]} />
+          <LightBeam color="#f6c97d" start={[4.45, 0, 0]} end={[-2.8, 0, 0]} opacity={0.5} />
+          <LightBeam color="#f6c97d" start={[4.45, 0.5, 0.28]} end={[-2.8, 0.5, 0.28]} />
+          <LightBeam
+            color="#f6c97d"
+            start={[4.45, 0.32, 0.12]}
+            end={[moonPosition[0] + 0.18, moonPosition[1] + 0.18, 0.12]}
+            opacity={0.48}
+          />
+          <LightBeam
+            color="#f6c97d"
+            start={[4.45, -0.32, -0.12]}
+            end={[moonPosition[0] - 0.18, moonPosition[1] - 0.18, -0.12]}
+            opacity={0.4}
+          />
+          <LightBeam
+            color="#55dceb"
+            start={[0, 0, 0]}
+            end={moonPosition}
+            opacity={0.58}
+            radius={0.015}
+          />
         </>
       )}
     </>
@@ -276,10 +285,22 @@ function WorldViewport({
   const [canvasFailed, setCanvasFailed] = useState(false);
   const viewportId = useId();
   const dragStart = useRef<number | null>(null);
+  const cameraAngleRef = useRef(0);
+  const cameraControlRef = useRef<CameraControlHandle | null>(null);
   const reducedMotion = usePrefersReducedMotion();
   const webglAvailable = useWebGlAvailability();
   const rendererAvailable = useThreeRendererAvailability(webglAvailable);
   const fallback = <MoonEvidenceDiagram observation={observation} kind={kind} />;
+
+  const setControlledCameraAngle: Dispatch<SetStateAction<number>> = (nextValue) => {
+    const nextAngle =
+      typeof nextValue === "function"
+        ? nextValue(cameraAngleRef.current)
+        : nextValue;
+    cameraAngleRef.current = nextAngle;
+    applyCameraAngle(cameraControlRef.current, nextAngle);
+    setCameraAngle(nextAngle);
+  };
 
   function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
     dragStart.current = event.clientX;
@@ -290,13 +311,15 @@ function WorldViewport({
     if (dragStart.current === null) return;
     const delta = event.clientX - dragStart.current;
     if (Math.abs(delta) >= 2) {
-      setCameraAngle((angle) => angle - delta * 0.012);
+      cameraAngleRef.current -= delta * 0.012;
+      applyCameraAngle(cameraControlRef.current, cameraAngleRef.current);
       dragStart.current = event.clientX;
     }
   }
 
   function handlePointerEnd(event: ReactPointerEvent<HTMLDivElement>) {
     dragStart.current = null;
+    setCameraAngle(cameraAngleRef.current);
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
@@ -321,8 +344,15 @@ function WorldViewport({
               dpr={reducedMotion ? 1 : [1, 1.5]}
               frameloop="demand"
               gl={{ antialias: !reducedMotion, alpha: false }}
+              onCreated={({ camera, invalidate }) => {
+                const handle = {
+                  camera: camera as PerspectiveCamera,
+                  invalidate,
+                };
+                cameraControlRef.current = handle;
+                applyCameraAngle(handle, cameraAngleRef.current);
+              }}
             >
-              <CameraRig angle={cameraAngle} />
               <WorldScene kind={kind} caseSpec={caseSpec} />
             </Canvas>
           </CanvasBoundary>
@@ -334,7 +364,7 @@ function WorldViewport({
         <CameraViewControls
           cameraAngle={cameraAngle}
           controlLabel={`${kind} model view`}
-          setCameraAngle={setCameraAngle}
+          setCameraAngle={setControlledCameraAngle}
           viewportId={viewportId}
         />
       ) : (
@@ -449,9 +479,11 @@ type SeasonsWorldKind = "learner" | "scientific";
 
 function SeasonsWorldScene({
   caseSpec,
+  kind,
   observation,
 }: Readonly<{
   caseSpec: SeasonsCaseSpec;
+  kind: SeasonsWorldKind;
   observation: SeasonsSimulationObservation;
 }>) {
   const visualTiltDeg =
@@ -459,31 +491,35 @@ function SeasonsWorldScene({
       ? 0
       : caseSpec.observedAxialTiltDeg;
   const tiltRadians = (visualTiltDeg * Math.PI) / 180;
+  const accent = kind === "learner" ? "#f2b765" : "#55dceb";
 
   return (
     <>
-      <ambientLight intensity={0.35} />
-      <pointLight position={[-3, 0, 0]} intensity={3.2} color="#fff3c4" />
-      <mesh position={[-3, 0, 0]}>
-        <sphereGeometry args={[0.72, 32, 32]} />
-        <meshBasicMaterial color="#ffd36a" />
-      </mesh>
+      <color attach="background" args={["#060a12"]} />
+      <fog attach="fog" args={["#060a12", 8, 16]} />
+      <TechnicalStarField opacity={0.5} />
+      <SunBody position={[-3.1, 0, 0]} radius={0.68} />
+      <OrbitRing color={accent} radius={3.5} opacity={0.28} rotation={[Math.PI / 2, 0, 0]} />
+      <LightBeam color="#f6c97d" start={[-2.42, -0.48, -0.26]} end={[0.24, -0.48, -0.26]} opacity={0.4} />
+      <LightBeam color="#f6c97d" start={[-2.42, 0, 0]} end={[0.24, 0, 0]} opacity={0.52} />
+      <LightBeam color="#f6c97d" start={[-2.42, 0.48, 0.26]} end={[0.24, 0.48, 0.26]} opacity={0.4} />
       <group position={[1.1, 0, 0]} rotation={[0, 0, tiltRadians]}>
-        <mesh>
-          <sphereGeometry args={[0.88, 32, 32]} />
-          <meshStandardMaterial color="#3f88c5" roughness={0.78} />
+        <EarthBody accent={accent} radius={0.88} />
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[0.9, 0.018, 8, 64]} />
+          <meshBasicMaterial color={accent} transparent opacity={0.58} toneMapped={false} />
         </mesh>
         <mesh position={[0, 0.98, 0]}>
           <sphereGeometry args={[0.12, 18, 18]} />
-          <meshStandardMaterial color="#89d17c" />
+          <meshStandardMaterial color="#68e4b2" emissive="#163b30" />
         </mesh>
         <mesh position={[0, -0.98, 0]}>
           <sphereGeometry args={[0.12, 18, 18]} />
-          <meshStandardMaterial color="#b9ddff" />
+          <meshStandardMaterial color="#b9f4f8" emissive="#17334a" />
         </mesh>
         <mesh>
           <cylinderGeometry args={[0.025, 0.025, 2.7, 12]} />
-          <meshBasicMaterial color="#f4f8ff" />
+          <meshBasicMaterial color="#f4f8ff" toneMapped={false} />
         </mesh>
       </group>
     </>
@@ -503,12 +539,24 @@ function SeasonsWorldViewport({
   const [canvasFailed, setCanvasFailed] = useState(false);
   const viewportId = useId();
   const dragStart = useRef<number | null>(null);
+  const cameraAngleRef = useRef(0);
+  const cameraControlRef = useRef<CameraControlHandle | null>(null);
   const reducedMotion = usePrefersReducedMotion();
   const webglAvailable = useWebGlAvailability();
   const rendererAvailable = useThreeRendererAvailability(webglAvailable);
   const fallback = (
     <SeasonsEvidenceDiagram caseSpec={caseSpec} observation={observation} />
   );
+
+  const setControlledCameraAngle: Dispatch<SetStateAction<number>> = (nextValue) => {
+    const nextAngle =
+      typeof nextValue === "function"
+        ? nextValue(cameraAngleRef.current)
+        : nextValue;
+    cameraAngleRef.current = nextAngle;
+    applyCameraAngle(cameraControlRef.current, nextAngle);
+    setCameraAngle(nextAngle);
+  };
 
   function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
     dragStart.current = event.clientX;
@@ -519,13 +567,15 @@ function SeasonsWorldViewport({
     if (dragStart.current === null) return;
     const delta = event.clientX - dragStart.current;
     if (Math.abs(delta) >= 2) {
-      setCameraAngle((angle) => angle - delta * 0.012);
+      cameraAngleRef.current -= delta * 0.012;
+      applyCameraAngle(cameraControlRef.current, cameraAngleRef.current);
       dragStart.current = event.clientX;
     }
   }
 
   function handlePointerEnd(event: ReactPointerEvent<HTMLDivElement>) {
     dragStart.current = null;
+    setCameraAngle(cameraAngleRef.current);
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
@@ -550,9 +600,16 @@ function SeasonsWorldViewport({
               dpr={reducedMotion ? 1 : [1, 1.5]}
               frameloop="demand"
               gl={{ antialias: !reducedMotion, alpha: false }}
+              onCreated={({ camera, invalidate }) => {
+                const handle = {
+                  camera: camera as PerspectiveCamera,
+                  invalidate,
+                };
+                cameraControlRef.current = handle;
+                applyCameraAngle(handle, cameraAngleRef.current);
+              }}
             >
-              <CameraRig angle={cameraAngle} />
-              <SeasonsWorldScene caseSpec={caseSpec} observation={observation} />
+              <SeasonsWorldScene caseSpec={caseSpec} kind={kind} observation={observation} />
             </Canvas>
           </CanvasBoundary>
         ) : (
@@ -563,7 +620,7 @@ function SeasonsWorldViewport({
         <CameraViewControls
           cameraAngle={cameraAngle}
           controlLabel={`${kind} seasons model view`}
-          setCameraAngle={setCameraAngle}
+          setCameraAngle={setControlledCameraAngle}
           viewportId={viewportId}
         />
       ) : (

@@ -306,8 +306,19 @@ dd {
   padding: clamp(3.5rem, 7vw, 6.2rem) 0;
   display: grid;
   grid-template-columns: minmax(0, 0.92fr) minmax(480px, 0.82fr);
-  align-items: center;
-  gap: clamp(3rem, 7vw, 7rem);
+  align-items: start;
+  column-gap: clamp(3rem, 7vw, 7rem);
+  row-gap: 2rem;
+}
+
+.capture-copy {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.capture-layout > .capture-card {
+  grid-column: 2;
+  grid-row: 1;
 }
 
 .eyebrow,
@@ -321,13 +332,13 @@ dd {
   text-transform: uppercase;
 }
 
-.capture-copy > .eyebrow {
+.capture-copy-intro > .eyebrow {
   display: flex;
   align-items: center;
   gap: 0.65rem;
 }
 
-.capture-copy > .eyebrow span {
+.capture-copy-intro > .eyebrow span {
   width: 1.8rem;
   height: 1px;
   background: var(--cyan);
@@ -405,44 +416,247 @@ dd {
   content: "";
 }
 
-.scenario-illustration {
-  position: relative;
+.hero-visualizer {
   margin: 2rem 0 0;
   overflow: hidden;
-  border-block: 1px solid var(--line);
-  background: var(--night);
+  border: 1px solid var(--line-strong);
+  border-radius: 0.42rem;
+  background: #060a12;
+  box-shadow: 8px 10px 0 rgba(3, 6, 11, 0.7);
 }
 
-.scenario-illustration::after {
+.capture-copy > .hero-visualizer {
+  margin-top: 1.7rem;
+}
+
+.hero-visualizer-heading,
+.hero-visualizer figcaption {
+  padding: 0.68rem 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--line);
+  color: var(--faint);
+  font-family: var(--font-data), ui-monospace, "SFMono-Regular", monospace;
+  font-size: var(--text-caption);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.hero-visualizer-heading span:first-child {
+  color: var(--cyan-soft);
+}
+
+.hero-visualizer-viewport {
+  position: relative;
+  height: clamp(16rem, 25vw, 20rem);
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 25% 32%, rgba(242, 183, 101, 0.08), transparent 28%),
+    radial-gradient(circle at 75% 32%, rgba(85, 220, 235, 0.08), transparent 28%),
+    #060a12;
+}
+
+.hero-visualizer-viewport canvas {
+  display: block;
+}
+
+.hero-world-labels {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, var(--night) 0, transparent 34%, transparent 100%);
-  content: "";
   pointer-events: none;
 }
 
-.scenario-illustration img {
-  width: 100%;
-  height: auto;
-  display: block;
-  aspect-ratio: 3 / 1.18;
-  object-fit: cover;
-  object-position: center;
+.hero-world-labels span {
+  position: absolute;
+  padding: 0.28rem 0.42rem;
+  border: 1px solid var(--line);
+  border-radius: 0.18rem;
+  font-family: var(--font-data), ui-monospace, "SFMono-Regular", monospace;
+  font-size: 0.62rem;
+  font-weight: 720;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  backdrop-filter: blur(8px);
 }
 
-.scenario-illustration figcaption {
-  position: absolute;
-  left: 0;
-  bottom: 0.7rem;
-  z-index: 1;
-  max-width: 16rem;
+.hero-world-labels .learner-label {
+  top: 0.7rem;
+  left: 0.7rem;
+  color: #f8d29a;
+  border-color: rgba(242, 183, 101, 0.34);
+  background: rgba(48, 34, 18, 0.72);
+}
+
+.hero-world-labels .science-label {
+  top: 0.7rem;
+  right: 0.7rem;
+  color: var(--cyan-soft);
+  border-color: rgba(85, 220, 235, 0.34);
+  background: rgba(10, 42, 51, 0.72);
+}
+
+.hero-world-labels .evidence-label {
+  bottom: 0.65rem;
+  left: 50%;
+  color: #d8faec;
+  border-color: rgba(104, 228, 178, 0.38);
+  background: rgba(13, 55, 44, 0.78);
+  transform: translateX(-50%);
+}
+
+.hero-focus-controls {
+  padding: 0.5rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: #09111d;
+}
+
+.hero-focus-controls button {
+  min-height: 44px;
+  padding: 0.55rem 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 0.28rem;
+  color: var(--muted);
+  background: #0c1726;
+  font-size: var(--text-caption);
+  font-weight: 760;
+  cursor: pointer;
+}
+
+.hero-focus-controls button:hover,
+.hero-focus-controls button[aria-pressed="true"] {
+  color: var(--ink);
+  border-color: rgba(104, 228, 178, 0.55);
+  background: rgba(104, 228, 178, 0.09);
+}
+
+.hero-visualizer figcaption {
+  min-height: 4.25rem;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 0.25rem;
+  border-bottom: 0;
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.hero-visualizer figcaption strong {
+  color: #dce7ed;
+  font-weight: 720;
+}
+
+.hero-visualizer figcaption span {
   color: var(--faint);
-  font-family: var(--font-data), ui-monospace, "SFMono-Regular", monospace;
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  line-height: 1.5;
-  text-transform: uppercase;
+  font-size: 0.67rem;
+}
+
+.hero-visualizer-fallback {
+  position: relative;
+  height: 100%;
+  min-height: 16rem;
+  overflow: hidden;
+}
+
+.hero-fallback-world {
+  position: absolute;
+  top: 18%;
+  width: 42%;
+  height: 48%;
+  border: 1px solid rgba(127, 141, 162, 0.28);
+  border-radius: 50%;
+  transition: border-color 160ms ease, opacity 160ms ease;
+}
+
+.hero-fallback-learner {
+  left: 4%;
+}
+
+.hero-fallback-science {
+  right: 4%;
+}
+
+.focus-learner .hero-fallback-learner {
+  border-color: rgba(242, 183, 101, 0.82);
+}
+
+.focus-scientific .hero-fallback-science {
+  border-color: rgba(85, 220, 235, 0.82);
+}
+
+.hero-fallback-world > span,
+.hero-fallback-evidence {
+  position: absolute;
+  display: block;
+}
+
+.hero-fallback-world .hero-fallback-earth {
+  width: 2.75rem;
+  height: 2.75rem;
+  top: calc(50% - 1.375rem);
+  left: calc(50% - 1.375rem);
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, #68e4b2 0 10%, #3177b6 13% 58%, #132c4c 73%);
+  box-shadow: 0 0 1.2rem rgba(85, 220, 235, 0.2);
+}
+
+.hero-fallback-world .hero-fallback-moon {
+  width: 1.35rem;
+  height: 1.35rem;
+  top: 16%;
+  right: 12%;
+  z-index: 2;
+  border-radius: 50%;
+  background: linear-gradient(90deg, #dfe4e3 50%, #172332 50%);
+}
+
+.hero-fallback-shadow {
+  width: 42%;
+  height: 28%;
+  top: 29%;
+  right: 16%;
+  background: linear-gradient(90deg, rgba(156, 120, 212, 0.58), transparent);
+  clip-path: polygon(0 30%, 100% 0, 100% 100%, 0 70%);
+}
+
+.hero-fallback-sun {
+  width: 1.9rem;
+  height: 1.9rem;
+  top: calc(50% - 0.95rem);
+  left: 4%;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 1.5rem rgba(242, 183, 101, 0.55);
+}
+
+.hero-fallback-light {
+  width: 64%;
+  height: 1px;
+  top: 50%;
+  left: 14%;
+  background: linear-gradient(90deg, rgba(242, 183, 101, 0.9), rgba(85, 220, 235, 0.38));
+  transform: rotate(-9deg);
+}
+
+.hero-fallback-evidence {
+  width: 2.9rem;
+  height: 2.9rem;
+  right: calc(50% - 1.45rem);
+  bottom: 6%;
+  border: 2px solid var(--evidence);
+  border-radius: 50%;
+  background: linear-gradient(90deg, #dfe4e3 50%, #172332 50%);
+  box-shadow: 0 0 1.5rem rgba(104, 228, 178, 0.28);
+}
+
+.focus-evidence .hero-fallback-evidence {
+  box-shadow: 0 0 0 0.45rem rgba(104, 228, 178, 0.12), 0 0 1.8rem rgba(104, 228, 178, 0.36);
 }
 
 .capture-card,
@@ -2395,15 +2609,32 @@ textarea:disabled {
   }
 
   .capture-copy {
-    max-width: 760px;
+    display: contents;
   }
 
-  .scenario-illustration {
-    display: none;
+  .capture-copy-intro,
+  .capture-copy > .hero-visualizer,
+  .capture-copy > .promise-list,
+  .capture-layout > .capture-card {
+    width: min(100%, 760px);
+    grid-column: 1;
   }
 
-.capture-card {
-    max-width: 760px;
+  .capture-copy-intro {
+    order: 1;
+  }
+
+  .capture-layout > .capture-card {
+    order: 2;
+    grid-row: auto;
+  }
+
+  .capture-copy > .hero-visualizer {
+    order: 3;
+  }
+
+  .capture-copy > .promise-list {
+    order: 4;
   }
 
   .revision-layout {
@@ -2569,10 +2800,6 @@ textarea:disabled {
     align-items: start;
   }
 
-  .scenario-illustration {
-    display: block;
-  }
-
   .hero-summary {
     margin-top: 0.9rem;
     line-height: 1.55;
@@ -2592,6 +2819,39 @@ textarea:disabled {
     font-weight: 680;
     letter-spacing: 0.01em;
     opacity: 0.76;
+  }
+
+  .hero-visualizer {
+    margin-top: 1.15rem;
+  }
+
+  .hero-visualizer-viewport {
+    height: 15rem;
+  }
+
+  .hero-world-labels span {
+    font-size: 0.57rem;
+  }
+
+  .hero-world-labels .learner-label,
+  .hero-world-labels .science-label {
+    top: 0.45rem;
+  }
+
+  .hero-world-labels .learner-label {
+    left: 0.45rem;
+  }
+
+  .hero-world-labels .science-label {
+    right: 0.45rem;
+  }
+
+  .hero-focus-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-focus-controls button {
+    min-height: 42px;
   }
 
   .promise-list {
