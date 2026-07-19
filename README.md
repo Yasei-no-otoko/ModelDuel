@@ -150,7 +150,8 @@ The server routes are:
 - [OpenAI SDK integration reference](docs/OPENAI_SDK_REFERENCE.md)
 - [Cloudflare Workers deployment reference](docs/CLOUDFLARE_DEPLOYMENT_REFERENCE.md)
 - [Submission media, narration rights, browser, and accessibility reference](docs/SUBMISSION_MEDIA_REFERENCE.md)
-- [Current local Evidence Lens submission-video evidence](docs/VIDEO_EVIDENCE_2026-07-19.md)
+- [Current local analytical 3D submission-video evidence](docs/VIDEO_EVIDENCE_2026-07-20.md)
+- [Historical first-view 3D submission-video evidence](docs/VIDEO_EVIDENCE_2026-07-19.md)
 - [Historical narration and media QA evidence](docs/VIDEO_EVIDENCE_2026-07-17.md)
 - [Product specification](docs/PRODUCT_SPEC.md)
 
@@ -198,11 +199,11 @@ This repository was initialized from an empty root during the build week. The en
 
 ## Media and licensing
 
-The runtime ships no third-party image, audio, video, or 3D media. The animated Capture hero, astronomy worlds, and verified observations are rendered from deterministic application geometry with no remote models, textures, or runtime generation call. Every Canvas has a semantic no-WebGL fallback. Package dependencies are declared in the repository, and the source is MIT-licensed. The five first-party captures below were refreshed from Cloudflare version `cd38e435-7875-4125-bfbb-c7f5a4d092d0` after the first-view visualizer release.
+The runtime ships no third-party image, audio, video, or 3D media. The interaction-only analytical Capture hero, astronomy worlds, and verified observations are rendered from deterministic application geometry with no remote models, textures, or runtime generation call. Every Canvas has a semantic no-WebGL fallback. Package dependencies are declared in the repository, and the source is MIT-licensed. The five first-party still captures below were refreshed from Cloudflare version `cd38e435-7875-4125-bfbb-c7f5a4d092d0` after the first-view visualizer release; the current submission video separately records the later analytical Three.js production.
 
 | Production media | Dimensions | Size | Submission role |
 | --- | ---: | ---: | --- |
-| [`docs/media/modelduel-cover.png`](docs/media/modelduel-cover.png) | 1600×900 | 152,499 B | Devpost cover and animated 3D landing hero |
+| [`docs/media/modelduel-cover.png`](docs/media/modelduel-cover.png) | 1600×900 | 152,499 B | Devpost cover and 3D landing hero |
 | [`docs/media/moon-evidence.png`](docs/media/moon-evidence.png) | 1280×900 | 114,198 B | Moon two-world evidence |
 | [`docs/media/model-revision-trace.png`](docs/media/model-revision-trace.png) | 1280×900 | 230,353 B | Completed revision trace and transfer result |
 | [`docs/media/seasons-evidence.png`](docs/media/seasons-evidence.png) | 1280×900 | 127,349 B | Seasons two-world evidence |
@@ -212,7 +213,7 @@ Production visual QA completed the Moon journey through trace at 1280px and 375p
 
 ## Historical integration verification and final gates
 
-The dated rows below preserve the 2026-07-17 integration baseline and intermediate releases. The current first-view 3D runtime merge `96b93d4` is deployed as Cloudflare version `cd38e435-7875-4125-bfbb-c7f5a4d092d0`.
+The dated rows below preserve the 2026-07-17 integration baseline and intermediate releases. The current analytical Three.js runtime through merge `40a276e` is deployed as Cloudflare version `5fe05dc0-7085-400f-bf0c-bddb9c9017f9`.
 
 | Verification | Result |
 | --- | --- |
@@ -234,13 +235,15 @@ The dated rows below preserve the 2026-07-17 integration baseline and intermedia
 | Evidence Lens quality gate — `1649c4b` | Node **360/360** across **36 files**; workerd **7/7**; Chromium **38/38**; Next.js/OpenNext/Workers types/Wrangler **Pass**; dry run **8,852.91 KiB raw / 1,707.73 KiB gzip**. The capture, evidence, and trace accessibility gate passed. |
 | Current Evidence Lens production — `1649c4b` | Cloudflare version `857b32b6-7ae0-4eec-8be2-75421eaf77ba`; startup **47 ms**; root HTTP 200 with HSTS and CSP; free verified Moon demo HTTP 200; production media capture made **zero** `/api/analyze` calls. |
 | First-view 3D release gate — `96b93d4` | Node **363/363** across **37 files**; workerd **7/7**; local Chromium plus WebKit **85 passed / 1 intentional skip**; Ubuntu Chromium/Firefox/WebKit [CI](https://github.com/Yasei-no-otoko/ModelDuel/actions/runs/29681260428) **127 passed / 2 intentional skips**; Next.js/OpenNext/Workers types/Wrangler **Pass**. |
-| Current first-view 3D production — `96b93d4` | Cloudflare version `cd38e435-7875-4125-bfbb-c7f5a4d092d0`; startup **45 ms**; 1600×900, 1280×720, and 768×1024 production probes show one running hero Canvas with no errors or horizontal overflow; the exact free three-request ledger passed with zero paid calls. |
+| Historical first-view 3D production — `96b93d4` | Cloudflare version `cd38e435-7875-4125-bfbb-c7f5a4d092d0`; startup **45 ms**; 1600×900, 1280×720, and 768×1024 production probes show one hero Canvas with no errors or horizontal overflow; the exact free three-request ledger passed with zero paid calls. |
+| Current analytical Three.js production — through `40a276e` | Cloudflare version `5fe05dc0-7085-400f-bf0c-bddb9c9017f9` at 100% traffic; named analytical views and the exact free three-request production ledger passed with zero paid calls. |
+| Current recorder and CI gate — `761b68d` | [CI run `29694422606`](https://github.com/Yasei-no-otoko/ModelDuel/actions/runs/29694422606): Node **363/363** across **37 files**; submission-video contracts **Pass**; Ubuntu Chromium/Firefox/WebKit **134 passed / 4 intentional skips**; Next.js/OpenNext/Workers types/Wrangler and production dependency audit **Pass**. |
 
 The dated production integration sequence made one Terra HTTP request and one Luna HTTP request with zero HTTP retries. Combined telemetry was 8,074 total tokens and an estimated **$0.014441**; the configured dollar ceilings remain output-only bounds, not an all-in preflight guarantee. That remains historical integration evidence, not final-build cost evidence.
 
 After earlier main merge `e04443f`, the paid runtime canary made exactly one live analysis request and one live revision request with zero retries. Analysis returned HTTP 200 in **17.642 seconds**, source `live`, model `gpt-5.6-terra`, with the exact tool order `validate_world_spec` → `simulate_world` → `compare_predictions` → `select_discriminating_case`. Revision returned HTTP 200 in **1.404 seconds**, source `gpt-5.6`, model `gpt-5.6-luna`; the same session and signed evaluation were accepted, conceptual change was `revised` with score `1`, and `liveUseAttestation: true` was carried by both requests. The server-minted cookie was reused with `Path=/`, `HttpOnly`, `Secure`, and `SameSite=Strict`; its value was not recorded. The strict responses did not expose token usage or cost, so neither is guessed. This is inherited integration evidence, not a paid canary of merge `6186358`; the handoff release intentionally used only the free verified path.
 
-The current exact 165-second Evidence Lens video candidate is run `20260719T092408557Z-fec2df68-b1ea-4ea6-9b0a-fb97131df4b5` from generator commit `96b93d4` against the same production merge. It opens on the animated 3D comparison, includes the supported-pilot boundary and learner-controlled teacher handoff, records 363/7/43 and Security 96/96/0 evidence, and uses 10/10 cached narration segments with zero Speech API calls. See [the current video evidence](docs/VIDEO_EVIDENCE_2026-07-19.md). Public video upload and visibility are user-owned manual actions that Codex does not perform. Repository access, the `/feedback` Session ID, and the Ubuntu three-engine CI gate are verified. The public video placeholder, logged-out video/link check, and final Devpost form submission remain user-owned gates. Track the canonical handoff in [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md).
+The current exact 165-second analytical 3D video candidate is run `20260719T161844609Z-1c1d0be9-1d97-4a0e-8a4e-967a27d9e9dd` from recorder commit `761b68d` against Cloudflare version `5fe05dc0-7085-400f-bf0c-bddb9c9017f9`. It opens on the interaction-only 3D comparison, demonstrates the named Earth-side, Plane, and Overview evidence views, includes the supported-pilot boundary and learner-controlled teacher handoff, records 363/7/46 and Security 96/96/0 evidence, and uses 10/10 cached narration segments with zero Speech API calls. See [the current video evidence](docs/VIDEO_EVIDENCE_2026-07-20.md). Public video upload and visibility are user-owned manual actions that Codex does not perform. Repository access, the `/feedback` Session ID, and the Ubuntu three-engine CI gate are verified. The public video placeholder, logged-out video/link check, and final Devpost form submission remain user-owned gates. Track the canonical handoff in [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md).
 
 ## License
 

@@ -11,7 +11,7 @@
 
 **July 21, 2026 at 5:00 PM PDT / July 22, 2026 at 9:00 AM JST.**
 
-Re-verified on 2026-07-19 JST against the official rules and FAQ. The current package satisfies the documented repository, license, README, working-demo, sub-three-minute narrated-video, Codex/GPT-5.6 explanation, and primary-thread Feedback Session ID requirements. The only unresolved submission placeholder is the user-owned public YouTube URL.
+Re-verified on 2026-07-20 JST against the official rules and FAQ. The current package satisfies the documented repository, license, README, working-demo, sub-three-minute narrated-video, Codex/GPT-5.6 explanation, and primary-thread Feedback Session ID requirements. The only unresolved submission placeholder is the user-owned public YouTube URL.
 
 ## Paste-ready submission fields
 
@@ -44,7 +44,7 @@ The first intended pilot is one middle-school astronomy lesson in which a teache
 
 The browser experience uses Next.js, React, and TypeScript. Zod schemas constrain learner models and server contracts. GPT output is validated before it can cross into the application domain. The application—not the model—owns the allowed cases, WorldSpecs, simulation constants, evidence, transfer answer keys, and grading. Deterministic simulation code produces the astronomy state, and Three.js renders the resulting scenes; GPT never generates or executes arbitrary Three.js code.
 
-The server exposes separate live, verified-sample, revision, and transfer routes. Live learner-data Responses requests use `store: false`. Transfer answer keys remain inside a private server registry, and the client receives an AES-256-GCM authenticated token that binds the session, question, options, answer, rationale, expiry, and live revision context. Each signed token's random `jti` selects a unique SQLite Durable Object through an HMAC-derived name. It atomically commits the first live-revision execution, returns the cached normalized result for the same input with fresh response metadata, and rejects changed or indeterminate replays without another model call. It stores an HMAC-derived key and fingerprint rather than the token, raw `jti`, session/request IDs, or revised explanation. Cleanup is scheduled after the authorization window plus a one-minute grace. A storage deletion failure attempts to re-arm cleanup once per minute; a failed re-arm throws so Cloudflare's finite alarm retries can run. A schema-valid unsupported or cross-scenario claim stops after extraction and before tool orchestration, does not auto-retry, and offers only an explicit API-free verified-sample path. Four fail-closed Cloudflare Rate Limiting bindings implement hashed-client and aggregate limits for analysis and revision. Their configuration, local `workerd` behavior, production bindings, deployed live paths, and exact API-free judge ledger were re-verified for final merge `96b93d4` and Cloudflare version `cd38e435-7875-4125-bfbb-c7f5a4d092d0`.
+The server exposes separate live, verified-sample, revision, and transfer routes. Live learner-data Responses requests use `store: false`. Transfer answer keys remain inside a private server registry, and the client receives an AES-256-GCM authenticated token that binds the session, question, options, answer, rationale, expiry, and live revision context. Each signed token's random `jti` selects a unique SQLite Durable Object through an HMAC-derived name. It atomically commits the first live-revision execution, returns the cached normalized result for the same input with fresh response metadata, and rejects changed or indeterminate replays without another model call. It stores an HMAC-derived key and fingerprint rather than the token, raw `jti`, session/request IDs, or revised explanation. Cleanup is scheduled after the authorization window plus a one-minute grace. A storage deletion failure attempts to re-arm cleanup once per minute; a failed re-arm throws so Cloudflare's finite alarm retries can run. A schema-valid unsupported or cross-scenario claim stops after extraction and before tool orchestration, does not auto-retry, and offers only an explicit API-free verified-sample path. Four fail-closed Cloudflare Rate Limiting bindings implement hashed-client and aggregate limits for analysis and revision. Their configuration, local `workerd` behavior, production bindings, deployed live paths, and exact API-free judge ledger were re-verified for analytical Three.js runtime merge `40a276e` and Cloudflare version `5fe05dc0-7085-400f-bf0c-bddb9c9017f9`.
 
 ### How Codex helped
 
@@ -72,7 +72,7 @@ The useful boundary is not “AI versus deterministic code.” It is deciding wh
 
 ### What's next
 
-The first-view 3D runtime merge `96b93d4` is deployed as Cloudflare version `cd38e435-7875-4125-bfbb-c7f5a4d092d0`; the responsive 3D probes, free production judge path, bindings, security headers, and zero-paid-call presentation capture passed. The current exact 2:45 local candidate is run `20260719T092408557Z-fec2df68-b1ea-4ea6-9b0a-fb97131df4b5` from generator commit `96b93d4`. The repository is public and the primary Codex Feedback Session ID is recorded. Before submission, the user will publish the video, replace the sole remaining `{{VIDEO_URL}}` placeholder, verify playback while logged out, and submit the Devpost form; Codex does not publish the video. After the hackathon, the constrained-world pattern could expand to additional science misconceptions and a separately evaluated classroom pilot. Any impact or learning-gain claim would require that evaluation rather than being inferred from this prototype.
+The analytical Three.js runtime through merge `40a276e` is deployed as Cloudflare version `5fe05dc0-7085-400f-bf0c-bddb9c9017f9`; the responsive 3D probes, free production judge path, bindings, security headers, and zero-paid-call presentation capture passed. The current exact 2:45 local candidate is run `20260719T161844609Z-1c1d0be9-1d97-4a0e-8a4e-967a27d9e9dd` from recorder commit `761b68d`. The repository is public and the primary Codex Feedback Session ID is recorded. Before submission, the user will publish the video, replace the sole remaining `{{VIDEO_URL}}` placeholder, verify playback while logged out, and submit the Devpost form; Codex does not publish the video. After the hackathon, the constrained-world pattern could expand to additional science misconceptions and a separately evaluated classroom pilot. Any impact or learning-gain claim would require that evaluation rather than being inferred from this prototype.
 
 ### Production verification
 
@@ -200,7 +200,7 @@ Use the verified sample for the recorded working journey. Keep its authored-sour
 
 | Time | Shot | Exact narration |
 | --- | --- | --- |
-| 0:00–0:13 | Hero, animated 3D model comparison, its three focus controls, and the Moon/Seasons challenge selector. | “AI can generate an answer. ModelDuel is a science experience for Moon phases and seasons that asks learners to expose a causal model, predict with it, and revise only after evidence appears.” |
+| 0:00–0:13 | Hero, interaction-only analytical 3D model comparison, its three focus controls, and the Moon/Seasons challenge selector. | “AI can generate an answer. ModelDuel is a science experience for Moon phases and seasons that asks learners to expose a causal model, predict with it, and revise only after evidence appears.” |
 | 0:13–0:30 | Moon capture card; show text, sketch input, and click **Run verified sample**. Keep the authored-source disclosure visible. | “A learner explains why the Moon changes shape and may add a sketch. I start the instant verified sample: it needs no account, makes no paid call, and is always labeled as authored, so judges can run the complete journey reliably.” |
 | 0:30–0:51 | Show the interpreted learner model, configured live label, and a brief overlay of the validated tool ledger; do not execute a paid call. | “The optional live path sends text or vision input to GPT-5.6 Terra. Structured output extracts a bounded learner model, while validated Programmatic Tool Calling requires the exact allow-listed ledger before a result can enter the experience. A failed live request stays a visible error; it never becomes this verified sample.” |
 | 0:51–1:04 | Click **Make a prediction**, choose an option, and lock it while evidence remains sealed. | “Before any evidence appears, I choose and lock a prediction. That commitment turns the learner’s explanation into a falsifiable claim and prevents the result from being rewritten after observation.” |
@@ -220,11 +220,11 @@ Use the verified sample for the recorded working journey. Keep its authored-sour
 
 ## Screenshot list
 
-Captured from the current first-view 3D production deployment, Cloudflare version `cd38e435-7875-4125-bfbb-c7f5a4d092d0`. These are production images, not audit “before” images.
+Captured from the historical first-view 3D production deployment, Cloudflare version `cd38e435-7875-4125-bfbb-c7f5a4d092d0`. These remain approved production images, not audit “before” images; the current video records the later analytical Three.js production.
 
 | Production media path | Dimensions | Size | Role |
 | --- | ---: | ---: | --- |
-| `docs/media/modelduel-cover.png` | 1600×900 | 152,499 B | Devpost cover and animated 3D landing hero |
+| `docs/media/modelduel-cover.png` | 1600×900 | 152,499 B | Devpost cover and 3D landing hero |
 | `docs/media/moon-evidence.png` | 1280×900 | 114,198 B | Moon two-world evidence |
 | `docs/media/model-revision-trace.png` | 1280×900 | 230,353 B | Completed revision trace and transfer result |
 | `docs/media/seasons-evidence.png` | 1280×900 | 127,349 B | Seasons two-world evidence |
@@ -247,16 +247,17 @@ Production visual QA completed Moon at 1280px and 375px through the trace, and S
 - [x] Run the final merged `e5e7b03` gate: frozen install; Node **356/356** across **34 files**; workerd **7/7**; Chromium **38/38**; WebKit **37 passed / 1 intentional non-Chromium axe skip**; Next.js/OpenNext/Workers types/Wrangler **Pass**; dry run **8,855.59 KiB raw / 1,705.90 KiB gzip**; production dependency audit **clean**; standard Codex Security scan **96/96 sources** with **0 reportable findings**.
 - [x] Run the Evidence Lens `1649c4b` gate: Node **360/360** across **36 files**; workerd **7/7**; Chromium **38/38**; capture/evidence/trace accessibility **Pass**; Next.js/OpenNext/Workers types/Wrangler **Pass**; dry run **8,852.91 KiB raw / 1,707.73 KiB gzip**.
 - [x] Run the first-view 3D `96b93d4` gate: Node **363/363** across **37 files**; workerd **7/7**; local Chromium plus WebKit **85 passed / 1 intentional skip**; Ubuntu Chromium/Firefox/WebKit **127 passed / 2 intentional skips**; responsive 3D, reduced-motion, capture/evidence/trace accessibility, Next.js/OpenNext/Workers types/Wrangler **Pass**.
+- [x] Run the analytical Three.js recorder `761b68d` gate: Node **363/363** across **37 files**; Ubuntu Chromium/Firefox/WebKit **134 passed / 4 intentional skips**; submission-video contracts, Next.js/OpenNext/Workers types/Wrangler, and the production dependency audit **Pass**.
 - [x] Prove the free Moon and Seasons judge journeys at browser runtime: exact same-origin `GET /api/demo` → verified-sample `POST /api/revision` → `POST /api/transfer`, with zero `/api/analyze` and zero external HTTP requests.
 - [x] Verify production visual journeys: Moon desktop and mobile through trace; Seasons desktop through evidence; zero overflow, page errors, failed requests, or unexpected console messages; no live submit.
 
 Pre-merge local gate at HEAD `682c206`: Vitest **332/332** across **31 files**; Chromium E2E **34/34**; Next.js, OpenNext, and Wrangler **Pass**; Worker **8,277.49 KiB raw / 1,619.89 KiB gzip**; dependency audit **no known vulnerabilities**. Wrangler reported **18 deployable asset entries** backed by **14 physical assets**; the largest dynamic 3D chunk was **896,059 bytes**. The rendered design audit scored **B+ / 3.37**, AI Slop **B-**, goodwill **93**, with Critical/High/Medium findings **0/0/0**. The performance audit recorded **229,931 encoded bytes** of initial JS before the outer recovery addition and **231,708 encoded bytes** for the final recovery build at HEAD `682c206`; under 4× CPU throttling, the primary CTA became ready in **363 ms**.
 
-Current post-merge `main` runtime gate: **Complete for first-view 3D merge `96b93d4`**. The current video candidate was generated from that exact commit against the matching production deployment and opens on the animated 3D comparison.
+Current post-merge `main` gate: **Complete for recorder merge `761b68d`**, with the analytical Three.js runtime through `40a276e`. The current video candidate was generated from `761b68d` against production version `5fe05dc0-7085-400f-bf0c-bddb9c9017f9` and opens on the interaction-only analytical 3D comparison.
 
 Submission-quality candidate gate on 2026-07-17 JST: `pnpm check` passed with Vitest **335/335** across **32 files** and a successful Next.js production build; Chromium plus WebKit E2E completed with **69 passed / 1 intentional non-Chromium axe skip**; the Chromium axe scan passed capture, evidence, and trace for WCAG 2.0/2.1/2.2 A/AA tags. OpenNext/Workers typecheck, Wrangler dry run (**8,286.05 KiB raw / 1,621.89 KiB gzip**), and production dependency audit all passed. At that dated gate, the local Playwright Firefox build could not launch even for an empty page because of a host graphics failure (`RenderCompositorSWGL failed mapping default framebuffer, no dt`), so Ubuntu CI still had to supply the three-engine evidence.
 
-Current public submission gate at main merge `96b93d4`: [GitHub Actions run `29681260428`](https://github.com/Yasei-no-otoko/ModelDuel/actions/runs/29681260428) passed lint, typecheck, **363/363** unit tests across **37 files**, **7/7** workerd tests, submission-video contract validation, Next.js production build, Cloudflare Worker build/typecheck, Wrangler bundle validation, and the production dependency audit. Its Ubuntu Chromium/Firefox/WebKit job completed successfully with **127 passed / 2 intentional skips**. No paid API request was made.
+Current public submission gate at main merge `761b68d`: [GitHub Actions run `29694422606`](https://github.com/Yasei-no-otoko/ModelDuel/actions/runs/29694422606) passed lint, typecheck, **363/363** unit tests across **37 files**, submission-video contract validation, Next.js production build, Cloudflare Worker build/typecheck, Wrangler bundle validation, and the production dependency audit. Its Ubuntu Chromium/Firefox/WebKit job completed successfully with **134 passed / 4 intentional skips**. No paid API request was made.
 
 ### GPT-5.6 proof
 
@@ -285,6 +286,7 @@ Operational follow-up, not a submission gate: exact production CPU p95 and accou
 - [x] Deploy final implementation merge `e5e7b03` as Cloudflare version `37596678-0018-4415-b9bd-5671d67068bb`; verify 100% traffic, both required secrets by name, the Durable Object, all four Rate Limit bindings, Terra/Luna routing, latest scope copy, HSTS/CSP/nosniff, and the exact free production judge ledger.
 - [x] Deploy Evidence Lens runtime merge `1649c4b` as Cloudflare version `857b32b6-7ae0-4eec-8be2-75421eaf77ba`; verify root HTTP 200, HSTS/CSP, the free Moon verified sample, Terra/Luna and all Worker bindings, and zero paid calls during production visual capture.
 - [x] Deploy first-view 3D merge `96b93d4` as Cloudflare version `cd38e435-7875-4125-bfbb-c7f5a4d092d0`; verify responsive one-Canvas animation at 1600×900, 1280×720, and 768×1024, the exact free three-request ledger, no browser errors or horizontal overflow, and zero paid calls.
+- [x] Deploy the analytical Three.js runtime through merge `40a276e` as Cloudflare version `5fe05dc0-7085-400f-bf0c-bddb9c9017f9`; verify 100% traffic and the exact free production judge ledger before recording.
 - [x] Publish the MIT-licensed repository and verify anonymous README access; initial publication SHA `e7ed952ef9616744c6eeea09f6ec4b0434c83972`.
 - [ ] Replace the remaining video placeholder after the user-owned YouTube upload.
 
@@ -297,13 +299,13 @@ Operational follow-up, not a submission gate: exact production CPU p95 and accou
 
 ### Video and media
 
-- [x] Capture and inventory five current first-view 3D production screenshots from Cloudflare version `cd38e435-7875-4125-bfbb-c7f5a4d092d0` with `/api/analyze` blocked and observed call count **0**.
+- [x] Capture and inventory five approved first-view 3D production screenshots from Cloudflare version `cd38e435-7875-4125-bfbb-c7f5a4d092d0` with `/api/analyze` blocked and observed call count **0**; retain them as still-media evidence while the current video records the later analytical release.
 - [x] Select `docs/media/modelduel-cover.png` as the Devpost cover/thumbnail and README hero.
 - [x] Confirm the deterministic authored-source label is visible and no live submit occurs in the production screenshot journeys.
 - [x] Complete the rights audit for the five first-party production screenshots and cover.
-- [x] Record the exact 2:45 shot list with audible English narration; current run `20260719T092408557Z-fec2df68-b1ea-4ea6-9b0a-fb97131df4b5` records the animated 3D hero from merge `96b93d4` and 363/7/43 plus Security 96/96/0 evidence from that exact generator commit.
+- [x] Record the exact 2:45 shot list with audible English narration; current run `20260719T161844609Z-1c1d0be9-1d97-4a0e-8a4e-967a27d9e9dd` records the interaction-only analytical 3D hero and named Moon evidence views from production runtime `40a276e`, using recorder commit `761b68d`, with 363/7/46 plus Security 96/96/0 evidence.
 - [x] Verify the exact three-request authored ledger, zero live model calls, zero external HTTP, and no cookies or request/response payloads in the recording manifest.
-- [x] Audit the current video media: first-party browser capture, OpenAI TTS `nova` with persistent disclosure and 10/10 cache hits, no music, H.264/AAC/mov_text, full decode pass, matching hashes, and checked 10-frame contact sheet. See [current evidence](VIDEO_EVIDENCE_2026-07-19.md).
+- [x] Audit the current video media: first-party browser capture, OpenAI TTS `nova` with persistent disclosure and 10/10 cache hits, no music, H.264/AAC/mov_text, full decode pass, matching hashes, checked 10-frame contact sheet, and targeted review of all three named scientific camera states. See [current evidence](VIDEO_EVIDENCE_2026-07-20.md).
 - [ ] User-owned manual gate: upload the final video to YouTube as **Public** (not Unlisted or Private), verify it while logged out, and replace `{{VIDEO_URL}}`. Codex only maintains [the title and description copy](YOUTUBE_PUBLICATION_COPY.md) and does not publish.
 
 ### Devpost form
@@ -311,7 +313,7 @@ Operational follow-up, not a submission gate: exact production CPU p95 and accou
 - [ ] Paste the project name, tagline, Education category, built-with list, outline, and long description.
 - [x] Confirm the live demo, repository URL, and Codex Feedback Session ID values.
 - [ ] Add the user-owned public video URL, then verify all final links and playback in a logged-out browser.
-- [x] Review the current official rules, FAQ, repository requirements, Feedback Session ID guidance, and public YouTube video requirements on 2026-07-19 JST.
+- [x] Review the current official rules, FAQ, repository requirements, Feedback Session ID guidance, and public YouTube video requirements on 2026-07-20 JST.
 - [ ] Submit before the deadline and retain confirmation.
 
 ## Official sources
