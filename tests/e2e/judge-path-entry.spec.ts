@@ -75,7 +75,11 @@ for (const viewport of [
       name: /Run verified sample/,
     });
     await expect(verifiedActions).toHaveCount(1);
-    const verified = page.locator(".capture-card-verified-action");
+    const verified = page.locator(
+      viewport.width <= 780
+        ? "[data-testid='mobile-verified-cta']"
+        : ".capture-card-verified-action",
+    );
     const confirmation = page.getByRole("checkbox", {
       name: /I am 18 or older, or I have teacher or guardian authorization/,
     });

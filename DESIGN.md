@@ -121,8 +121,10 @@
 - All geometry and materials are application code. There are no remote models,
   textures, image hosts, runtime generation calls, or paid requests in the visual
   layer.
-- Every Canvas uses demand rendering, bounded DPR, reduced-motion handling, native
-  controls, and a semantic HTML fallback that preserves the complete comparison.
+- Evidence canvases use demand rendering. The Capture hero uses a lightweight
+  continuous loop only while it is mounted and motion is allowed; reduced-motion
+  switches it back to demand rendering at DPR 1. Every view keeps bounded DPR,
+  native controls, and a semantic fallback that preserves the complete comparison.
 
 ## Safe Choices
 
@@ -148,3 +150,4 @@
 | 2026-07-19 | Remove purple gradients | Purple gradients were the strongest remaining AI-slop signal and carried no scientific meaning. |
 | 2026-07-19 | Use self-hosted Atkinson, Barlow, and IBM Plex typography | Improves cross-platform consistency, learner legibility, and data distinction without runtime third-party font requests. |
 | 2026-07-19 | Replace the observatory plate with a live model comparison | Makes the product method legible in the first viewport while keeping the visual layer deterministic and API-free. |
+| 2026-07-19 | Promote the animated 3D comparison above supporting copy | Keeps the complete 3D panel in the 1600×900 first view and the full scene viewport visible at 1280×720 and 768×1024. |

@@ -994,6 +994,8 @@ export function ModelDuelExperience() {
                   <span>Two models predict.</span>
                   <span className="evidence-text">Evidence decides.</span>
                 </h1>
+              </div>
+              <div className="capture-copy-support">
                 <p className="hero-summary">{scenarioContent.heroSummary}</p>
                 <button
                   className="primary-button full-button mobile-verified-cta"
