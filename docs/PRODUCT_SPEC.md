@@ -39,7 +39,7 @@ Recoverable validation and network errors remain in the current state with the l
 - The app selects a case where the learner and scientific models predict observably different outcomes.
 - The learner must lock a prediction before either outcome is shown.
 - A deterministic, allow-listed WorldSpec renders both worlds under identical conditions.
-- Both scenario renderers provide pointer controls and keyboard-focusable viewpoints whose current orientation is named and announced after button actions. When WebGL or the Three.js renderer is unavailable, the semantic evidence fallback removes inert camera controls and remains sufficient to continue the learning journey.
+- Both scenario renderers provide three deterministic, keyboard-focusable camera states whose names are announced after button actions. When WebGL or the Three.js renderer is unavailable, the semantic evidence fallback removes inert camera controls and remains sufficient to continue the learning journey.
 - Moon phases contrasts Earth-shadow and viewing-angle models; seasons contrasts distance-only and axial-tilt models across both hemispheres.
 
 ### Revision and transfer

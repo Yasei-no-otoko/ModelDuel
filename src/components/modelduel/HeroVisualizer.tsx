@@ -9,22 +9,28 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { Group } from "three";
 
-import { usePrefersReducedMotion, useWebGlAvailability } from "./browser";
+import {
+  useCompactViewport,
+  usePrefersReducedMotion,
+} from "./browser";
 import {
   HERO_COMPLETE_SUMMARY,
   HeroVisualizerFallback,
   type HeroFocus,
 } from "./hero-visualizer-fallback";
 import {
+  AngleArc,
+  DirectionVector,
   EarthBody,
-  LightBeam,
   MoonBody,
   OrbitRing,
   SunBody,
-  TechnicalStarField,
 } from "./ScenePrimitives";
+import {
+  useThreeRendererAvailability,
+  WebGlContextLossGuard,
+} from "./ThreeCanvasRuntime";
 
 const FOCUS_COPY: Record<HeroFocus, string> = {
   learner: "Learner claim: Earth’s shadow is proposed as the cause.",
@@ -35,6 +41,7 @@ const FOCUS_COPY: Record<HeroFocus, string> = {
 type HeroCanvasBoundaryProps = Readonly<{
   children: ReactNode;
   fallback: ReactNode;
+  onFailure: () => void;
 }>;
 
 class HeroCanvasBoundary extends Component<
@@ -48,7 +55,7 @@ class HeroCanvasBoundary extends Component<
   }
 
   componentDidCatch() {
-    // The semantic diagram carries the complete comparison when WebGL fails.
+    this.props.onFailure();
   }
 
   render() {
@@ -67,12 +74,24 @@ function HeroCameraRig({ focus }: Readonly<{ focus: HeroFocus }>) {
       camera.position.set(2.35, 2.65, 7.4);
       camera.lookAt(2.35, -0.05, 0);
     } else {
-      camera.position.set(0, 3.25, 9.8);
+      camera.position.set(0, 2.75, 8.2);
       camera.lookAt(0, -0.35, 0);
     }
     camera.updateProjectionMatrix();
     invalidate();
   }, [camera, focus, invalidate]);
+
+  return null;
+}
+
+function RenderReadySignal({ onReady }: Readonly<{ onReady: () => void }>) {
+  const signaled = useRef(false);
+
+  useFrame(() => {
+    if (signaled.current) return;
+    signaled.current = true;
+    requestAnimationFrame(onReady);
+  });
 
   return null;
 }
@@ -104,11 +123,26 @@ function LearnerModel({ active }: Readonly<{ active: boolean }>) {
   return (
     <group position={[-2.35, 0.35, 0]}>
       <FocusRing active={active} color="#f2b765" position={[0, -0.05, 0]} />
-      <EarthBody accent="#f2b765" radius={0.5} />
-      <MoonBody position={[1.18, 0.62, 0]} radius={0.25} />
-      <OrbitRing color="#f2b765" radius={1.34} opacity={active ? 0.56 : 0.28} />
-      <mesh position={[0.9, 0.47, 0]} rotation={[0, 0, -0.99]}>
-        <coneGeometry args={[0.42, 1.75, 32, 1, true]} />
+      <SunBody position={[-1.28, 0, 0]} radius={0.3} />
+      <EarthBody accent="#f2b765" position={[0.08, 0, 0]} radius={0.46} />
+      <MoonBody position={[0.08, 1.18, 0]} radius={0.24} />
+      <group position={[0.08, 0, 0]}>
+        <OrbitRing
+          color="#f2b765"
+          radius={1.18}
+          rotation={[0, 0, 0]}
+          opacity={active ? 0.58 : 0.3}
+        />
+      </group>
+      <DirectionVector
+        color="#f6c97d"
+        start={[-0.95, -0.28, 0.08]}
+        end={[-0.42, -0.28, 0.08]}
+        opacity={active ? 0.84 : 0.42}
+        radius={0.013}
+      />
+      <mesh position={[0.86, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>
+        <coneGeometry args={[0.46, 1.56, 32, 1, true]} />
         <meshBasicMaterial
           color="#9c78d4"
           side={2}
@@ -118,12 +152,6 @@ function LearnerModel({ active }: Readonly<{ active: boolean }>) {
           toneMapped={false}
         />
       </mesh>
-      <LightBeam
-        color="#f2b765"
-        start={[-0.62, -0.85, 0]}
-        end={[2.35, -2.15, 0]}
-        opacity={active ? 0.62 : 0.25}
-      />
     </group>
   );
 }
@@ -132,29 +160,37 @@ function ScientificModel({ active }: Readonly<{ active: boolean }>) {
   return (
     <group position={[2.35, 0.35, 0]}>
       <FocusRing active={active} color="#55dceb" position={[0, -0.05, 0]} />
-      <SunBody position={[-1.38, 0.1, 0]} radius={0.38} />
-      <EarthBody accent="#55dceb" position={[0.25, 0, 0]} radius={0.48} />
-      <MoonBody position={[1.25, 0.72, 0]} radius={0.24} />
-      <OrbitRing color="#55dceb" radius={1.18} opacity={active ? 0.62 : 0.3} />
-      <LightBeam
+      <SunBody position={[-1.28, 0, 0]} radius={0.38} />
+      <EarthBody accent="#55dceb" position={[0.08, 0, 0]} radius={0.48} />
+      <MoonBody position={[0.08, 1.18, 0]} radius={0.24} />
+      <group position={[0.08, 0, 0]}>
+        <OrbitRing
+          color="#55dceb"
+          radius={1.18}
+          rotation={[0, 0, 0]}
+          opacity={active ? 0.62 : 0.3}
+        />
+      </group>
+      <AngleArc
+        color="#68e4b2"
+        position={[0.08, 0, 0.04]}
+        radius={0.58}
+        rotation={[0, 0, Math.PI / 2]}
+        opacity={active ? 0.82 : 0.4}
+      />
+      <DirectionVector
         color="#f6c97d"
-        start={[-1.05, 0.34, 0.08]}
-        end={[1.08, 0.88, 0.08]}
-        opacity={active ? 0.68 : 0.3}
+        start={[-0.95, -0.28, 0.08]}
+        end={[-0.42, -0.28, 0.08]}
+        opacity={active ? 0.78 : 0.36}
         radius={0.014}
       />
-      <LightBeam
-        color="#f6c97d"
-        start={[-1.05, -0.08, -0.08]}
-        end={[1.08, 0.5, -0.08]}
-        opacity={active ? 0.54 : 0.24}
-        radius={0.01}
-      />
-      <LightBeam
+      <DirectionVector
         color="#55dceb"
-        start={[0.62, -0.82, 0]}
-        end={[-2.35, -2.15, 0]}
-        opacity={active ? 0.62 : 0.25}
+        start={[0.08, 0.34, 0]}
+        end={[0.08, 0.96, 0]}
+        opacity={active ? 0.8 : 0.38}
+        radius={0.012}
       />
     </group>
   );
@@ -187,66 +223,42 @@ function EvidenceTarget({ active }: Readonly<{ active: boolean }>) {
   );
 }
 
-function HeroMotion({ focus }: Readonly<{ focus: HeroFocus }>) {
-  const learner = useRef<Group>(null);
-  const scientific = useRef<Group>(null);
-  const evidence = useRef<Group>(null);
-  const phase = useRef(0);
-
-  useFrame((_state, delta) => {
-    phase.current = (phase.current + Math.min(delta, 0.05)) % (Math.PI * 2);
-    const t = phase.current;
-
-    if (learner.current) {
-      learner.current.position.y = Math.sin(t * 0.9) * 0.035;
-      learner.current.rotation.y = Math.sin(t * 0.72) * 0.075;
-    }
-    if (scientific.current) {
-      scientific.current.position.y = Math.sin(t * 0.9 + Math.PI) * 0.035;
-      scientific.current.rotation.y = -Math.sin(t * 0.72) * 0.075;
-    }
-    if (evidence.current) {
-      const scale = 1 + Math.sin(t * 1.15) * 0.025;
-      evidence.current.scale.setScalar(scale);
-      evidence.current.position.y = Math.sin(t * 0.75) * 0.025;
-    }
-  });
-
+function HeroModels({ focus }: Readonly<{ focus: HeroFocus }>) {
   return (
     <>
-      <group ref={learner}>
-        <LearnerModel active={focus === "learner"} />
-      </group>
-      <group ref={scientific}>
-        <ScientificModel active={focus === "scientific"} />
-      </group>
-      <group ref={evidence}>
-        <EvidenceTarget active={focus === "evidence"} />
-      </group>
+      <LearnerModel active={focus === "learner"} />
+      <ScientificModel active={focus === "scientific"} />
+      <EvidenceTarget active={focus === "evidence"} />
     </>
   );
 }
 
-function HeroScene({ focus }: Readonly<{ focus: HeroFocus }>) {
+function HeroScene({
+  focus,
+  onContextLoss,
+}: Readonly<{ focus: HeroFocus; onContextLoss: () => void }>) {
   return (
     <>
       <color attach="background" args={["#060a12"]} />
       <fog attach="fog" args={["#060a12", 8, 16]} />
-      <ambientLight intensity={0.46} />
+      <ambientLight intensity={0.38} />
       <directionalLight color="#d5f7ff" intensity={1.25} position={[0, 5, 5]} />
       <directionalLight color="#8d79c6" intensity={0.55} position={[-5, 1, -2]} />
-      <TechnicalStarField opacity={0.46} />
-      <HeroMotion focus={focus} />
+      <WebGlContextLossGuard onContextLoss={onContextLoss} />
+      <HeroModels focus={focus} />
     </>
   );
 }
 
 export function HeroVisualizer() {
   const [focus, setFocus] = useState<HeroFocus>("evidence");
+  const [canvasFailed, setCanvasFailed] = useState(false);
+  const [renderReady, setRenderReady] = useState(false);
   const viewportId = useId();
   const summaryId = useId();
   const reducedMotion = usePrefersReducedMotion();
-  const webglAvailable = useWebGlAvailability();
+  const compactViewport = useCompactViewport();
+  const webglAvailable = useThreeRendererAvailability();
   const fallback = (
     <HeroVisualizerFallback descriptionId={summaryId} focus={focus} />
   );
@@ -255,7 +267,15 @@ export function HeroVisualizer() {
     <figure
       className="hero-visualizer"
       data-testid="hero-visualizer"
-      data-motion={reducedMotion ? "paused" : "running"}
+      data-camera-state={focus}
+      data-motion={reducedMotion ? "paused" : "interaction-only"}
+      data-render-state={
+        canvasFailed || webglAvailable === false
+          ? "fallback"
+          : renderReady
+            ? "ready"
+            : "loading"
+      }
     >
       <p className="sr-only" id={summaryId}>
         {HERO_COMPLETE_SUMMARY}
@@ -265,19 +285,23 @@ export function HeroVisualizer() {
         <span>One sealed test</span>
       </div>
       <div className="hero-visualizer-viewport" id={viewportId}>
-        {webglAvailable ? (
-          <HeroCanvasBoundary fallback={fallback}>
+        {webglAvailable && !canvasFailed ? (
+          <HeroCanvasBoundary
+            fallback={fallback}
+            onFailure={() => setCanvasFailed(true)}
+          >
             <Canvas
               role="img"
               aria-label={`Interactive 3D model comparison. ${FOCUS_COPY[focus]}`}
               aria-describedby={summaryId}
-              camera={{ fov: 38, near: 0.1, far: 100, position: [0, 3.25, 9.8] }}
-              dpr={reducedMotion ? 1 : [1, 1.5]}
-              frameloop={reducedMotion ? "demand" : "always"}
-              gl={{ antialias: !reducedMotion, alpha: false, powerPreference: "high-performance" }}
+              camera={{ fov: 38, near: 0.1, far: 100, position: [0, 2.75, 8.2] }}
+              dpr={reducedMotion || compactViewport ? 1 : [1, 1.5]}
+              frameloop="demand"
+              gl={{ antialias: !reducedMotion, alpha: false, powerPreference: "default" }}
             >
               <HeroCameraRig focus={focus} />
-              <HeroScene focus={focus} />
+              <RenderReadySignal onReady={() => setRenderReady(true)} />
+              <HeroScene focus={focus} onContextLoss={() => setCanvasFailed(true)} />
             </Canvas>
           </HeroCanvasBoundary>
         ) : (
@@ -286,9 +310,14 @@ export function HeroVisualizer() {
         <div className="hero-world-labels" aria-hidden="true">
           <span className="learner-label">A · Learner claim</span>
           <span className="science-label">B · Scientific model</span>
-          <span className="evidence-label">Verified observation</span>
+          <span className="evidence-label">50% lit · shadow: none</span>
         </div>
       </div>
+      <ul className="hero-encoding-legend" aria-label="3D encoding legend">
+        <li><i className="legend-sunlight" aria-hidden="true" />Sunlight direction</li>
+        <li><i className="legend-shadow" aria-hidden="true" />Proposed shadow</li>
+        <li><i className="legend-view" aria-hidden="true" />Viewing direction</li>
+      </ul>
       <div className="hero-focus-controls" role="group" aria-label="Focus the 3D comparison">
         {(
           [
@@ -310,7 +339,7 @@ export function HeroVisualizer() {
       </div>
       <figcaption>
         <strong>{FOCUS_COPY[focus]}</strong>
-        <span>Deterministic geometry · subtle motion pauses with reduced-motion settings</span>
+        <span>90° sealed case · deterministic geometry · interaction-only rendering</span>
       </figcaption>
       <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
         {FOCUS_COPY[focus]}

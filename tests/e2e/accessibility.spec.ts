@@ -39,40 +39,40 @@ test("keeps the capture, evidence, and trace states free of automatic WCAG A/AA 
   const learnerWorld = page.locator(".evidence-world.learner");
   const learnerViewport = learnerWorld.getByRole("img").first();
   const learnerViewportShell = learnerWorld.locator(".world-viewport[id]");
-  const rotateLearnerLeft = learnerWorld.getByRole("button", {
-    name: "Rotate learner model view left to -22.5 degrees",
+  const planeView = learnerWorld.getByRole("button", {
+    name: "Plane view",
   });
   await expect(learnerViewport).toBeVisible();
   await expect(learnerViewport).toHaveAttribute(
     "aria-label",
-    /Learner model 3D view\. Camera orientation 0 degrees/,
+    /Learner model 3D view\. Case overview/,
   );
   const learnerViewportId = await learnerViewportShell.getAttribute("id");
   expect(learnerViewportId).toBeTruthy();
-  await expect(rotateLearnerLeft).toHaveAttribute(
+  await expect(planeView).toHaveAttribute(
     "aria-controls",
     learnerViewportId!,
   );
-  await rotateLearnerLeft.focus();
+  await planeView.focus();
   await page.keyboard.press("Enter");
   await expect(learnerViewport).toHaveAttribute(
     "aria-label",
-    /Camera orientation -22\.5 degrees/,
+    /Plane view/,
   );
   await expect(learnerWorld.locator(".camera-view-status")).toHaveText(
-    "Learner model view rotated left. Camera orientation -22.5 degrees.",
+    "Learner model view: Plane view.",
   );
   const resetLearnerView = learnerWorld.getByRole("button", {
-    name: "Reset learner model view to 0 degrees",
+    name: "Case overview",
   });
   await resetLearnerView.focus();
   await page.keyboard.press("Enter");
   await expect(learnerViewport).toHaveAttribute(
     "aria-label",
-    /Camera orientation 0 degrees/,
+    /Case overview/,
   );
   await expect(learnerWorld.locator(".camera-view-status")).toHaveText(
-    "Learner model view reset. Camera orientation 0 degrees.",
+    "Learner model view: Case overview.",
   );
   await expectNoAutomaticWcagViolations(page, "evidence");
 

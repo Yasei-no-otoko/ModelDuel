@@ -243,7 +243,7 @@ for (const viewport of [
   });
 }
 
-test("pauses decorative 3D motion when reduced motion is requested", async ({
+test("keeps the on-demand 3D scene static while preserving reduced-motion state", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -257,8 +257,47 @@ test("pauses decorative 3D motion when reduced motion is requested", async ({
   await page.reload();
   await expect(page.getByTestId("hero-visualizer")).toHaveAttribute(
     "data-motion",
-    "running",
+    "interaction-only",
   );
+});
+
+test("keeps the analytical hero still between interactions", async ({ page }) => {
+  await page.goto("/");
+  const visualizer = page.getByTestId("hero-visualizer");
+  await expect(visualizer).toHaveAttribute("data-render-state", "ready");
+  const viewport = visualizer.locator(".hero-visualizer-viewport");
+  const firstFrame = await viewport.screenshot();
+  await page.waitForTimeout(450);
+  const secondFrame = await viewport.screenshot();
+  expect(secondFrame.equals(firstFrame)).toBe(true);
+});
+
+test("replaces a genuinely lost hero WebGL context with the complete semantic view", async ({
+  browserName,
+  page,
+}) => {
+  test.skip(browserName !== "chromium", "WEBGL_lose_context is covered once.");
+  await page.goto("/");
+  const visualizer = page.getByTestId("hero-visualizer");
+  await expect(visualizer).toHaveAttribute("data-render-state", "ready");
+
+  const usedExtension = await visualizer.locator("canvas").evaluate((element) => {
+    const canvas = element as HTMLCanvasElement;
+    const context =
+      canvas.getContext("webgl2") ?? canvas.getContext("webgl");
+    const extension = context?.getExtension("WEBGL_lose_context");
+    if (!extension) {
+      canvas.dispatchEvent(new Event("webglcontextlost", { cancelable: true }));
+      return false;
+    }
+    extension.loseContext();
+    return true;
+  });
+  expect(usedExtension).toBe(true);
+
+  await expect(visualizer).toHaveAttribute("data-render-state", "fallback");
+  await expect(visualizer.getByTestId("hero-visualizer-fallback")).toBeVisible();
+  await expect(visualizer.locator("canvas")).toHaveCount(0);
 });
 
 test("completes the verified Seasons journey with sealed evidence and a transfer trace", async ({ page }) => {

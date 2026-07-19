@@ -13,17 +13,17 @@ Reviewed: 2026-07-19 JST
 ## Current documentation check
 
 - Playwright records the configured viewport into `recordVideo.size`; closing the browser context is required to flush the video before the artifact is consumed.
-- Playwright's context-level `reducedMotion` option emulates the corresponding media feature. The previous submission recorder forced `reduce`, which is appropriate for accessibility screenshots but would intentionally stop the new hero motion in the demo video.
+- Playwright's context-level `reducedMotion` option emulates the corresponding media feature. The refined hero is readable as a still and no longer relies on autonomous motion.
 - React Three Fiber's supported continuous-animation path is `useFrame`. Per-frame work should mutate object refs directly and remain small.
-- React Three Fiber exposes `frameloop` modes `always`, `demand`, and `never`. The landing hero may use `always` when motion is allowed because it unmounts before the two evidence canvases mount; reduced-motion users keep demand rendering.
+- React Three Fiber exposes `frameloop` modes `always`, `demand`, and `never`. The landing hero now uses `demand` for every motion preference because its changes are explicit focus/camera states.
 
 ## Implementation decisions
 
 1. The 3D scene viewport must be visible without scrolling at both 1600 × 900 and 1280 × 720 desktop recording breakpoints.
 2. The complete visualizer, including controls and caption, should fit in the 1600 × 900 submission-video frame.
-3. Motion is limited to slow, non-semantic float/rotation/pulse transforms. It must not change the deterministic test case or scientific evidence.
-4. `prefers-reduced-motion: reduce` keeps the scene static and at DPR 1.
-5. The recorder uses `reducedMotion: "no-preference"` so the video demonstrates the motion requested for the landing page. This does not change the public accessibility behavior.
+3. Non-semantic float/rotation/pulse transforms are prohibited. Sunlight, umbra, viewing direction, the 90 degree case, and verified evidence remain legible in the default still.
+4. `prefers-reduced-motion: reduce` keeps DPR 1; compact viewports also use DPR 1.
+5. The recorder may use either motion preference because the interaction-only scene has the same scientific meaning in both modes.
 6. The approved narration text remains unchanged so all ten existing OpenAI TTS segments remain cache hits and the refresh requires zero Speech API calls.
 
 ## Primary sources

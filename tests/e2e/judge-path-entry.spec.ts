@@ -313,6 +313,7 @@ test("uses one capture-stage WebGL probe and preserves the evidence fallback", a
 test("removes camera controls when the interactive Canvas cannot start", async ({
   page,
 }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
   await page.addInitScript(() => {
     let availabilityProbePending = true;
     const getContext = HTMLCanvasElement.prototype.getContext;
@@ -351,5 +352,29 @@ test("removes camera controls when the interactive Canvas cannot start", async (
       exact: true,
     }),
   ).toHaveCount(2);
+  const fallbackShells = page.locator(".moon-world-viewport-shell");
+  await expect(fallbackShells).toHaveCount(2);
+  for (const shell of await fallbackShells.all()) {
+    const layout = await shell.evaluate((element) => {
+      const viewport = element.querySelector(".world-viewport")!;
+      const legend = element.querySelector(".scene-encoding-legend")!;
+      const note = element.querySelector(".static-view-note")!;
+      const viewportBounds = viewport.getBoundingClientRect();
+      const legendBounds = legend.getBoundingClientRect();
+      const noteBounds = note.getBoundingClientRect();
+      return {
+        legendBottom: legendBounds.bottom,
+        noteTop: noteBounds.top,
+        viewportBottom: viewportBounds.bottom,
+      };
+    });
+    expect(layout.legendBottom).toBeLessThanOrEqual(layout.viewportBottom + 1);
+    expect(layout.noteTop).toBeGreaterThanOrEqual(layout.viewportBottom - 1);
+  }
   await expect(page.getByTestId("verified-observation")).toBeVisible();
+  const widths = await page.evaluate(() => ({
+    client: document.documentElement.clientWidth,
+    scroll: document.documentElement.scrollWidth,
+  }));
+  expect(widths.scroll).toBeLessThanOrEqual(widths.client);
 });
