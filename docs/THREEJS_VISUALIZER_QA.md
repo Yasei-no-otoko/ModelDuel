@@ -1,7 +1,8 @@
 # Three.js visualizer QA record
 
 Date: 2026-07-19 JST
-Branch: `codex/modelduel-threejs-visualizer`
+Implementation merge: `96b93d4`
+Production version: `cd38e435-7875-4125-bfbb-c7f5a4d092d0`
 
 ## Architecture and scope
 
@@ -31,18 +32,19 @@ The previous observatory illustration was removed from the runtime and repositor
 | Installed skill validator | Pass |
 | `THREEJS_VISUALIZER_SPEC.json` validator | Pass; expected `modelUrl: null` advisory only |
 | `pnpm check` | Pass: lint, typecheck, 363/363 Node tests, 7/7 Workers tests, video contract, production build |
-| Playwright Chromium + WebKit | Pass: 77 passed, 1 intentional non-Chromium axe skip |
+| Playwright Chromium + WebKit | Pass: 85 passed, 1 intentional non-Chromium axe skip |
+| Ubuntu Chromium + Firefox + WebKit CI | Pass: 127 passed, 2 intentional non-Chromium axe skips |
 | Targeted Chromium a11y/mobile | Pass: WCAG A/AA, mobile entry, and caption legibility |
 | Bundle budget | Pass: 2,126.9 KiB raw total, 1,873.7 KiB JavaScript, 52.2 KiB CSS, 713.2 KiB aggregate gzip |
 | `pnpm cf:typecheck` | Pass: OpenNext 1.20.1 build and checked-in Workers types |
-| Wrangler deploy dry run | Pass: 8,843.33 KiB raw / 1,705.07 KiB gzip, 43 static asset files |
+| Cloudflare deployment | Pass: 8,844.13 KiB raw / 1,705.10 KiB gzip, 43 static asset files, startup 45 ms |
 | `git diff --check` | Pass |
 
 The installed skill's static auditor assumes its vanilla `index.html` / `src/main.ts` scaffold and therefore reports non-applicable findings for this R3F application, including missing vanilla entrypoints and OrbitControls. The R3F-specific checks above, browser probes, interaction tests, and manual inspection are the authoritative verification for this integration.
 
 ## Runtime states inspected
 
-- First-view refresh, local production build: one canvas, no fallback, no console errors, and no horizontal overflow. At 1600 × 900 the scene spans y=475.4–731.4 and the complete visualizer ends at y=870.4. At 1280 × 720 the scene spans y=430.6–661.0. At 768 × 1024 it spans y=637.8–853.8 and precedes the input card.
+- First-view refresh, Cloudflare production: one canvas, `data-motion="running"`, no fallback, no console errors, and no horizontal overflow. At 1600 × 900 the scene spans y=475.4–731.4 and the complete visualizer ends at y=870.4. At 1280 × 720 the scene spans y=430.6–661.0. At 768 × 1024 it spans y=637.8–853.8 and precedes the input card.
 - Observe stage: two canvases, no fallback, no console errors.
 - Reduced motion: media query honored, one canvas, reduced DPR, and the continuous hero loop is paused.
 - WebGL unavailable: zero canvases and one complete semantic fallback.
@@ -56,9 +58,4 @@ The local Playwright macOS Firefox Nightly runner hangs on a blank-page `page.ev
 
 ## Captured evidence
 
-Local captures (not committed):
-
-- `/tmp/modelduel-final-hero-1600x900.png`
-- `/tmp/modelduel-final-evidence-1600x900.png`
-- `/tmp/modelduel-final-reduced-motion.png`
-- `/tmp/modelduel-final-no-webgl.png`
+Committed production captures are listed in [`README.md`](../README.md#media-and-licensing). The 1600×900 cover and 375×812 mobile capture show the first-view 3D entry; Moon and Seasons evidence captures each show the deterministic two-Canvas comparison.
