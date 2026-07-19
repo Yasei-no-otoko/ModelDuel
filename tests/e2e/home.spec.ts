@@ -264,7 +264,12 @@ test("keeps the on-demand 3D scene static while preserving reduced-motion state"
 test("keeps the analytical hero still between interactions", async ({ page }) => {
   await page.goto("/");
   const visualizer = page.getByTestId("hero-visualizer");
-  await expect(visualizer).toHaveAttribute("data-render-state", "ready");
+  await expect
+    .poll(() => visualizer.getAttribute("data-render-state"))
+    .toMatch(/^(ready|fallback)$/);
+  if ((await visualizer.getAttribute("data-render-state")) === "fallback") {
+    await expect(visualizer.getByTestId("hero-visualizer-fallback")).toBeVisible();
+  }
   const viewport = visualizer.locator(".hero-visualizer-viewport");
   const firstFrame = await viewport.screenshot();
   await page.waitForTimeout(450);

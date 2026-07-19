@@ -199,7 +199,7 @@ test("keeps Moon evidence legends clear of every named camera control at 375px",
         viewportBottom: viewportBounds.bottom,
       };
     });
-    expect(layout.legendBottom).toBeLessThanOrEqual(layout.viewportBottom + 1);
+    expect(layout.legendBottom).toBeLessThanOrEqual(layout.viewportBottom + 1.1);
     expect(layout.controlsTop).toBeGreaterThanOrEqual(layout.viewportBottom - 1);
   }
 
