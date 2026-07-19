@@ -303,7 +303,7 @@ dd {
 
 .capture-layout {
   min-height: 680px;
-  padding: clamp(3.5rem, 7vw, 6.2rem) 0;
+  padding: clamp(2.75rem, 4vw, 4rem) 0;
   display: grid;
   grid-template-columns: minmax(0, 0.92fr) minmax(480px, 0.82fr);
   align-items: start;
@@ -314,6 +314,24 @@ dd {
 .capture-copy {
   grid-column: 1;
   grid-row: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.capture-copy-intro {
+  order: 1;
+}
+
+.capture-copy > .hero-visualizer {
+  order: 2;
+}
+
+.capture-copy-support {
+  order: 3;
+}
+
+.capture-copy > .promise-list {
+  order: 4;
 }
 
 .capture-layout > .capture-card {
@@ -451,7 +469,7 @@ dd {
 
 .hero-visualizer-viewport {
   position: relative;
-  height: clamp(16rem, 25vw, 20rem);
+  height: clamp(13.5rem, 18vw, 16rem);
   overflow: hidden;
   background:
     radial-gradient(circle at 25% 32%, rgba(242, 183, 101, 0.08), transparent 28%),
@@ -2613,6 +2631,7 @@ textarea:disabled {
   }
 
   .capture-copy-intro,
+  .capture-copy-support,
   .capture-copy > .hero-visualizer,
   .capture-copy > .promise-list,
   .capture-layout > .capture-card {
@@ -2624,17 +2643,21 @@ textarea:disabled {
     order: 1;
   }
 
-  .capture-layout > .capture-card {
+  .capture-copy-support {
     order: 2;
-    grid-row: auto;
   }
 
   .capture-copy > .hero-visualizer {
     order: 3;
   }
 
-  .capture-copy > .promise-list {
+  .capture-layout > .capture-card {
     order: 4;
+    grid-row: auto;
+  }
+
+  .capture-copy > .promise-list {
+    order: 5;
   }
 
   .revision-layout {
@@ -2660,6 +2683,27 @@ textarea:disabled {
   }
 
   .header-meta > span {
+    display: none;
+  }
+
+  .primary-button.mobile-verified-cta {
+    min-height: 62px;
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    line-height: 1.2;
+  }
+
+  .mobile-verified-cta small {
+    font-size: 0.67rem;
+    font-weight: 680;
+    letter-spacing: 0.01em;
+    opacity: 0.76;
+  }
+
+  .capture-card-verified-action,
+  .capture-actions-verified {
     display: none;
   }
 
@@ -2805,22 +2849,6 @@ textarea:disabled {
     line-height: 1.55;
   }
 
-  .primary-button.mobile-verified-cta {
-    min-height: 62px;
-    margin-top: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-    line-height: 1.2;
-  }
-
-  .mobile-verified-cta small {
-    font-size: 0.67rem;
-    font-weight: 680;
-    letter-spacing: 0.01em;
-    opacity: 0.76;
-  }
-
   .hero-visualizer {
     margin-top: 1.15rem;
   }
@@ -2905,14 +2933,6 @@ textarea:disabled {
 
   .capture-actions {
     grid-template-columns: 1fr;
-  }
-
-  .capture-card-verified-action {
-    display: none;
-  }
-
-  .capture-actions-verified {
-    display: none;
   }
 
   .error-actions {

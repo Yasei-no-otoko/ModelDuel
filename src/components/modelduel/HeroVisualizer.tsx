@@ -1,13 +1,15 @@
 "use client";
 
-import { Canvas, useThree } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
   Component,
   useEffect,
   useId,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
+import type { Group } from "three";
 
 import { usePrefersReducedMotion, useWebGlAvailability } from "./browser";
 import {
@@ -185,6 +187,46 @@ function EvidenceTarget({ active }: Readonly<{ active: boolean }>) {
   );
 }
 
+function HeroMotion({ focus }: Readonly<{ focus: HeroFocus }>) {
+  const learner = useRef<Group>(null);
+  const scientific = useRef<Group>(null);
+  const evidence = useRef<Group>(null);
+  const phase = useRef(0);
+
+  useFrame((_state, delta) => {
+    phase.current = (phase.current + Math.min(delta, 0.05)) % (Math.PI * 2);
+    const t = phase.current;
+
+    if (learner.current) {
+      learner.current.position.y = Math.sin(t * 0.9) * 0.035;
+      learner.current.rotation.y = Math.sin(t * 0.72) * 0.075;
+    }
+    if (scientific.current) {
+      scientific.current.position.y = Math.sin(t * 0.9 + Math.PI) * 0.035;
+      scientific.current.rotation.y = -Math.sin(t * 0.72) * 0.075;
+    }
+    if (evidence.current) {
+      const scale = 1 + Math.sin(t * 1.15) * 0.025;
+      evidence.current.scale.setScalar(scale);
+      evidence.current.position.y = Math.sin(t * 0.75) * 0.025;
+    }
+  });
+
+  return (
+    <>
+      <group ref={learner}>
+        <LearnerModel active={focus === "learner"} />
+      </group>
+      <group ref={scientific}>
+        <ScientificModel active={focus === "scientific"} />
+      </group>
+      <group ref={evidence}>
+        <EvidenceTarget active={focus === "evidence"} />
+      </group>
+    </>
+  );
+}
+
 function HeroScene({ focus }: Readonly<{ focus: HeroFocus }>) {
   return (
     <>
@@ -194,9 +236,7 @@ function HeroScene({ focus }: Readonly<{ focus: HeroFocus }>) {
       <directionalLight color="#d5f7ff" intensity={1.25} position={[0, 5, 5]} />
       <directionalLight color="#8d79c6" intensity={0.55} position={[-5, 1, -2]} />
       <TechnicalStarField opacity={0.46} />
-      <LearnerModel active={focus === "learner"} />
-      <ScientificModel active={focus === "scientific"} />
-      <EvidenceTarget active={focus === "evidence"} />
+      <HeroMotion focus={focus} />
     </>
   );
 }
@@ -212,12 +252,16 @@ export function HeroVisualizer() {
   );
 
   return (
-    <figure className="hero-visualizer" data-testid="hero-visualizer">
+    <figure
+      className="hero-visualizer"
+      data-testid="hero-visualizer"
+      data-motion={reducedMotion ? "paused" : "running"}
+    >
       <p className="sr-only" id={summaryId}>
         {HERO_COMPLETE_SUMMARY}
       </p>
       <div className="hero-visualizer-heading">
-        <span>Live model comparison</span>
+        <span>Interactive 3D model comparison</span>
         <span>One sealed test</span>
       </div>
       <div className="hero-visualizer-viewport" id={viewportId}>
@@ -229,7 +273,7 @@ export function HeroVisualizer() {
               aria-describedby={summaryId}
               camera={{ fov: 38, near: 0.1, far: 100, position: [0, 3.25, 9.8] }}
               dpr={reducedMotion ? 1 : [1, 1.5]}
-              frameloop="demand"
+              frameloop={reducedMotion ? "demand" : "always"}
               gl={{ antialias: !reducedMotion, alpha: false, powerPreference: "high-performance" }}
             >
               <HeroCameraRig focus={focus} />
@@ -266,7 +310,7 @@ export function HeroVisualizer() {
       </div>
       <figcaption>
         <strong>{FOCUS_COPY[focus]}</strong>
-        <span>Exaggerated scale · deterministic geometry · drag-free view controls</span>
+        <span>Deterministic geometry · subtle motion pauses with reduced-motion settings</span>
       </figcaption>
       <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
         {FOCUS_COPY[focus]}

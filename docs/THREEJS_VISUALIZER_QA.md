@@ -7,7 +7,7 @@ Branch: `codex/modelduel-threejs-visualizer`
 
 - Preserved the existing React Three Fiber architecture instead of introducing a second vanilla Three.js runtime.
 - Added a client-only landing-page hero visualizer with a semantic static fallback when WebGL is unavailable.
-- Used `frameloop="demand"`, explicit invalidation, a maximum device pixel ratio of 1.5, and a reduced-motion DPR of 1.
+- Evidence views use `frameloop="demand"` and explicit invalidation. The Capture hero uses a small ref-mutation animation loop only while motion is allowed; reduced-motion switches it to demand rendering at DPR 1. All 3D views remain capped at DPR 1.5.
 - Limited the experience to at most two simultaneous WebGL canvases: one hero canvas during Capture, or two evidence canvases during Observe. The hero unmounts before the evidence pair mounts.
 - Reused deterministic geometry and shader-free materials for the hero, Moon phases, and seasons. No generated code, runtime model loading, or remote visual dependencies are used.
 - Evidence scenes are lit by the modeled Sun point light. The conceptual hero keeps restrained fill lighting so its three explanatory layers remain legible.
@@ -42,9 +42,9 @@ The installed skill's static auditor assumes its vanilla `index.html` / `src/mai
 
 ## Runtime states inspected
 
-- Production hero: one canvas, no fallback, no console errors, no horizontal overflow. At 1600 × 900 its visualizer begins at 588.6 px, keeping the comparison itself visible in the first viewport.
+- First-view refresh, local production build: one canvas, no fallback, no console errors, and no horizontal overflow. At 1600 × 900 the scene spans y=475.4–731.4 and the complete visualizer ends at y=870.4. At 1280 × 720 the scene spans y=430.6–661.0. At 768 × 1024 it spans y=637.8–853.8 and precedes the input card.
 - Observe stage: two canvases, no fallback, no console errors.
-- Reduced motion: media query honored, one canvas, reduced DPR.
+- Reduced motion: media query honored, one canvas, reduced DPR, and the continuous hero loop is paused.
 - WebGL unavailable: zero canvases and one complete semantic fallback.
 - Keyboard focus controls expose Learner claim, Science model, and Shared evidence without requiring pointer drag.
 

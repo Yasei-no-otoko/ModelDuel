@@ -95,14 +95,15 @@ const REPRESENTATIVE_COMMITS = Object.freeze([
   "e5e7b03",
   "983776a",
   "1649c4b",
+  "7dec581",
 ]);
 const BUILD_EVIDENCE = Object.freeze({
-  nodeTests: 360,
+  nodeTests: 363,
   workerdTests: 7,
-  chromiumTests: 38,
+  chromiumTests: 43,
   securityReviewedSources: 96,
   reportableSecurityFindings: 0,
-  productionMerge: "1649c4b",
+  productionMerge: "resolved-at-recording",
 });
 
 const SELECTORS = Object.freeze({
@@ -110,6 +111,25 @@ const SELECTORS = Object.freeze({
     kind: "role",
     role: "heading",
     name: "Two models predict. Evidence decides.",
+  }),
+  heroVisualizer: Object.freeze({
+    kind: "testId",
+    value: "hero-visualizer",
+  }),
+  heroLearnerFocus: Object.freeze({
+    kind: "role",
+    role: "button",
+    name: "Learner claim",
+  }),
+  heroScienceFocus: Object.freeze({
+    kind: "role",
+    role: "button",
+    name: "Science model",
+  }),
+  heroEvidenceFocus: Object.freeze({
+    kind: "role",
+    role: "button",
+    name: "Shared evidence",
   }),
   verifiedButton: Object.freeze({
     kind: "role",
@@ -398,6 +418,10 @@ function locatorFor(page, selector) {
 function validateSelectorContracts() {
   const requiredKeys = [
     "heroHeading",
+    "heroVisualizer",
+    "heroLearnerFocus",
+    "heroScienceFocus",
+    "heroEvidenceFocus",
     "verifiedButton",
     "interpretationHeading",
     "authoredBadge",
@@ -1193,7 +1217,7 @@ async function recordVerifiedJourney(
       viewport: { width: RECORDING_WIDTH, height: RECORDING_HEIGHT },
       deviceScaleFactor: 1,
       colorScheme: "dark",
-      reducedMotion: "reduce",
+      reducedMotion: "no-preference",
       serviceWorkers: "block",
     };
     if (recordVideo) {
@@ -1210,6 +1234,7 @@ async function recordVerifiedJourney(
     await installFailClosedAudit(page, baseUrl, counters);
     await page.goto(baseUrl.href, { waitUntil: "networkidle", timeout: 30_000 });
     await locatorFor(page, SELECTORS.heroHeading).waitFor({ state: "visible" });
+    await locatorFor(page, SELECTORS.heroVisualizer).waitFor({ state: "visible" });
     await locatorFor(page, SELECTORS.verifiedButton).waitFor({ state: "visible" });
     await showNarrationDisclosure(page);
     const recordingStart = process.hrtime.bigint();
@@ -1242,6 +1267,19 @@ async function recordVerifiedJourney(
       }
     };
 
+    for (const [deadline, label, selector] of [
+      [3, "hero-focus-learner", SELECTORS.heroLearnerFocus],
+      [6, "hero-focus-science", SELECTORS.heroScienceFocus],
+      [9, "hero-focus-evidence", SELECTORS.heroEvidenceFocus],
+    ]) {
+      await schedule(deadline, label, async () => {
+        const control = locatorFor(page, selector);
+        await control.click();
+        if ((await control.getAttribute("aria-pressed")) !== "true") {
+          throw new Error(`${label} did not become the active 3D focus.`);
+        }
+      });
+    }
     await schedule(13, "hero-hold");
     await schedule(17, "load-verified-sample", async () => {
       await locatorFor(page, SELECTORS.verifiedButton).click();
@@ -1939,7 +1977,10 @@ async function main() {
         durationSeconds: TOTAL_DURATION_SECONDS,
         timecodes: timeline.rows.map((row) => row.timecode),
       },
-      buildEvidence: BUILD_EVIDENCE,
+      buildEvidence: {
+        ...BUILD_EVIDENCE,
+        productionMerge: provenance.repositoryCommit.slice(0, 7),
+      },
       narration: {
         model: TTS_MODEL,
         voice: TTS_VOICE,

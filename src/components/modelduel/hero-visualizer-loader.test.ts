@@ -31,12 +31,15 @@ describe("hero visualizer boundary", () => {
     expect(experienceSource).toContain("<DynamicHeroVisualizer");
   });
 
-  it("uses demand rendering, bounded DPR, and native focus controls", () => {
-    expect(visualizerSource).toContain('frameloop="demand"');
+  it("animates only when motion is allowed and keeps bounded DPR and native controls", () => {
+    expect(visualizerSource).toContain(
+      'frameloop={reducedMotion ? "demand" : "always"}',
+    );
     expect(visualizerSource).toContain("dpr={reducedMotion ? 1 : [1, 1.5]}");
+    expect(visualizerSource).toContain("useFrame((_state, delta)");
+    expect(visualizerSource).toContain('data-motion={reducedMotion ? "paused" : "running"}');
     expect(visualizerSource).toContain('role="group"');
     expect(visualizerSource).toContain('aria-pressed={focus === value}');
-    expect(visualizerSource).not.toContain("useFrame");
   });
 
   it("renders the full model-versus-evidence meaning without WebGL", () => {

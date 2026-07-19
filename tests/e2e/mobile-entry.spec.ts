@@ -53,6 +53,18 @@ test("keeps progress labels semantic and collision-free at 768px", async ({
     scroll: document.documentElement.scrollWidth,
   }));
   expect(widths.scroll).toBeLessThanOrEqual(widths.client);
+
+  const visualizer = page.getByTestId("hero-visualizer");
+  const captureCard = page.locator(".capture-card");
+  const [visualizerBox, captureCardBox] = await Promise.all([
+    visualizer.boundingBox(),
+    captureCard.boundingBox(),
+  ]);
+  expect(visualizerBox).not.toBeNull();
+  expect(captureCardBox).not.toBeNull();
+  expect(visualizerBox?.y ?? Number.POSITIVE_INFINITY).toBeLessThan(
+    captureCardBox?.y ?? Number.NEGATIVE_INFINITY,
+  );
 });
 
 test("keeps the first task and all seven progress steps usable at 375px", async ({

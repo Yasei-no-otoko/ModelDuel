@@ -202,6 +202,65 @@ test("explains the duel through the interactive hero before the challenge starts
   expect(widths.scroll).toBeLessThanOrEqual(widths.client);
 });
 
+for (const viewport of [
+  { width: 1600, height: 900, requireWholeFigure: true },
+  { width: 1280, height: 720, requireWholeFigure: false },
+  { width: 768, height: 1024, requireWholeFigure: false },
+] as const) {
+  test(`keeps the 3D comparison in the first ${viewport.width}×${viewport.height} viewport`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.goto("/");
+
+    const visualizer = page.getByTestId("hero-visualizer");
+    const scene = visualizer.locator(".hero-visualizer-viewport");
+    await expect(visualizer).toBeVisible();
+    await expect(scene).toBeVisible();
+
+    const geometry = await scene.evaluate((element) => {
+      const bounds = element.getBoundingClientRect();
+      const visibleHeight = Math.max(
+        0,
+        Math.min(bounds.bottom, window.innerHeight) - Math.max(bounds.top, 0),
+      );
+      return {
+        bottom: bounds.bottom,
+        figureBottom:
+          element.closest("figure")?.getBoundingClientRect().bottom ?? Number.POSITIVE_INFINITY,
+        height: bounds.height,
+        top: bounds.top,
+        visibleHeight,
+      };
+    });
+
+    expect(geometry.top).toBeGreaterThanOrEqual(0);
+    expect(geometry.bottom).toBeLessThanOrEqual(viewport.height);
+    expect(geometry.visibleHeight / geometry.height).toBeGreaterThanOrEqual(0.99);
+    if (viewport.requireWholeFigure) {
+      expect(geometry.figureBottom).toBeLessThanOrEqual(viewport.height);
+    }
+  });
+}
+
+test("pauses decorative 3D motion when reduced motion is requested", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  await expect(page.getByTestId("hero-visualizer")).toHaveAttribute(
+    "data-motion",
+    "paused",
+  );
+
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.reload();
+  await expect(page.getByTestId("hero-visualizer")).toHaveAttribute(
+    "data-motion",
+    "running",
+  );
+});
+
 test("completes the verified Seasons journey with sealed evidence and a transfer trace", async ({ page }) => {
   const verifiedLedger = observeVerifiedRequestLedger(page);
   await startSeasonsChallenge(page);
