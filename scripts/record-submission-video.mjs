@@ -92,7 +92,7 @@ const REPRESENTATIVE_COMMITS = Object.freeze([
   "8f9895d",
   "2708191",
   "fe91da0",
-  "e5e7b03",
+  "f99e348",
   "983776a",
   "1649c4b",
   "7dec581",
@@ -1308,17 +1308,27 @@ async function recordVerifiedJourney(
       }
       await locatorFor(page, SELECTORS.verifiedObservation).waitFor({ state: "visible" });
     }, 0.75);
-    await schedule(72, "rotate-scientific-world", async () => {
-      const scientificCanvas = page.locator(".world-viewport canvas").nth(1);
-      const box = await scientificCanvas.boundingBox();
-      if (!box) throw new Error("Scientific canvas is not draggable.");
-      await page.mouse.move(box.x + box.width * 0.35, box.y + box.height * 0.5);
-      await page.mouse.down();
-      await page.mouse.move(box.x + box.width * 0.68, box.y + box.height * 0.5, {
-        steps: 18,
+    const scientificWorld = page.locator(".evidence-world.scientific");
+    for (const [deadline, label, buttonName, cameraState] of [
+      [72, "show-scientific-earth-view", "Earth-side view", "earth"],
+      [79, "show-scientific-plane-view", "Plane view", "plane"],
+      [85, "reset-scientific-overview", "Case overview", "overview"],
+    ]) {
+      await schedule(deadline, label, async () => {
+        const control = scientificWorld.getByRole("button", {
+          name: buttonName,
+          exact: true,
+        });
+        await control.click();
+        if ((await control.getAttribute("aria-pressed")) !== "true") {
+          throw new Error(`${label} did not become the active evidence view.`);
+        }
+        const viewport = scientificWorld.locator(".world-viewport");
+        if ((await viewport.getAttribute("data-camera-state")) !== cameraState) {
+          throw new Error(`${label} did not update the evidence camera state.`);
+        }
       });
-      await page.mouse.up();
-    });
+    }
     await schedule(88, "enter-revision", async () => {
       await locatorFor(page, SELECTORS.reviseButton).click();
       await locatorFor(page, SELECTORS.revisionText).fill(FULL_SCORE_REVISION);
