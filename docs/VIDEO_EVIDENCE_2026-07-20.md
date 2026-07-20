@@ -57,7 +57,7 @@ Narration uses disclosed OpenAI `tts-1` / `nova`. All 10 approved segments were 
 - Public judge-accessible repository verified: https://github.com/Yasei-no-otoko/ModelDuel
 - Codex Feedback Session ID recorded: `019f648c-0eb8-7b60-ad84-28ce35bbac4b` (official feedback upload for the primary build task).
 
-## Publication status and remaining gates
+## Publication and submission status
 
-- User-owned manual gate: upload this exact MP4 to YouTube as **Public** (not Unlisted or Private), verify playback while logged out, and replace `{{VIDEO_URL}}`.
-- Complete the final Devpost form review and submit before **July 21, 2026 at 5:00 PM PDT / July 22, 2026 at 9:00 AM JST**.
+- Published this exact MP4 to YouTube as **Public** at https://youtu.be/5zMkF4aCn3E on 2026-07-20 JST. The exact title and thumbnail were verified anonymously through YouTube oEmbed, and Devpost rendered the public video embed.
+- Submitted the reviewed final project to OpenAI Build Week at https://devpost.com/software/modelduel from the Devpost `yasei` account on 2026-07-20 JST, before **July 21, 2026 at 5:00 PM PDT / July 22, 2026 at 9:00 AM JST**. Devpost showed the success banner, `Submitted to OpenAI Build Week`, and My projects `Submitted` status.

@@ -12,10 +12,11 @@ The two complete challenges focus on common astronomy misconceptions: that Earth
 
 - Live demo: [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev)
 - Repository: [github.com/Yasei-no-otoko/ModelDuel](https://github.com/Yasei-no-otoko/ModelDuel)
-- Demo video: `{{VIDEO_URL}}`
+- Demo video: [youtu.be/5zMkF4aCn3E](https://youtu.be/5zMkF4aCn3E)
+- Devpost submission: [devpost.com/software/modelduel](https://devpost.com/software/modelduel)
 - Codex Feedback Session ID: `019f648c-0eb8-7b60-ad84-28ce35bbac4b`
 
-Replace the remaining video placeholder before submission. The public MIT-licensed repository is judge-accessible, and the primary build task was uploaded through Codex's official feedback workflow.
+The video is public and anonymously discoverable through YouTube's oEmbed endpoint. The Devpost project was submitted to OpenAI Build Week from the `yasei` account on 2026-07-20 JST. The public MIT-licensed repository is judge-accessible, and the primary build task was uploaded through Codex's official feedback workflow.
 
 ## Current scope
 
@@ -243,7 +244,7 @@ The dated production integration sequence made one Terra HTTP request and one Lu
 
 After earlier main merge `e04443f`, the paid runtime canary made exactly one live analysis request and one live revision request with zero retries. Analysis returned HTTP 200 in **17.642 seconds**, source `live`, model `gpt-5.6-terra`, with the exact tool order `validate_world_spec` → `simulate_world` → `compare_predictions` → `select_discriminating_case`. Revision returned HTTP 200 in **1.404 seconds**, source `gpt-5.6`, model `gpt-5.6-luna`; the same session and signed evaluation were accepted, conceptual change was `revised` with score `1`, and `liveUseAttestation: true` was carried by both requests. The server-minted cookie was reused with `Path=/`, `HttpOnly`, `Secure`, and `SameSite=Strict`; its value was not recorded. The strict responses did not expose token usage or cost, so neither is guessed. This is inherited integration evidence, not a paid canary of merge `6186358`; the handoff release intentionally used only the free verified path.
 
-The current exact 165-second analytical 3D video candidate is run `20260719T161844609Z-1c1d0be9-1d97-4a0e-8a4e-967a27d9e9dd` from recorder commit `761b68d` against Cloudflare version `5fe05dc0-7085-400f-bf0c-bddb9c9017f9`. It opens on the interaction-only 3D comparison, demonstrates the named Earth-side, Plane, and Overview evidence views, includes the supported-pilot boundary and learner-controlled teacher handoff, records 363/7/46 and Security 96/96/0 evidence, and uses 10/10 cached narration segments with zero Speech API calls. See [the current video evidence](docs/VIDEO_EVIDENCE_2026-07-20.md). Public video upload and visibility are user-owned manual actions that Codex does not perform. Repository access, the `/feedback` Session ID, and the Ubuntu three-engine CI gate are verified. The public video placeholder, logged-out video/link check, and final Devpost form submission remain user-owned gates. Track the canonical handoff in [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md).
+The exact 165-second analytical 3D submission video is run `20260719T161844609Z-1c1d0be9-1d97-4a0e-8a4e-967a27d9e9dd` from recorder commit `761b68d` against Cloudflare version `5fe05dc0-7085-400f-bf0c-bddb9c9017f9`. It opens on the interaction-only 3D comparison, demonstrates the named Earth-side, Plane, and Overview evidence views, includes the supported-pilot boundary and learner-controlled teacher handoff, records 363/7/46 and Security 96/96/0 evidence, and uses 10/10 cached narration segments with zero Speech API calls. See [the current video evidence](docs/VIDEO_EVIDENCE_2026-07-20.md). The video is public at [youtu.be/5zMkF4aCn3E](https://youtu.be/5zMkF4aCn3E), and the final project is submitted at [devpost.com/software/modelduel](https://devpost.com/software/modelduel). Repository access, the `/feedback` Session ID, the public YouTube embed, the Devpost `Submitted` state, and the Ubuntu three-engine CI gate are verified. Track the canonical record in [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md).
 
 ## License
 
