@@ -1,17 +1,18 @@
 # Devpost Submission — ModelDuel
 
-> **Submission warning:** Replace the video placeholder below before submitting. Do not publish placeholder text. The public repository and primary build task's Codex Feedback Session ID are recorded.
+> **Submission status:** Submitted to OpenAI Build Week from the Devpost `yasei` account on 2026-07-20 JST. The public repository, video, live demo, and primary build task's Codex Feedback Session ID are recorded below.
 
 - Live demo: [modelduel.yasei.workers.dev](https://modelduel.yasei.workers.dev)
 - Repository: [github.com/Yasei-no-otoko/ModelDuel](https://github.com/Yasei-no-otoko/ModelDuel)
-- Demo video: `{{VIDEO_URL}}`
+- Demo video: [youtu.be/5zMkF4aCn3E](https://youtu.be/5zMkF4aCn3E)
+- Devpost project: [devpost.com/software/modelduel](https://devpost.com/software/modelduel)
 - Codex Feedback Session ID: `019f648c-0eb8-7b60-ad84-28ce35bbac4b`
 
 ## Deadline
 
 **July 21, 2026 at 5:00 PM PDT / July 22, 2026 at 9:00 AM JST.**
 
-Re-verified on 2026-07-20 JST against the official rules and FAQ. The current package satisfies the documented repository, license, README, working-demo, sub-three-minute narrated-video, Codex/GPT-5.6 explanation, and primary-thread Feedback Session ID requirements. The only unresolved submission placeholder is the user-owned public YouTube URL.
+Re-verified on 2026-07-20 JST against the official rules and FAQ. The submitted package satisfies the documented repository, license, README, working-demo, sub-three-minute narrated-video, Codex/GPT-5.6 explanation, and primary-thread Feedback Session ID requirements. YouTube's anonymous oEmbed endpoint returned the exact video title and thumbnail, Devpost rendered the video plus five-image gallery, and the hackathon manager showed `Submitted`.
 
 ## Paste-ready submission fields
 
@@ -72,7 +73,7 @@ The useful boundary is not “AI versus deterministic code.” It is deciding wh
 
 ### What's next
 
-The analytical Three.js runtime through merge `40a276e` is deployed as Cloudflare version `5fe05dc0-7085-400f-bf0c-bddb9c9017f9`; the responsive 3D probes, free production judge path, bindings, security headers, and zero-paid-call presentation capture passed. The current exact 2:45 local candidate is run `20260719T161844609Z-1c1d0be9-1d97-4a0e-8a4e-967a27d9e9dd` from recorder commit `761b68d`. The repository is public and the primary Codex Feedback Session ID is recorded. Before submission, the user will publish the video, replace the sole remaining `{{VIDEO_URL}}` placeholder, verify playback while logged out, and submit the Devpost form; Codex does not publish the video. After the hackathon, the constrained-world pattern could expand to additional science misconceptions and a separately evaluated classroom pilot. Any impact or learning-gain claim would require that evaluation rather than being inferred from this prototype.
+The analytical Three.js runtime through merge `40a276e` is deployed as Cloudflare version `5fe05dc0-7085-400f-bf0c-bddb9c9017f9`; the responsive 3D probes, free production judge path, bindings, security headers, and zero-paid-call presentation capture passed. The exact public 2:45 submission video is run `20260719T161844609Z-1c1d0be9-1d97-4a0e-8a4e-967a27d9e9dd` from recorder commit `761b68d`. The repository is public, the primary Codex Feedback Session ID is recorded, the video is public at https://youtu.be/5zMkF4aCn3E, and the project is submitted at https://devpost.com/software/modelduel. After the hackathon, the constrained-world pattern could expand to additional science misconceptions and a separately evaluated classroom pilot. Any impact or learning-gain claim would require that evaluation rather than being inferred from this prototype.
 
 ### Production verification
 
@@ -288,7 +289,7 @@ Operational follow-up, not a submission gate: exact production CPU p95 and accou
 - [x] Deploy first-view 3D merge `96b93d4` as Cloudflare version `cd38e435-7875-4125-bfbb-c7f5a4d092d0`; verify responsive one-Canvas animation at 1600×900, 1280×720, and 768×1024, the exact free three-request ledger, no browser errors or horizontal overflow, and zero paid calls.
 - [x] Deploy the analytical Three.js runtime through merge `40a276e` as Cloudflare version `5fe05dc0-7085-400f-bf0c-bddb9c9017f9`; verify 100% traffic and the exact free production judge ledger before recording.
 - [x] Publish the MIT-licensed repository and verify anonymous README access; initial publication SHA `e7ed952ef9616744c6eeea09f6ec4b0434c83972`.
-- [ ] Replace the remaining video placeholder after the user-owned YouTube upload.
+- [x] Publish the approved video as Public and replace the video placeholder with https://youtu.be/5zMkF4aCn3E.
 
 ### Codex evidence
 
@@ -306,15 +307,15 @@ Operational follow-up, not a submission gate: exact production CPU p95 and accou
 - [x] Record the exact 2:45 shot list with audible English narration; current run `20260719T161844609Z-1c1d0be9-1d97-4a0e-8a4e-967a27d9e9dd` records the interaction-only analytical 3D hero and named Moon evidence views from production runtime `40a276e`, using recorder commit `761b68d`, with 363/7/46 plus Security 96/96/0 evidence.
 - [x] Verify the exact three-request authored ledger, zero live model calls, zero external HTTP, and no cookies or request/response payloads in the recording manifest.
 - [x] Audit the current video media: first-party browser capture, OpenAI TTS `nova` with persistent disclosure and 10/10 cache hits, no music, H.264/AAC/mov_text, full decode pass, matching hashes, checked 10-frame contact sheet, and targeted review of all three named scientific camera states. See [current evidence](VIDEO_EVIDENCE_2026-07-20.md).
-- [ ] User-owned manual gate: upload the final video to YouTube as **Public** (not Unlisted or Private), verify it while logged out, and replace `{{VIDEO_URL}}`. Codex only maintains [the title and description copy](YOUTUBE_PUBLICATION_COPY.md) and does not publish.
+- [x] Publish the final video to YouTube as **Public**, verify the exact title and thumbnail through the anonymous oEmbed endpoint, and record https://youtu.be/5zMkF4aCn3E. See [the publication record](YOUTUBE_PUBLICATION_COPY.md).
 
 ### Devpost form
 
-- [ ] Paste the project name, tagline, Education category, built-with list, outline, and long description.
+- [x] Paste the project name, tagline, Education category, built-with list, outline, and edited long description.
 - [x] Confirm the live demo, repository URL, and Codex Feedback Session ID values.
-- [ ] Add the user-owned public video URL, then verify all final links and playback in a logged-out browser.
+- [x] Add the public video URL and verify the public YouTube embed, five-image gallery, live-demo link, repository link, and rendered story in the Devpost preview.
 - [x] Review the current official rules, FAQ, repository requirements, Feedback Session ID guidance, and public YouTube video requirements on 2026-07-20 JST.
-- [ ] Submit before the deadline and retain confirmation.
+- [x] Submit before the deadline; retain the `Project submitted!` confirmation, public `Submitted to OpenAI Build Week` state, and My projects `Submitted` status at https://devpost.com/software/modelduel.
 
 ## Official sources
 

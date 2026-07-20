@@ -1,7 +1,16 @@
 # YouTube publication copy
 
-This file contains copy only. Uploading, publishing, visibility selection, and
-the final public URL remain user-owned actions; Codex has not published a video.
+The approved copy below was published to YouTube on 2026-07-20 JST.
+
+## Publication record
+
+- Public URL: https://youtu.be/5zMkF4aCn3E
+- Visibility: **Public**
+- Duration: **2:45**
+- Audience: **No, it is not made for kids**
+- Altered or synthetic content disclosure: **Yes**
+- Checks: YouTube reported no copyright or Community Guidelines issues
+- Anonymous verification: YouTube oEmbed returned the exact public title and thumbnail on 2026-07-20 JST
 
 ## Title
 
